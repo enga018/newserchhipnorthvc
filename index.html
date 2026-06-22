@@ -573,11 +573,6 @@
                     <input type="tel" id="contact" placeholder="10-digit mobile number" required pattern="[0-9]{10}">
                 </div>
 
-                <hr style="margin: 20px 0; border: none; border-top: 1px solid var(--border);">
-
-                <!-- Property Details -->
-                <h3 style="font-size: 15px; font-weight: 600; margin-bottom: 12px;">Property Details</h3>
-
                 <div class="form-group">
                     <label for="propertyType">Property Type *</label>
                     <select id="propertyType" onchange="updateOwnerLabel()" required>
@@ -602,6 +597,11 @@
                     </select>
                 </div>
 
+                <hr style="margin: 20px 0; border: none; border-top: 1px solid var(--border);">
+
+                <!-- Location Section -->
+                <h3 style="font-size: 15px; font-weight: 600; margin-bottom: 12px;">Location & Photo</h3>
+
                 <div class="form-group">
                     <label>Location (GPS Based)</label>
                     <button type="button" class="btn-photo" onclick="captureLocation()" style="width: 100%;">📍 Capture Current Location</button>
@@ -610,11 +610,6 @@
                     <input type="hidden" id="longitude">
                     <input type="hidden" id="accuracy">
                 </div>
-
-                <hr style="margin: 20px 0; border: none; border-top: 1px solid var(--border);">
-
-                <!-- Photo -->
-                <h3 style="font-size: 15px; font-weight: 600; margin-bottom: 12px;">Property Photo</h3>
 
                 <div class="photo-container">
                     <img id="photoPreview" class="photo-preview hidden">
