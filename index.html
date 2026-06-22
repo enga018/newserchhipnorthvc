@@ -640,13 +640,6 @@
                     <textarea id="remarks" placeholder="Any additional information about the property or owner..."></textarea>
                 </div>
 
-                <div class="form-group">
-                    <div class="checkbox-item">
-                        <input type="checkbox" id="taxPaid">
-                        <label for="taxPaid">Tax already paid</label>
-                    </div>
-                </div>
-
                 <!-- Submit -->
                 <div class="button-group">
                     <button type="button" class="btn-secondary" onclick="resetForm()">Clear Form</button>
@@ -679,14 +672,6 @@
                 <div class="stat-card">
                     <div class="stat-value" id="totalCount">0</div>
                     <div class="stat-label">Total Records</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value" id="paidCount">0</div>
-                    <div class="stat-label">Tax Paid</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value" id="pendingCount">0</div>
-                    <div class="stat-label">Pending</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-value" id="photoCount">0</div>
@@ -786,9 +771,6 @@
                                 <div class="record-detail"><strong>${r.ownerType || 'Owner'}:</strong> ${r.ownerName}</div>
                                 ${r.fatherHusbandName ? `<div class="record-detail"><strong>${r.fatherHusbandType || 'Father/Husband'}:</strong> ${r.fatherHusbandName}</div>` : ''}
                             </div>
-                            <span class="record-status ${r.taxPaid ? '' : 'pending'}">
-                                ${r.taxPaid ? '✓ Paid' : 'Pending'}
-                            </span>
                         </div>
                         <div class="record-detail">📱 ${r.contact}</div>
                         <div class="record-detail">🏠 ${r.propertyType}</div>
@@ -807,13 +789,9 @@
 
             updateSummary() {
                 const total = this.records.length;
-                const paid = this.records.filter(r => r.taxPaid).length;
-                const pending = total - paid;
                 const withPhotos = this.records.filter(r => r.photo).length;
 
                 document.getElementById('totalCount').textContent = total;
-                document.getElementById('paidCount').textContent = paid;
-                document.getElementById('pendingCount').textContent = pending;
                 document.getElementById('photoCount').textContent = withPhotos;
 
                 // Property type breakdown
@@ -947,7 +925,6 @@
                 propertyType: propertyType,
                 buildingType: document.getElementById('buildingType').value,
                 remarks: document.getElementById('remarks').value,
-                taxPaid: document.getElementById('taxPaid').checked,
                 latitude: document.getElementById('latitude').value ? parseFloat(document.getElementById('latitude').value) : null,
                 longitude: document.getElementById('longitude').value ? parseFloat(document.getElementById('longitude').value) : null,
                 accuracy: document.getElementById('accuracy').value ? parseFloat(document.getElementById('accuracy').value) : null,
@@ -1102,7 +1079,7 @@
             }
 
             const csv = [
-                ['Property ID', 'Organization/Institution Name', 'Owner/Contact Person', 'Person Type', 'Father/Husband/Designation', 'Field Type', 'Contact', 'Property Type', 'Building Type', 'Latitude', 'Longitude', 'Tax Paid', 'Date', 'Remarks'],
+                ['Property ID', 'Organization/Institution Name', 'Owner/Contact Person', 'Person Type', 'Father/Husband/Designation', 'Field Type', 'Contact', 'Property Type', 'Building Type', 'Latitude', 'Longitude', 'Date', 'Remarks'],
                 ...app.records.map(r => [
                     r.propertyId,
                     r.organizationName || '',
@@ -1115,7 +1092,6 @@
                     r.buildingType || '',
                     r.latitude || '',
                     r.longitude || '',
-                    r.taxPaid ? 'Yes' : 'No',
                     new Date(r.timestamp).toLocaleString(),
                     r.remarks || ''
                 ])
