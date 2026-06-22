@@ -526,6 +526,7 @@
         <!-- Header -->
         <div class="header">
             <h1>🏘️ Property Tax Collector</h1>
+            <p id="vcName" style="font-size: 14px; margin-top: 8px; font-weight: 500;"></p>
             <p>Door-to-door data collection for property tax assessment</p>
         </div>
 
@@ -534,6 +535,7 @@
             <button class="tab-btn active" onclick="switchTab('collect')">Collect</button>
             <button class="tab-btn" onclick="switchTab('records')">Records</button>
             <button class="tab-btn" onclick="switchTab('summary')">Summary</button>
+            <button class="tab-btn" onclick="switchTab('settings')">Settings</button>
         </div>
 
         <!-- Collect Tab -->
@@ -693,6 +695,42 @@
             <div style="margin-top: 20px;">
                 <button class="btn-primary" onclick="exportData()" style="width: 100%;">⬇️ Export All Data as CSV</button>
                 <button class="btn-secondary" onclick="clearAllData()" style="width: 100%; margin-top: 8px;">🗑️ Clear All Records</button>
+            </div>
+        </div>
+
+        <!-- Settings Tab -->
+        <div id="settings" class="form-section">
+            <h2 style="font-size: 16px; font-weight: 600; margin-bottom: 16px;">Settings</h2>
+
+            <div class="form-group">
+                <label for="vcNameInput">Village Council / Organization Name *</label>
+                <input type="text" id="vcNameInput" placeholder="Enter your Village Council name" required>
+                <div class="text-muted mt-10" style="font-size: 12px;">This name will appear at the top of the app</div>
+            </div>
+
+            <div class="button-group">
+                <button class="btn-primary" onclick="saveVCName()" style="width: 100%;">💾 Save Name</button>
+            </div>
+
+            <hr style="margin: 20px 0; border: none; border-top: 1px solid var(--border);">
+
+            <div style="padding: 16px; background: var(--bg); border-radius: 6px; margin-bottom: 16px;">
+                <h3 style="font-size: 14px; font-weight: 600; margin-bottom: 12px;">📊 Data Management</h3>
+                <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 12px;">
+                    All data is stored locally on this device. Export regularly to keep backups.
+                </p>
+                <button class="btn-primary" onclick="exportData()" style="width: 100%; margin-bottom: 8px;">⬇️ Export Data as CSV</button>
+                <button class="btn-secondary" onclick="clearAllData()" style="width: 100%;">🗑️ Delete All Records</button>
+            </div>
+
+            <div style="padding: 16px; background: #e7f5ff; border-radius: 6px; border: 1px solid #74c0fc;">
+                <h3 style="font-size: 14px; font-weight: 600; margin-bottom: 8px; color: #0c3c72;">ℹ️ App Information</h3>
+                <p style="font-size: 12px; color: #0c3c72; line-height: 1.6;">
+                    <strong>Version:</strong> 1.0<br>
+                    <strong>Data Storage:</strong> Local (on this device)<br>
+                    <strong>Works Offline:</strong> Yes<br>
+                    <strong>Syncing:</strong> No (each device independent)
+                </p>
             </div>
         </div>
     </div>
@@ -888,6 +926,30 @@
 
         // Initialize app
         const app = new PropertyTaxApp();
+
+        // Load and display VC name on page load
+        function loadVCName() {
+            const vcName = localStorage.getItem('vcName');
+            if (vcName) {
+                document.getElementById('vcName').textContent = `📍 ${vcName}`;
+                document.getElementById('vcNameInput').value = vcName;
+            }
+        }
+
+        // Save VC name
+        function saveVCName() {
+            const vcName = document.getElementById('vcNameInput').value.trim();
+            if (!vcName) {
+                showAlert('Please enter a Village Council name', 'error');
+                return;
+            }
+            localStorage.setItem('vcName', vcName);
+            document.getElementById('vcName').textContent = `📍 ${vcName}`;
+            showAlert('✓ Village Council name saved', 'success');
+        }
+
+        // Load on startup
+        window.addEventListener('load', loadVCName);
 
         // Tab switching
         function switchTab(tabName) {
