@@ -583,6 +583,11 @@
                 </div>
 
                 <div class="form-group">
+                    <label for="organizationName" id="organizationNameLabel" class="hidden">Organization/Department/Institution Name *</label>
+                    <input type="text" id="organizationName" placeholder="e.g., ABC School, XYZ Hospital, NGO Name" class="hidden">
+                </div>
+
+                <div class="form-group">
                     <label for="responsiblePerson" id="responsiblePersonLabel" class="hidden">Contact Person *</label>
                     <input type="text" id="responsiblePerson" placeholder="Name of contact person" class="hidden">
                 </div>
@@ -777,6 +782,7 @@
                         <div class="record-header">
                             <div>
                                 <div class="record-id">ID: ${r.propertyId}</div>
+                                ${r.organizationName ? `<div class="record-detail"><strong>Organization:</strong> ${r.organizationName}</div>` : ''}
                                 <div class="record-detail"><strong>${r.ownerType || 'Owner'}:</strong> ${r.ownerName}</div>
                                 ${r.fatherHusbandName ? `<div class="record-detail"><strong>${r.fatherHusbandType || 'Father/Husband'}:</strong> ${r.fatherHusbandName}</div>` : ''}
                             </div>
@@ -863,6 +869,7 @@
                         <div style="margin-bottom: 12px;">
                             <strong style="display: block; margin-bottom: 8px;">Owner Information</strong>
                             <div style="font-size: 13px; line-height: 1.8;">
+                                ${record.organizationName ? `<div><strong>Organization/Institution:</strong> ${record.organizationName}</div>` : ''}
                                 <div><strong>${record.ownerType || 'Owner'}:</strong> ${record.ownerName}</div>
                                 ${record.fatherHusbandName ? `<div><strong>${record.fatherHusbandType || 'Father/Husband'}:</strong> ${record.fatherHusbandName}</div>` : ''}
                                 <div><strong>Contact:</strong> ${record.contact}</div>
@@ -929,6 +936,9 @@
                 propertyId: document.getElementById('propertyId').value,
                 ownerName: ownerOrResponsible,
                 ownerType: institutionTypes.includes(propertyType) ? 'Contact Person' : 'Owner',
+                organizationName: institutionTypes.includes(propertyType)
+                    ? document.getElementById('organizationName').value
+                    : null,
                 fatherHusbandName: institutionTypes.includes(propertyType) 
                     ? document.getElementById('designation').value
                     : document.getElementById('fatherHusbandName').value,
@@ -966,6 +976,8 @@
             const propertyType = document.getElementById('propertyType').value;
             const ownerLabel = document.getElementById('ownerLabel');
             const ownerInput = document.getElementById('ownerName');
+            const organizationNameLabel = document.getElementById('organizationNameLabel');
+            const organizationNameInput = document.getElementById('organizationName');
             const responsibleLabel = document.getElementById('responsiblePersonLabel');
             const responsibleInput = document.getElementById('responsiblePerson');
             const fatherHusbandLabel = document.getElementById('fatherHusbandLabel');
@@ -976,10 +988,14 @@
             const institutionTypes = ['education', 'church', 'ngo', 'govt'];
 
             if (institutionTypes.includes(propertyType)) {
-                // Institution: Show Contact Person and Designation, hide Owner Name and Father/Husband
+                // Institution: Show Organization Name, Contact Person, and Designation
                 ownerLabel.classList.add('hidden');
                 ownerInput.classList.add('hidden');
                 ownerInput.removeAttribute('required');
+                
+                organizationNameLabel.classList.remove('hidden');
+                organizationNameInput.classList.remove('hidden');
+                organizationNameInput.setAttribute('required', 'required');
                 
                 responsibleLabel.classList.remove('hidden');
                 responsibleInput.classList.remove('hidden');
@@ -993,10 +1009,14 @@
                 designationInput.classList.remove('hidden');
                 designationInput.setAttribute('required', 'required');
             } else {
-                // Residential/Commercial: Show Owner Name and Father/Husband, hide Contact Person and Designation
+                // Residential/Commercial: Show Owner Name and Father/Husband
                 ownerLabel.classList.remove('hidden');
                 ownerInput.classList.remove('hidden');
                 ownerInput.setAttribute('required', 'required');
+                
+                organizationNameLabel.classList.add('hidden');
+                organizationNameInput.classList.add('hidden');
+                organizationNameInput.removeAttribute('required');
                 
                 responsibleLabel.classList.add('hidden');
                 responsibleInput.classList.add('hidden');
@@ -1082,9 +1102,10 @@
             }
 
             const csv = [
-                ['Property ID', 'Owner/Contact Person', 'Person Type', 'Father/Husband/Designation', 'Field Type', 'Contact', 'Property Type', 'Building Type', 'Latitude', 'Longitude', 'Tax Paid', 'Date', 'Remarks'],
+                ['Property ID', 'Organization/Institution Name', 'Owner/Contact Person', 'Person Type', 'Father/Husband/Designation', 'Field Type', 'Contact', 'Property Type', 'Building Type', 'Latitude', 'Longitude', 'Tax Paid', 'Date', 'Remarks'],
                 ...app.records.map(r => [
                     r.propertyId,
+                    r.organizationName || '',
                     r.ownerName,
                     r.ownerType || 'Owner',
                     r.fatherHusbandName || '',
