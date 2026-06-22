@@ -548,6 +548,30 @@
                     <div class="text-muted mt-10" style="font-size: 12px;">Scan or enter the ID from the door sticker</div>
                 </div>
 
+                <div class="form-group">
+                    <label for="propertyType">Property Type *</label>
+                    <select id="propertyType" onchange="updateOwnerLabel()" required>
+                        <option value="">Select type</option>
+                        <option value="residential">Residential</option>
+                        <option value="commercial">Commercial</option>
+                        <option value="mixed">Mixed Use</option>
+                        <option value="education">Education (School/College)</option>
+                        <option value="church">Church</option>
+                        <option value="ngo">NGO</option>
+                        <option value="govt">Government</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="buildingType">Building Type * (for tax calculation)</label>
+                    <select id="buildingType" required>
+                        <option value="">Select building type</option>
+                        <option value="rcc">RCC (Reinforced Concrete)</option>
+                        <option value="semi-rcc">Semi RCC</option>
+                        <option value="assam">Assam Type</option>
+                    </select>
+                </div>
+
                 <hr style="margin: 20px 0; border: none; border-top: 1px solid var(--border);">
 
                 <!-- Owner Information -->
@@ -571,30 +595,6 @@
                 <div class="form-group">
                     <label for="contact">Contact Number *</label>
                     <input type="tel" id="contact" placeholder="10-digit mobile number" required pattern="[0-9]{10}">
-                </div>
-
-                <div class="form-group">
-                    <label for="propertyType">Property Type *</label>
-                    <select id="propertyType" onchange="updateOwnerLabel()" required>
-                        <option value="">Select type</option>
-                        <option value="residential">Residential</option>
-                        <option value="commercial">Commercial</option>
-                        <option value="mixed">Mixed Use</option>
-                        <option value="education">Education (School/College)</option>
-                        <option value="church">Church</option>
-                        <option value="ngo">NGO</option>
-                        <option value="govt">Government</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label for="buildingType">Building Type * (for tax calculation)</label>
-                    <select id="buildingType" required>
-                        <option value="">Select building type</option>
-                        <option value="rcc">RCC (Reinforced Concrete)</option>
-                        <option value="semi-rcc">Semi RCC</option>
-                        <option value="assam">Assam Type</option>
-                    </select>
                 </div>
 
                 <hr style="margin: 20px 0; border: none; border-top: 1px solid var(--border);">
