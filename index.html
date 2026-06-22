@@ -583,13 +583,18 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="responsiblePerson" id="responsiblePersonLabel" class="hidden">Responsible Person *</label>
-                    <input type="text" id="responsiblePerson" placeholder="Name of responsible person" class="hidden">
+                    <label for="responsiblePerson" id="responsiblePersonLabel" class="hidden">Contact Person *</label>
+                    <input type="text" id="responsiblePerson" placeholder="Name of contact person" class="hidden">
                 </div>
 
                 <div class="form-group">
-                    <label for="fatherHusbandName">Father/Husband Name *</label>
+                    <label for="fatherHusbandName" id="fatherHusbandLabel">Father/Husband Name *</label>
                     <input type="text" id="fatherHusbandName" placeholder="Father's or Husband's name" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="designation" id="designationLabel" class="hidden">Designation *</label>
+                    <input type="text" id="designation" placeholder="e.g., Principal, Pastor, Manager" class="hidden">
                 </div>
 
                 <div class="form-group">
@@ -773,6 +778,7 @@
                             <div>
                                 <div class="record-id">ID: ${r.propertyId}</div>
                                 <div class="record-detail"><strong>${r.ownerType || 'Owner'}:</strong> ${r.ownerName}</div>
+                                ${r.fatherHusbandName ? `<div class="record-detail"><strong>${r.fatherHusbandType || 'Father/Husband'}:</strong> ${r.fatherHusbandName}</div>` : ''}
                             </div>
                             <span class="record-status ${r.taxPaid ? '' : 'pending'}">
                                 ${r.taxPaid ? '✓ Paid' : 'Pending'}
@@ -858,7 +864,7 @@
                             <strong style="display: block; margin-bottom: 8px;">Owner Information</strong>
                             <div style="font-size: 13px; line-height: 1.8;">
                                 <div><strong>${record.ownerType || 'Owner'}:</strong> ${record.ownerName}</div>
-                                ${record.fatherHusbandName ? `<div><strong>Father/Husband:</strong> ${record.fatherHusbandName}</div>` : ''}
+                                ${record.fatherHusbandName ? `<div><strong>${record.fatherHusbandType || 'Father/Husband'}:</strong> ${record.fatherHusbandName}</div>` : ''}
                                 <div><strong>Contact:</strong> ${record.contact}</div>
                             </div>
                         </div>
@@ -922,8 +928,11 @@
             const data = {
                 propertyId: document.getElementById('propertyId').value,
                 ownerName: ownerOrResponsible,
-                ownerType: institutionTypes.includes(propertyType) ? 'Responsible Person' : 'Owner',
-                fatherHusbandName: document.getElementById('fatherHusbandName').value,
+                ownerType: institutionTypes.includes(propertyType) ? 'Contact Person' : 'Owner',
+                fatherHusbandName: institutionTypes.includes(propertyType) 
+                    ? document.getElementById('designation').value
+                    : document.getElementById('fatherHusbandName').value,
+                fatherHusbandType: institutionTypes.includes(propertyType) ? 'Designation' : 'Father/Husband',
                 contact: document.getElementById('contact').value,
                 propertyType: propertyType,
                 buildingType: document.getElementById('buildingType').value,
@@ -959,25 +968,47 @@
             const ownerInput = document.getElementById('ownerName');
             const responsibleLabel = document.getElementById('responsiblePersonLabel');
             const responsibleInput = document.getElementById('responsiblePerson');
+            const fatherHusbandLabel = document.getElementById('fatherHusbandLabel');
+            const fatherHusbandInput = document.getElementById('fatherHusbandName');
+            const designationLabel = document.getElementById('designationLabel');
+            const designationInput = document.getElementById('designation');
 
             const institutionTypes = ['education', 'church', 'ngo', 'govt'];
 
             if (institutionTypes.includes(propertyType)) {
-                // Show responsible person, hide owner name
+                // Institution: Show Contact Person and Designation, hide Owner Name and Father/Husband
                 ownerLabel.classList.add('hidden');
                 ownerInput.classList.add('hidden');
                 ownerInput.removeAttribute('required');
+                
                 responsibleLabel.classList.remove('hidden');
                 responsibleInput.classList.remove('hidden');
                 responsibleInput.setAttribute('required', 'required');
+                
+                fatherHusbandLabel.classList.add('hidden');
+                fatherHusbandInput.classList.add('hidden');
+                fatherHusbandInput.removeAttribute('required');
+                
+                designationLabel.classList.remove('hidden');
+                designationInput.classList.remove('hidden');
+                designationInput.setAttribute('required', 'required');
             } else {
-                // Show owner name, hide responsible person
+                // Residential/Commercial: Show Owner Name and Father/Husband, hide Contact Person and Designation
                 ownerLabel.classList.remove('hidden');
                 ownerInput.classList.remove('hidden');
                 ownerInput.setAttribute('required', 'required');
+                
                 responsibleLabel.classList.add('hidden');
                 responsibleInput.classList.add('hidden');
                 responsibleInput.removeAttribute('required');
+                
+                fatherHusbandLabel.classList.remove('hidden');
+                fatherHusbandInput.classList.remove('hidden');
+                fatherHusbandInput.setAttribute('required', 'required');
+                
+                designationLabel.classList.add('hidden');
+                designationInput.classList.add('hidden');
+                designationInput.removeAttribute('required');
             }
         }
 
@@ -1051,12 +1082,13 @@
             }
 
             const csv = [
-                ['Property ID', 'Owner/Responsible Person', 'Owner Type', 'Father/Husband', 'Contact', 'Property Type', 'Building Type', 'Latitude', 'Longitude', 'Tax Paid', 'Date', 'Remarks'],
+                ['Property ID', 'Owner/Contact Person', 'Person Type', 'Father/Husband/Designation', 'Field Type', 'Contact', 'Property Type', 'Building Type', 'Latitude', 'Longitude', 'Tax Paid', 'Date', 'Remarks'],
                 ...app.records.map(r => [
                     r.propertyId,
                     r.ownerName,
                     r.ownerType || 'Owner',
                     r.fatherHusbandName || '',
+                    r.fatherHusbandType || 'Father/Husband',
                     r.contact,
                     r.propertyType,
                     r.buildingType || '',
