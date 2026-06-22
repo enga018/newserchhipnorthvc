@@ -1,0 +1,1033 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Property Tax Collector</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #2c5282;
+            --primary-light: #3182ce;
+            --primary-dark: #1e3a5f;
+            --success: #22863a;
+            --warning: #cb2431;
+            --bg: #f5f7fa;
+            --surface: #ffffff;
+            --text: #24292e;
+            --text-secondary: #586069;
+            --border: #d1d5da;
+            --focus: #0366d6;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 10px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header */
+        .header {
+            background: var(--primary);
+            color: white;
+            padding: 20px 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .header p {
+            font-size: 13px;
+            opacity: 0.95;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 12px 16px;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s;
+            position: relative;
+            bottom: -2px;
+        }
+
+        .tab-btn:hover {
+            color: var(--text);
+            background: rgba(0,0,0,0.02);
+        }
+
+        .tab-btn.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        /* Forms */
+        .form-section {
+            display: none;
+        }
+
+        .form-section.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: var(--text);
+        }
+
+        input[type="text"],
+        input[type="email"],
+        input[type="tel"],
+        input[type="number"],
+        input[type="date"],
+        select,
+        textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: inherit;
+            transition: border-color 0.2s;
+        }
+
+        input[type="text"]:focus,
+        input[type="email"]:focus,
+        input[type="tel"]:focus,
+        input[type="number"]:focus,
+        input[type="date"]:focus,
+        select:focus,
+        textarea:focus {
+            outline: none;
+            border-color: var(--focus);
+            box-shadow: 0 0 0 3px rgba(3, 102, 214, 0.1);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .checkbox-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        input[type="checkbox"],
+        input[type="radio"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .checkbox-item label {
+            margin: 0;
+            font-weight: 400;
+            cursor: pointer;
+            flex: 1;
+        }
+
+        /* Photo section */
+        .photo-container {
+            margin-top: 20px;
+        }
+
+        .photo-preview {
+            width: 100%;
+            max-width: 300px;
+            border-radius: 6px;
+            margin-top: 10px;
+            border: 2px solid var(--border);
+            background: var(--bg);
+        }
+
+        .photo-buttons {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .btn-photo {
+            flex: 1;
+            padding: 10px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-photo:hover {
+            background: var(--primary-dark);
+        }
+
+        .btn-photo:active {
+            transform: scale(0.98);
+        }
+
+        /* GPS Location */
+        .location-status {
+            padding: 10px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            margin: 10px 0;
+            background: #e7f5ff;
+            color: #0c3c72;
+            border: 1px solid #74c0fc;
+        }
+
+        .location-status.success {
+            background: #e6ffed;
+            color: #22863a;
+            border-color: #28a745;
+        }
+
+        .location-status.error {
+            background: #ffebee;
+            color: #cb2431;
+            border-color: #ea4c89;
+        }
+
+        /* Buttons */
+        .button-group {
+            display: flex;
+            gap: 8px;
+            margin-top: 24px;
+        }
+
+        button {
+            padding: 12px 16px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            flex: 1;
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+        }
+
+        .btn-primary:active {
+            transform: scale(0.98);
+        }
+
+        .btn-secondary {
+            flex: 1;
+            background: var(--border);
+            color: var(--text);
+        }
+
+        .btn-secondary:hover {
+            background: #c6cbd1;
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #1a6e2e;
+        }
+
+        .btn-warning {
+            background: var(--warning);
+            color: white;
+        }
+
+        .btn-warning:hover {
+            background: #a61d1d;
+        }
+
+        /* Records List */
+        .records-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .record-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 12px;
+            transition: all 0.2s;
+        }
+
+        .record-card:hover {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .record-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 8px;
+        }
+
+        .record-id {
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        .record-status {
+            font-size: 11px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            background: #e6ffed;
+            color: var(--success);
+            font-weight: 500;
+        }
+
+        .record-status.pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .record-detail {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin: 4px 0;
+        }
+
+        .record-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .btn-small {
+            flex: 1;
+            padding: 6px 8px;
+            font-size: 12px;
+            border-radius: 4px;
+        }
+
+        /* Stats */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 16px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--primary);
+            line-height: 1;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--surface);
+            border-radius: 8px;
+            padding: 24px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+        }
+
+        .modal-header {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--text-secondary);
+        }
+
+        /* Alerts */
+        .alert {
+            padding: 12px 16px;
+            border-radius: 6px;
+            margin-bottom: 16px;
+            font-size: 14px;
+        }
+
+        .alert-success {
+            background: #e6ffed;
+            color: #22863a;
+            border: 1px solid #28a745;
+        }
+
+        .alert-error {
+            background: #ffebee;
+            color: #cb2431;
+            border: 1px solid #ea4c89;
+        }
+
+        .alert-info {
+            background: #e7f5ff;
+            color: #0c3c72;
+            border: 1px solid #74c0fc;
+        }
+
+        /* Utility */
+        .hidden {
+            display: none !important;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .text-muted {
+            color: var(--text-secondary);
+        }
+
+        .mt-10 {
+            margin-top: 10px;
+        }
+
+        .mt-20 {
+            margin-top: 20px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-secondary);
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+        }
+
+        /* Responsive */
+        @media (max-width: 480px) {
+            .container {
+                padding: 8px;
+            }
+
+            .header {
+                padding: 16px 12px;
+            }
+
+            .header h1 {
+                font-size: 20px;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🏘️ Property Tax Collector</h1>
+            <p>Door-to-door data collection for property tax assessment</p>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('collect')">Collect</button>
+            <button class="tab-btn" onclick="switchTab('records')">Records</button>
+            <button class="tab-btn" onclick="switchTab('summary')">Summary</button>
+        </div>
+
+        <!-- Collect Tab -->
+        <div id="collect" class="form-section active">
+            <div id="alertBox"></div>
+
+            <form id="propertyForm" onsubmit="saveRecord(event)">
+                <!-- Property ID Lookup -->
+                <div class="form-group">
+                    <label for="propertyId">Property ID *</label>
+                    <input type="text" id="propertyId" placeholder="Enter property ID from sticker" required>
+                    <div class="text-muted mt-10" style="font-size: 12px;">Scan or enter the ID from the door sticker</div>
+                </div>
+
+                <hr style="margin: 20px 0; border: none; border-top: 1px solid var(--border);">
+
+                <!-- Owner Information -->
+                <h3 style="font-size: 15px; font-weight: 600; margin-bottom: 12px;">Owner Information</h3>
+
+                <div class="form-group">
+                    <label for="ownerName">Owner Name *</label>
+                    <input type="text" id="ownerName" placeholder="Full name of property owner" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="fatherHusbandName">Father/Husband Name *</label>
+                    <input type="text" id="fatherHusbandName" placeholder="Father's or Husband's name" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="contact">Contact Number *</label>
+                    <input type="tel" id="contact" placeholder="10-digit mobile number" required pattern="[0-9]{10}">
+                </div>
+
+                <hr style="margin: 20px 0; border: none; border-top: 1px solid var(--border);">
+
+                <!-- Property Details -->
+                <h3 style="font-size: 15px; font-weight: 600; margin-bottom: 12px;">Property Details</h3>
+
+                <div class="form-group">
+                    <label for="propertyType">Property Type *</label>
+                    <select id="propertyType" required>
+                        <option value="">Select type</option>
+                        <option value="residential">Residential</option>
+                        <option value="commercial">Commercial</option>
+                        <option value="mixed">Mixed Use</option>
+                        <option value="agricultural">Agricultural</option>
+                        <option value="industrial">Industrial</option>
+                        <option value="vacant">Vacant Land</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Location (GPS Based)</label>
+                    <button type="button" class="btn-photo" onclick="captureLocation()" style="width: 100%;">📍 Capture Current Location</button>
+                    <div id="locationStatus" class="location-status hidden"></div>
+                    <input type="hidden" id="latitude">
+                    <input type="hidden" id="longitude">
+                    <input type="hidden" id="accuracy">
+                </div>
+
+                <hr style="margin: 20px 0; border: none; border-top: 1px solid var(--border);">
+
+                <!-- Photo -->
+                <h3 style="font-size: 15px; font-weight: 600; margin-bottom: 12px;">Property Photo</h3>
+
+                <div class="photo-container">
+                    <img id="photoPreview" class="photo-preview hidden">
+                    <div class="photo-buttons">
+                        <button type="button" class="btn-photo" onclick="document.getElementById('photoInput').click();">📷 Take Photo</button>
+                        <button type="button" class="btn-photo" onclick="clearPhoto();">✕ Clear</button>
+                    </div>
+                    <input type="file" id="photoInput" accept="image/*" capture="environment" onchange="handlePhotoCapture(event)">
+                </div>
+
+                <hr style="margin: 20px 0; border: none; border-top: 1px solid var(--border);">
+
+                <!-- Remarks -->
+                <h3 style="font-size: 15px; font-weight: 600; margin-bottom: 12px;">Additional Information</h3>
+
+                <div class="form-group">
+                    <label for="remarks">Remarks / Notes</label>
+                    <textarea id="remarks" placeholder="Any additional information about the property or owner..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="taxPaid">
+                        <label for="taxPaid">Tax already paid</label>
+                    </div>
+                </div>
+
+                <!-- Submit -->
+                <div class="button-group">
+                    <button type="button" class="btn-secondary" onclick="resetForm()">Clear Form</button>
+                    <button type="submit" class="btn-primary">Save Record</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Records Tab -->
+        <div id="records" class="form-section">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <h2 style="font-size: 16px; font-weight: 600;">Collected Records</h2>
+                <button class="btn-small btn-secondary" onclick="exportData()" style="width: auto;">⬇️ Export</button>
+            </div>
+
+            <div id="recordsList" class="records-list"></div>
+
+            <div id="emptyRecords" class="empty-state">
+                <div class="empty-state-icon">📋</div>
+                <p>No records collected yet.</p>
+                <p style="font-size: 12px; margin-top: 8px;">Start collecting data from the Collect tab.</p>
+            </div>
+        </div>
+
+        <!-- Summary Tab -->
+        <div id="summary" class="form-section">
+            <h2 style="font-size: 16px; font-weight: 600; margin-bottom: 16px;">Collection Summary</h2>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value" id="totalCount">0</div>
+                    <div class="stat-label">Total Records</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="paidCount">0</div>
+                    <div class="stat-label">Tax Paid</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="pendingCount">0</div>
+                    <div class="stat-label">Pending</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="photoCount">0</div>
+                    <div class="stat-label">With Photos</div>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px;">
+                <div class="stat-card">
+                    <div style="font-size: 13px; font-weight: 600; margin-bottom: 12px;">Property Types</div>
+                    <div id="propertyTypeBreakdown" style="font-size: 13px; line-height: 1.8; color: var(--text-secondary);"></div>
+                </div>
+                <div class="stat-card">
+                    <div style="font-size: 13px; font-weight: 600; margin-bottom: 12px;">Recent Activity</div>
+                    <div id="recentActivity" style="font-size: 13px; line-height: 1.8; color: var(--text-secondary);"></div>
+                </div>
+            </div>
+
+            <div style="margin-top: 20px;">
+                <button class="btn-primary" onclick="exportData()" style="width: 100%;">⬇️ Export All Data as CSV</button>
+                <button class="btn-secondary" onclick="clearAllData()" style="width: 100%; margin-top: 8px;">🗑️ Clear All Records</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detail Modal -->
+    <div id="detailModal" class="modal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModal()">×</button>
+            <div class="modal-header">Record Details</div>
+            <div id="modalBody"></div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize app
+        class PropertyTaxApp {
+            constructor() {
+                this.records = this.loadRecords();
+                this.updateUI();
+            }
+
+            // Storage
+            loadRecords() {
+                const data = localStorage.getItem('propertyTaxRecords');
+                return data ? JSON.parse(data) : [];
+            }
+
+            saveToStorage() {
+                localStorage.setItem('propertyTaxRecords', JSON.stringify(this.records));
+            }
+
+            // Records
+            addRecord(data) {
+                const record = {
+                    id: Date.now(),
+                    timestamp: new Date().toISOString(),
+                    ...data
+                };
+                this.records.unshift(record);
+                this.saveToStorage();
+                return record;
+            }
+
+            deleteRecord(recordId) {
+                this.records = this.records.filter(r => r.id !== recordId);
+                this.saveToStorage();
+            }
+
+            getRecord(recordId) {
+                return this.records.find(r => r.id === recordId);
+            }
+
+            // UI Updates
+            updateUI() {
+                this.updateRecordsList();
+                this.updateSummary();
+            }
+
+            updateRecordsList() {
+                const list = document.getElementById('recordsList');
+                const empty = document.getElementById('emptyRecords');
+
+                if (this.records.length === 0) {
+                    list.innerHTML = '';
+                    empty.classList.remove('hidden');
+                    return;
+                }
+
+                empty.classList.add('hidden');
+                list.innerHTML = this.records.map(r => `
+                    <div class="record-card">
+                        <div class="record-header">
+                            <div>
+                                <div class="record-id">ID: ${r.propertyId}</div>
+                                <div class="record-detail">${r.ownerName}</div>
+                            </div>
+                            <span class="record-status ${r.taxPaid ? '' : 'pending'}">
+                                ${r.taxPaid ? '✓ Paid' : 'Pending'}
+                            </span>
+                        </div>
+                        <div class="record-detail">📱 ${r.contact}</div>
+                        <div class="record-detail">🏠 ${r.propertyType}</div>
+                        ${r.latitude ? `<div class="record-detail">📍 GPS: ${r.latitude.toFixed(4)}, ${r.longitude.toFixed(4)}</div>` : ''}
+                        <div class="record-detail" style="font-size: 12px; color: #999;">
+                            ${new Date(r.timestamp).toLocaleDateString()} ${new Date(r.timestamp).toLocaleTimeString()}
+                        </div>
+                        <div class="record-actions">
+                            <button class="btn-small btn-primary" onclick="app.showDetail(${r.id})">View</button>
+                            <button class="btn-small btn-warning" onclick="app.deleteRecord(${r.id}); app.updateUI();">Delete</button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            updateSummary() {
+                const total = this.records.length;
+                const paid = this.records.filter(r => r.taxPaid).length;
+                const pending = total - paid;
+                const withPhotos = this.records.filter(r => r.photo).length;
+
+                document.getElementById('totalCount').textContent = total;
+                document.getElementById('paidCount').textContent = paid;
+                document.getElementById('pendingCount').textContent = pending;
+                document.getElementById('photoCount').textContent = withPhotos;
+
+                // Property type breakdown
+                const types = {};
+                this.records.forEach(r => {
+                    types[r.propertyType] = (types[r.propertyType] || 0) + 1;
+                });
+                document.getElementById('propertyTypeBreakdown').innerHTML = Object.entries(types)
+                    .map(([type, count]) => `<div>${type}: <strong>${count}</strong></div>`)
+                    .join('');
+
+                // Recent activity
+                const recent = this.records.slice(0, 3);
+                document.getElementById('recentActivity').innerHTML = recent.length > 0
+                    ? recent.map(r => `<div>${r.ownerName} (${new Date(r.timestamp).toLocaleDateString()})</div>`).join('')
+                    : '<div style="color: #999;">No recent activity</div>';
+            }
+
+            showDetail(recordId) {
+                const record = this.getRecord(recordId);
+                if (!record) return;
+
+                const modal = document.getElementById('detailModal');
+                const body = document.getElementById('modalBody');
+
+                let html = `
+                    <div style="margin-bottom: 16px;">
+                        <div style="padding: 12px; background: var(--bg); border-radius: 6px; margin-bottom: 12px;">
+                            <strong>Property ID:</strong> ${record.propertyId}<br>
+                            <strong>Status:</strong> ${record.taxPaid ? '✓ Tax Paid' : '⏳ Pending'}<br>
+                            <strong>Date:</strong> ${new Date(record.timestamp).toLocaleString()}
+                        </div>
+
+                        <div style="margin-bottom: 12px;">
+                            <strong style="display: block; margin-bottom: 8px;">Owner Information</strong>
+                            <div style="font-size: 13px; line-height: 1.8;">
+                                <div><strong>Name:</strong> ${record.ownerName}</div>
+                                <div><strong>Father/Husband:</strong> ${record.fatherHusbandName}</div>
+                                <div><strong>Contact:</strong> ${record.contact}</div>
+                            </div>
+                        </div>
+
+                        <div style="margin-bottom: 12px;">
+                            <strong style="display: block; margin-bottom: 8px;">Property Details</strong>
+                            <div style="font-size: 13px; line-height: 1.8;">
+                                <div><strong>Type:</strong> ${record.propertyType}</div>
+                                ${record.latitude ? `<div><strong>GPS:</strong> ${record.latitude.toFixed(6)}, ${record.longitude.toFixed(6)} (±${record.accuracy?.toFixed(0)}m)</div>` : ''}
+                            </div>
+                        </div>
+
+                        ${record.remarks ? `
+                        <div style="margin-bottom: 12px;">
+                            <strong style="display: block; margin-bottom: 8px;">Notes</strong>
+                            <div style="font-size: 13px; background: var(--bg); padding: 8px; border-radius: 4px;">
+                                ${record.remarks}
+                            </div>
+                        </div>
+                        ` : ''}
+
+                        ${record.photo ? `
+                        <div style="margin-bottom: 12px;">
+                            <strong style="display: block; margin-bottom: 8px;">Property Photo</strong>
+                            <img src="${record.photo}" style="width: 100%; border-radius: 6px; max-height: 300px; object-fit: cover;">
+                        </div>
+                        ` : ''}
+                    </div>
+                `;
+
+                body.innerHTML = html;
+                modal.classList.add('active');
+            }
+        }
+
+        // Initialize app
+        const app = new PropertyTaxApp();
+
+        // Tab switching
+        function switchTab(tabName) {
+            document.querySelectorAll('.form-section').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        // Form handling
+        function saveRecord(event) {
+            event.preventDefault();
+
+            const data = {
+                propertyId: document.getElementById('propertyId').value,
+                ownerName: document.getElementById('ownerName').value,
+                fatherHusbandName: document.getElementById('fatherHusbandName').value,
+                contact: document.getElementById('contact').value,
+                propertyType: document.getElementById('propertyType').value,
+                remarks: document.getElementById('remarks').value,
+                taxPaid: document.getElementById('taxPaid').checked,
+                latitude: document.getElementById('latitude').value ? parseFloat(document.getElementById('latitude').value) : null,
+                longitude: document.getElementById('longitude').value ? parseFloat(document.getElementById('longitude').value) : null,
+                accuracy: document.getElementById('accuracy').value ? parseFloat(document.getElementById('accuracy').value) : null,
+                photo: document.getElementById('photoPreview').src || null
+            };
+
+            app.addRecord(data);
+            app.updateUI();
+
+            showAlert('✓ Record saved successfully', 'success');
+            resetForm();
+
+            setTimeout(() => switchTab('records'), 500);
+        }
+
+        function resetForm() {
+            document.getElementById('propertyForm').reset();
+            clearPhoto();
+            clearLocation();
+            document.getElementById('alertBox').innerHTML = '';
+        }
+
+        // Photo handling
+        function handlePhotoCapture(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const preview = document.getElementById('photoPreview');
+                preview.src = e.target.result;
+                preview.classList.remove('hidden');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function clearPhoto() {
+            document.getElementById('photoInput').value = '';
+            document.getElementById('photoPreview').classList.add('hidden');
+        }
+
+        // GPS Location
+        function captureLocation() {
+            const status = document.getElementById('locationStatus');
+
+            if (!navigator.geolocation) {
+                status.className = 'location-status error';
+                status.textContent = '❌ Geolocation not supported';
+                status.classList.remove('hidden');
+                return;
+            }
+
+            status.className = 'location-status';
+            status.textContent = '🔄 Capturing location...';
+            status.classList.remove('hidden');
+
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+                    const acc = position.coords.accuracy;
+
+                    document.getElementById('latitude').value = lat;
+                    document.getElementById('longitude').value = lng;
+                    document.getElementById('accuracy').value = acc;
+
+                    status.className = 'location-status success';
+                    status.textContent = `✓ Location captured: ${lat.toFixed(5)}, ${lng.toFixed(5)} (±${acc.toFixed(0)}m)`;
+                },
+                (error) => {
+                    status.className = 'location-status error';
+                    status.textContent = `❌ ${error.message}`;
+                },
+                { enableHighAccuracy: true, timeout: 10000 }
+            );
+        }
+
+        function clearLocation() {
+            document.getElementById('latitude').value = '';
+            document.getElementById('longitude').value = '';
+            document.getElementById('accuracy').value = '';
+            document.getElementById('locationStatus').classList.add('hidden');
+        }
+
+        // Export data
+        function exportData() {
+            if (app.records.length === 0) {
+                showAlert('No records to export', 'error');
+                return;
+            }
+
+            const csv = [
+                ['Property ID', 'Owner Name', 'Father/Husband', 'Contact', 'Property Type', 'Latitude', 'Longitude', 'Tax Paid', 'Date', 'Remarks'],
+                ...app.records.map(r => [
+                    r.propertyId,
+                    r.ownerName,
+                    r.fatherHusbandName,
+                    r.contact,
+                    r.propertyType,
+                    r.latitude || '',
+                    r.longitude || '',
+                    r.taxPaid ? 'Yes' : 'No',
+                    new Date(r.timestamp).toLocaleString(),
+                    r.remarks || ''
+                ])
+            ].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
+
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `property-tax-records-${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
+
+            showAlert('✓ Data exported successfully', 'success');
+        }
+
+        // Clear all data
+        function clearAllData() {
+            if (confirm('⚠️ Are you sure? This will delete all records.')) {
+                app.records = [];
+                app.saveToStorage();
+                app.updateUI();
+                showAlert('✓ All records cleared', 'success');
+            }
+        }
+
+        // Modal
+        function closeModal() {
+            document.getElementById('detailModal').classList.remove('active');
+        }
+
+        // Alert
+        function showAlert(message, type) {
+            const box = document.getElementById('alertBox');
+            box.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
+            setTimeout(() => {
+                if (box.firstChild) box.removeChild(box.firstChild);
+            }, 4000);
+        }
+    </script>
+</body>
+</html>
