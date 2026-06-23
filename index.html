@@ -324,12 +324,12 @@
                 <select id="myRecordFilter" onchange="renderMyRecords(myRecordsCache)" style="font-size:12px;padding:5px 8px;width:auto;border-radius:6px;border:1px solid var(--border)">
                     <option value="all">All Records</option>
                     <option value="complete">✅ Complete</option>
-                    <option value="absent">🔴 Owner Absent</option>
+                    <option value="absent">🔴 Needs Follow Up</option>
                 </select>
             </div>
             <div id="myStats" class="stats-grid">
                 <div class="stat-card"><div class="stat-value" id="myTotal">0</div><div class="stat-label">Total</div></div>
-                <div class="stat-card warning"><div class="stat-value" id="myAbsent">0</div><div class="stat-label">Owner Absent</div></div>
+                <div class="stat-card warning"><div class="stat-value" id="myAbsent">0</div><div class="stat-label">Need Follow Up</div></div>
             </div>
             <div id="myRecordsList" class="records-list"></div>
             <div id="myEmptyRecords" class="empty-state hidden">
@@ -339,7 +339,7 @@
 
         <!-- FOLLOW UP TAB -->
         <div id="followup" class="form-section">
-            <div class="alert alert-warning">🔴 These properties need a follow-up visit — owner was absent.</div>
+            <div class="alert alert-warning">🔴 These properties need follow-up — owner was absent, or admin requested a correction (see notes).</div>
             <div id="followUpList" class="records-list"></div>
             <div id="followUpEmpty" class="empty-state hidden">
                 <div class="empty-state-icon">✅</div><p>No follow-ups needed!</p>
@@ -371,7 +371,7 @@
             <div class="stats-grid">
                 <div class="stat-card"><div class="stat-value" id="adminTotal">0</div><div class="stat-label">Total Records</div></div>
                 <div class="stat-card"><div class="stat-value" id="adminToday">0</div><div class="stat-label">Today</div></div>
-                <div class="stat-card warning"><div class="stat-value" id="adminAbsent">0</div><div class="stat-label">Owner Absent</div></div>
+                <div class="stat-card warning"><div class="stat-value" id="adminAbsent">0</div><div class="stat-label">Need Follow Up</div></div>
                 <div class="stat-card"><div class="stat-value" id="adminWorkerCount">0</div><div class="stat-label">Workers</div></div>
             </div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
@@ -409,6 +409,7 @@
                     <option value="">All Status</option>
                     <option value="complete">✅ Complete</option>
                     <option value="absent">🔴 Owner Absent</option>
+                    <option value="correction">🟡 Needs Correction</option>
                 </select>
             </div>
             <div style="font-size:12px;color:var(--text2);margin-bottom:8px" id="recordCount"></div>
@@ -722,6 +723,7 @@ async function saveRecord(e) {
         if (editingRecordId) {
             data.adminFlagNote = firebase.firestore.FieldValue.delete();
             data.adminFlaggedAt = firebase.firestore.FieldValue.delete();
+            data.needsCorrection = firebase.firestore.FieldValue.delete();
             await db.collection('records').doc(editingRecordId).update(data);
             showAlert('✓ Record updated successfully!', 'success');
         } else {
@@ -878,12 +880,12 @@ async function loadMyRecords() {
 function renderMyRecords(records) {
     const filter = document.getElementById('myRecordFilter')?.value || 'all';
     let filtered = records;
-    if (filter === 'complete') filtered = records.filter(r => !isRecordAbsent(r));
-    if (filter === 'absent') filtered = records.filter(r => isRecordAbsent(r));
+    if (filter === 'complete') filtered = records.filter(r => !needsFollowUp(r));
+    if (filter === 'absent') filtered = records.filter(r => needsFollowUp(r));
 
     const today = new Date().toDateString();
     document.getElementById('myTotal').textContent = records.length;
-    document.getElementById('myAbsent').textContent = records.filter(r=>isRecordAbsent(r)).length;
+    document.getElementById('myAbsent').textContent = records.filter(r=>needsFollowUp(r)).length;
 
     const list = document.getElementById('myRecordsList');
     const empty = document.getElementById('myEmptyRecords');
@@ -893,12 +895,16 @@ function renderMyRecords(records) {
 }
 
 function renderFollowUp(records) {
-    const absent = records.filter(r => isRecordAbsent(r));
+    const items = records.filter(r => needsFollowUp(r));
     const list = document.getElementById('followUpList');
     const empty = document.getElementById('followUpEmpty');
-    if (!absent.length) { list.innerHTML=''; empty.classList.remove('hidden'); return; }
+    if (!items.length) { list.innerHTML=''; empty.classList.remove('hidden'); return; }
     empty.classList.add('hidden');
-    list.innerHTML = absent.map(r => recordCard(r, 'followup')).join('');
+    list.innerHTML = items.map(r => recordCard(r, 'followup')).join('');
+}
+
+function needsFollowUp(r) {
+    return isRecordAbsent(r) || r.needsCorrection === true;
 }
 
 function isRecordAbsent(r) {
@@ -911,44 +917,51 @@ function isRecordAbsent(r) {
 
 function recordCard(r, context) {
     const absent = isRecordAbsent(r);
+    const correction = r.needsCorrection === true;
     const isAdminView = context === 'admin';
     const showWorker = isAdminView;
-    return `<div class="record-card ${absent?'absent':'complete'}">
+    let statusBadge;
+    if (correction) statusBadge = '<span class="badge" style="margin-left:8px;background:#fff3cd;color:#856404">🟡 Needs Correction</span>';
+    else if (absent) statusBadge = '<span class="badge badge-absent" style="margin-left:8px">🔴 Owner Absent</span>';
+    else statusBadge = '<span class="badge badge-complete" style="margin-left:8px">✅ Complete</span>';
+    return `<div class="record-card ${absent||correction?'absent':'complete'}">
         <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:6px">
             <div>
                 <span class="record-id">ID: ${r.propertyId}</span>
-                ${absent ? '<span class="badge badge-absent" style="margin-left:8px">🔴 Owner Absent</span>' : '<span class="badge badge-complete" style="margin-left:8px">✅ Complete</span>'}
+                ${statusBadge}
             </div>
             <div style="font-size:11px;color:#999;text-align:right">${r.localTimestamp ? new Date(r.localTimestamp).toLocaleDateString() : ''}</div>
         </div>
         ${r.organizationName ? `<div class="record-detail"><b>Org:</b> ${r.organizationName}</div>` : ''}
         ${r.ownerName ? `<div class="record-detail"><b>${r.ownerType||'Owner'}:</b> ${r.ownerName}</div>` : ''}
+        ${r.contact ? `<div class="record-detail">📱 ${r.contact}</div>` : ''}
         <div class="record-detail">🏠 ${r.propertyType} &nbsp;|&nbsp; 🏗️ ${r.buildingType}</div>
         <div style="margin-top:5px">
             ${r.photo ? '<span class="badge badge-photo">📷 Photo</span> ' : ''}
             ${r.latitude ? '<span class="badge badge-gps">📍 GPS</span> ' : ''}
             ${showWorker ? `<span class="badge badge-worker">👤 ${r.workerName||'Unknown'}</span>` : ''}
         </div>
-        ${r.adminFlagNote ? `<div style="background:#fff3cd;border-radius:4px;padding:5px 8px;margin-top:5px;font-size:12px;color:#856404">⚠️ Admin note: ${r.adminFlagNote}</div>` : ''}
+        ${r.adminFlagNote ? `<div style="background:#fff3cd;border-radius:4px;padding:5px 8px;margin-top:5px;font-size:12px;color:#856404">⚠️ <b>Fix needed:</b> ${r.adminFlagNote}</div>` : ''}
         <div class="record-actions">
             <button class="btn-small btn-primary" onclick='showDetail(${JSON.stringify(r).replace(/'/g,"&#39;")})'>👁 View</button>
             ${context === 'followup' ? `<button class="btn-small" style="background:#e65100;color:white" onclick='startEditRecord(${JSON.stringify(r).replace(/'/g,"&#39;")})'>✏️ Edit</button>` : ''}
-            ${isAdminView && !absent ? `<button class="btn-small" style="background:#856404;color:white" onclick="adminMarkIncomplete('${r.id}','${r.propertyId}')">↩️ Mark Incomplete</button>` : ''}
+            ${isAdminView && !absent && !correction ? `<button class="btn-small" style="background:#856404;color:white" onclick="adminMarkIncomplete('${r.id}','${r.propertyId}')">↩️ Send for Correction</button>` : ''}
             ${isAdminView ? `<button class="btn-small btn-danger" onclick="adminDeleteRecord('${r.id}','${r.propertyId}')">🗑 Delete</button>` : ''}
         </div>
     </div>`;
 }
 
 async function adminMarkIncomplete(id, propId) {
-    const reason = prompt(`Mark ${propId} as incomplete?\nThis sends it back to the worker's Follow Up tab.\n\nOptional note (e.g. "name spelling wrong"):`);
-    if (reason === null) return; // cancelled
+    const reason = prompt(`Send ${propId} back to the worker for correction.\n\nWhat needs to be fixed? (required)\ne.g. "Phone number is wrong", "Owner name misspelled"`);
+    if (reason === null) return;
+    if (!reason.trim()) { alert('Please enter what needs to be corrected.'); return; }
     try {
         await db.collection('records').doc(id).update({
-            isAbsent: true,
-            adminFlagNote: reason || 'Marked incomplete by admin',
+            needsCorrection: true,
+            adminFlagNote: reason.trim(),
             adminFlaggedAt: new Date().toISOString()
         });
-        showAlert(propId + ' sent back to worker for follow-up', 'success');
+        showAlert(propId + ' sent back to worker for correction', 'success');
     } catch(e) { alert('Error: ' + e.message); }
 }
 
@@ -982,7 +995,7 @@ function renderAdminOverview() {
     const workers = new Set(allRecords.map(r=>r.workerUid));
     document.getElementById('adminTotal').textContent = allRecords.length;
     document.getElementById('adminToday').textContent = allRecords.filter(r=>r.localTimestamp&&new Date(r.localTimestamp).toDateString()===today).length;
-    document.getElementById('adminAbsent').textContent = allRecords.filter(r=>isRecordAbsent(r)).length;
+    document.getElementById('adminAbsent').textContent = allRecords.filter(r=>needsFollowUp(r)).length;
     document.getElementById('adminWorkerCount').textContent = Object.values(allUsers).filter(u=>u.role==='worker').length;
 
     const bc={}, pc={};
@@ -1050,8 +1063,9 @@ function filterRecords() {
     let f = allRecords;
     if (wf) f = f.filter(r=>r.workerUid===wf);
     if (tf) f = f.filter(r=>r.propertyType===tf);
-    if (sf==='complete') f = f.filter(r=>!isRecordAbsent(r));
+    if (sf==='complete') f = f.filter(r=>!needsFollowUp(r));
     if (sf==='absent') f = f.filter(r=>isRecordAbsent(r));
+    if (sf==='correction') f = f.filter(r=>r.needsCorrection===true);
     renderAllRecords(f);
 }
 
@@ -1121,7 +1135,7 @@ function exportCSV(records, filename) {
     const rows = [
         ['Property ID','Status','Organization/Institution','Owner/Contact Person','Person Type','Father/Husband','Designation','Contact','Property Type','Building Type','Latitude','Longitude','GPS Accuracy','Remarks','Worker Name','Date'],
         ...records.map(r=>[
-            r.propertyId, isRecordAbsent(r)?'Owner Absent':'Complete',
+            r.propertyId, r.needsCorrection?'Needs Correction':(isRecordAbsent(r)?'Owner Absent':'Complete'),
             r.organizationName||'', r.ownerName||'', r.ownerType||'Owner',
             r.fatherHusbandName||'', r.designation||'', r.contact||'',
             r.propertyType, r.buildingType,
@@ -1143,7 +1157,8 @@ function showDetail(r) {
     document.getElementById('modalTitle').textContent = `Property: ${r.propertyId}`;
     document.getElementById('modalBody').innerHTML = `
         <div style="background:var(--bg);padding:12px;border-radius:8px;margin-bottom:12px">
-            ${isRecordAbsent(r) ? '<div style="color:var(--warning);font-weight:600;margin-bottom:6px">🔴 Owner Absent — Needs Follow-up</div>' : '<div style="color:var(--success);font-weight:600;margin-bottom:6px">✅ Complete Record</div>'}
+            ${r.needsCorrection ? '<div style="color:#856404;font-weight:600;margin-bottom:6px">🟡 Needs Correction — sent back to worker</div>' : (isRecordAbsent(r) ? '<div style="color:var(--warning);font-weight:600;margin-bottom:6px">🔴 Owner Absent — Needs Follow-up</div>' : '<div style="color:var(--success);font-weight:600;margin-bottom:6px">✅ Complete Record</div>')}
+            ${r.adminFlagNote ? `<div style="background:#fff3cd;border-radius:4px;padding:6px 8px;margin-bottom:6px;font-size:13px;color:#856404">⚠️ <b>Fix needed:</b> ${r.adminFlagNote}</div>` : ''}
             <b>Property ID:</b> ${r.propertyId}<br>
             <b>Type:</b> ${r.propertyType} &nbsp;|&nbsp; <b>Building:</b> ${r.buildingType}<br>
             <b>Date:</b> ${r.localTimestamp ? new Date(r.localTimestamp).toLocaleString() : 'N/A'}
