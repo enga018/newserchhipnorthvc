@@ -7,6 +7,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
         :root{
@@ -294,7 +295,7 @@
                     <input type="hidden" id="accuracy">
                 </div>
 
-                <div class="section-title">📷 Property Photo <span class="required-star">*</span></div>
+                <div class="section-title">📷 Property Photo <span class="required-star">*</span> <span style="font-size:11px;color:var(--text2);font-weight:400">(capture GPS first to stamp it on photo)</span></div>
                 <div class="form-group">
                     <img id="photoPreview" class="photo-preview">
                     <div id="photoStatus" class="photo-status needed">📷 Photo required — tap to take</div>
@@ -446,6 +447,8 @@
             <div class="section-title">Data Management</div>
             <button class="btn-primary" onclick="exportAllData()" style="margin-bottom:8px">⬇️ Export All Data (CSV)</button>
             <button class="btn-primary" onclick="exportAbsentData()" style="background:#e65100">⬇️ Export Incomplete Only</button>
+            <button class="btn-primary" onclick="exportAllPhotos()" style="background:#6a1b9a;margin-top:8px">🖼️ Download All Photos (ZIP)</button>
+            <div id="photoExportStatus" style="font-size:12px;color:var(--text2);margin-top:6px"></div>
             <hr class="divider">
             <div class="section-title" style="color:var(--warning)">⚠️ Danger Zone</div>
             <div style="background:#ffebee;border:1px solid #ea4c89;border-radius:8px;padding:12px">
@@ -493,6 +496,7 @@ let isAdmin = false;
 let allRecords = [];
 let allUsers = {};
 let myRecordsCache = [];
+let currentVcName = 'Village Council';
 
 // ========== AUTH ==========
 auth.onAuthStateChanged(async user => {
@@ -820,7 +824,6 @@ function resetForm() {
 function handlePhotoCapture(e) {
     const file = e.target.files[0];
     if (!file) return;
-    // Compress image
     const reader = new FileReader();
     reader.onload = ev => {
         const img = new Image();
@@ -831,13 +834,48 @@ function handlePhotoCapture(e) {
             if (w > h) { if (w > MAX) { h = h*(MAX/w); w = MAX; } }
             else { if (h > MAX) { w = w*(MAX/h); h = MAX; } }
             canvas.width = w; canvas.height = h;
-            canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, w, h);
+
+            // ===== STAMP DETAILS ONTO PHOTO =====
+            const rawId = document.getElementById('propertyId').value.trim().replace(/^NSN-/i,'').replace(/^[0]*/,'');
+            const propId = rawId ? 'NSN-' + rawId.padStart(4,'0') : 'NSN-____';
+            const lat = document.getElementById('latitude').value;
+            const lng = document.getElementById('longitude').value;
+            const gpsText = (lat && lng) ? `${parseFloat(lat).toFixed(5)}, ${parseFloat(lng).toFixed(5)}` : 'GPS not captured';
+            const now = new Date();
+            const dateText = now.toLocaleDateString() + ' ' + now.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+
+            const lines = [
+                propId,
+                '📍 ' + gpsText,
+                '🕒 ' + dateText,
+                currentVcName
+            ];
+
+            // Banner sizing
+            const fontSize = Math.max(13, Math.round(w/40));
+            const lineH = fontSize + 6;
+            const pad = 8;
+            const bannerH = lines.length * lineH + pad*2;
+            // Semi-transparent black banner at bottom
+            ctx.fillStyle = 'rgba(0,0,0,0.55)';
+            ctx.fillRect(0, h - bannerH, w, bannerH);
+            // Text
+            ctx.fillStyle = '#ffffff';
+            ctx.font = `${fontSize}px Arial, sans-serif`;
+            ctx.textBaseline = 'top';
+            lines.forEach((ln, i) => {
+                ctx.fillText(ln, pad, h - bannerH + pad + i*lineH);
+            });
+            // ===== END STAMP =====
+
             const compressed = canvas.toDataURL('image/jpeg', 0.7);
             const preview = document.getElementById('photoPreview');
             preview.src = compressed;
             preview.style.display = 'block';
             document.getElementById('photoStatus').className = 'photo-status ok';
-            document.getElementById('photoStatus').textContent = '✅ Photo captured';
+            document.getElementById('photoStatus').textContent = '✅ Photo captured & stamped';
         };
         img.src = ev.target.result;
     };
@@ -1113,8 +1151,10 @@ function filterRecords() {
 async function loadVCName() {
     try {
         const doc = await db.collection('settings').doc('app').get();
-        if (doc.exists && doc.data().vcName)
+        if (doc.exists && doc.data().vcName) {
+            currentVcName = doc.data().vcName;
             document.getElementById('vcNameDisplay').textContent = '📍 ' + doc.data().vcName;
+        }
         else document.getElementById('vcNameDisplay').textContent = 'Village Council';
     } catch(e) { document.getElementById('vcNameDisplay').textContent = 'Village Council'; }
 }
@@ -1142,6 +1182,38 @@ async function saveAdminSettings() {
 // ========== EXPORT ==========
 function exportAllData() { exportCSV(allRecords, 'all-records'); }
 function exportAbsentData() { exportCSV(allRecords.filter(r=>isRecordAbsent(r)), 'owner-absent'); }
+
+async function exportAllPhotos() {
+    const withPhotos = allRecords.filter(r => r.photo);
+    if (!withPhotos.length) { alert('No photos to export'); return; }
+    if (typeof JSZip === 'undefined') { alert('Photo export library not loaded. Check your internet and try again.'); return; }
+    const status = document.getElementById('photoExportStatus');
+    status.textContent = `Preparing ${withPhotos.length} photos...`;
+    try {
+        const zip = new JSZip();
+        let added = 0;
+        for (const r of withPhotos) {
+            // photo is a data URL: data:image/jpeg;base64,xxxx
+            const base64 = r.photo.split(',')[1];
+            if (!base64) continue;
+            // Name file by property ID; add suffix if duplicate
+            let name = (r.propertyId || 'unknown') + '.jpg';
+            if (zip.file(name)) name = (r.propertyId||'unknown') + '_' + r.id.slice(-4) + '.jpg';
+            zip.file(name, base64, {base64:true});
+            added++;
+            status.textContent = `Adding photos... ${added}/${withPhotos.length}`;
+        }
+        status.textContent = 'Compressing ZIP file...';
+        const blob = await zip.generateAsync({type:'blob'});
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `property-tax-photos-${new Date().toISOString().split('T')[0]}.zip`;
+        a.click();
+        status.textContent = `✓ Downloaded ${added} photos.`;
+    } catch(e) {
+        status.textContent = '❌ Error: ' + e.message;
+    }
+}
 
 async function resetEverything() {
     if (!confirm('⚠️ This will DELETE ALL records and ALL workers permanently.\n\nAre you absolutely sure?')) return;
