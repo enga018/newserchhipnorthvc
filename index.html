@@ -12,63 +12,69 @@
         :root{
             --primary:#2c5282;--primary-dark:#1e3a5f;--success:#22863a;
             --warning:#cb2431;--bg:#f5f7fa;--surface:#fff;--text:#24292e;
-            --text2:#586069;--border:#d1d5da;--focus:#0366d6
+            --text2:#586069;--border:#d1d5da;--focus:#0366d6;--orange:#e65100
         }
         body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);line-height:1.5}
-        .container{max-width:600px;margin:0 auto;padding:10px;min-height:100vh}
+        .container{max-width:620px;margin:0 auto;padding:10px;min-height:100vh}
 
-        /* AUTH SCREEN */
+        /* AUTH */
         .auth-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:20px}
         .auth-box{background:var(--surface);border-radius:12px;padding:32px 24px;width:100%;max-width:400px;box-shadow:0 4px 20px rgba(0,0,0,0.1)}
         .auth-logo{text-align:center;margin-bottom:24px}
         .auth-logo h1{font-size:22px;color:var(--primary);margin-top:8px}
         .auth-logo p{font-size:13px;color:var(--text2);margin-top:4px}
-        .auth-tabs{display:flex;gap:0;margin-bottom:24px;border:1px solid var(--border);border-radius:8px;overflow:hidden}
-        .auth-tab{flex:1;padding:10px;text-align:center;font-size:14px;font-weight:500;cursor:pointer;background:none;border:none;color:var(--text2);transition:all 0.2s}
+        .auth-tabs{display:flex;margin-bottom:24px;border:1px solid var(--border);border-radius:8px;overflow:hidden}
+        .auth-tab{flex:1;padding:10px;text-align:center;font-size:14px;font-weight:500;cursor:pointer;background:none;border:none;color:var(--text2)}
         .auth-tab.active{background:var(--primary);color:white}
 
         /* HEADER */
-        .header{background:var(--primary);color:white;padding:16px;border-radius:8px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center}
-        .header-left h1{font-size:18px;font-weight:600}
-        .header-left p{font-size:12px;opacity:0.9;margin-top:2px}
-        .header-right{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
-        .user-badge{background:rgba(255,255,255,0.2);padding:4px 10px;border-radius:20px;font-size:12px}
-        .btn-logout{background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:white;padding:4px 10px;border-radius:4px;font-size:11px;cursor:pointer}
-        .btn-logout:hover{background:rgba(255,255,255,0.25)}
+        .header{background:var(--primary);color:white;padding:14px 16px;border-radius:8px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center}
+        .header-left h1{font-size:17px;font-weight:600}
+        .header-left p{font-size:11px;opacity:0.9;margin-top:2px}
+        .header-right{display:flex;flex-direction:column;align-items:flex-end;gap:5px}
+        .user-badge{background:rgba(255,255,255,0.2);padding:3px 10px;border-radius:20px;font-size:11px}
+        .btn-logout{background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:white;padding:3px 10px;border-radius:4px;font-size:11px;cursor:pointer}
 
         /* TABS */
-        .tabs{display:flex;gap:0;margin-bottom:16px;background:var(--surface);border-radius:8px;padding:4px;border:1px solid var(--border)}
-        .tab-btn{flex:1;padding:8px 4px;background:none;border:none;color:var(--text2);font-size:12px;font-weight:500;cursor:pointer;border-radius:6px;transition:all 0.2s}
+        .tabs{display:flex;gap:0;margin-bottom:14px;background:var(--surface);border-radius:8px;padding:3px;border:1px solid var(--border)}
+        .tab-btn{flex:1;padding:7px 2px;background:none;border:none;color:var(--text2);font-size:11px;font-weight:500;cursor:pointer;border-radius:6px;transition:all 0.2s}
         .tab-btn.active{background:var(--primary);color:white}
 
         /* FORMS */
         .form-section{display:none}.form-section.active{display:block}
-        .form-group{margin-bottom:14px}
-        label{display:block;font-size:13px;font-weight:600;margin-bottom:5px}
+        .form-group{margin-bottom:13px}
+        label{display:block;font-size:13px;font-weight:600;margin-bottom:5px;color:var(--text)}
         input[type=text],input[type=email],input[type=tel],input[type=password],select,textarea{
-            width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:6px;
-            font-size:14px;font-family:inherit;background:var(--surface)
+            width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:6px;
+            font-size:14px;font-family:inherit;background:var(--surface);transition:border-color 0.2s
         }
         input:focus,select:focus,textarea:focus{outline:none;border-color:var(--focus);box-shadow:0 0 0 3px rgba(3,102,214,0.1)}
         textarea{resize:vertical;min-height:70px}
+        .required-star{color:var(--warning)}
 
         /* BUTTONS */
         button{padding:10px 16px;border:none;border-radius:6px;font-size:14px;font-weight:500;cursor:pointer;transition:all 0.2s;font-family:inherit}
         .btn-primary{background:var(--primary);color:white;width:100%}
         .btn-primary:hover{background:var(--primary-dark)}
-        .btn-primary:active{transform:scale(0.98)}
         .btn-secondary{background:var(--border);color:var(--text);width:100%}
-        .btn-secondary:hover{background:#c6cbd1}
         .btn-danger{background:var(--warning);color:white}
         .btn-danger:hover{background:#a61d1d}
-        .btn-photo{background:var(--primary);color:white;padding:10px;font-size:13px;border-radius:6px}
-        .btn-small{padding:6px 10px;font-size:12px;border-radius:4px}
-        .button-group{display:flex;gap:8px;margin-top:20px}
+        .btn-success{background:var(--success);color:white}
+        .btn-photo{background:var(--primary);color:white;padding:10px;font-size:13px;border-radius:6px;width:100%}
+        .btn-small{padding:5px 10px;font-size:12px;border-radius:4px}
+        .button-group{display:flex;gap:8px;margin-top:18px}
         input[type=file]{display:none}
 
+        /* COMPULSORY FIELD HIGHLIGHT */
+        .field-required{border-color:#e65100 !important}
+        .field-ok{border-color:var(--success) !important}
+
         /* PHOTO */
-        .photo-preview{width:100%;max-width:300px;border-radius:6px;margin-top:10px;border:2px solid var(--border);display:none}
+        .photo-preview{width:100%;border-radius:8px;margin-top:8px;border:2px solid var(--border);display:none;max-height:200px;object-fit:cover}
         .photo-buttons{display:flex;gap:8px;margin-top:8px}
+        .photo-status{font-size:12px;margin-top:6px;padding:6px 10px;border-radius:6px}
+        .photo-status.ok{background:#e6ffed;color:#22863a}
+        .photo-status.needed{background:#fff3cd;color:#856404}
 
         /* LOCATION */
         .location-status{padding:10px 12px;border-radius:6px;font-size:13px;margin:8px 0;background:#e7f5ff;color:#0c3c72;border:1px solid #74c0fc}
@@ -78,54 +84,63 @@
         /* RECORDS */
         .records-list{display:flex;flex-direction:column;gap:10px}
         .record-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px}
+        .record-card.absent{border-left:4px solid var(--warning)}
+        .record-card.complete{border-left:4px solid var(--success)}
         .record-id{font-weight:600;color:var(--primary);font-size:14px}
         .record-detail{font-size:13px;color:var(--text2);margin:3px 0}
-        .record-actions{display:flex;gap:8px;margin-top:8px}
-        .worker-tag{font-size:11px;background:#e7f5ff;color:#0c3c72;padding:2px 8px;border-radius:10px;display:inline-block;margin-top:4px}
+        .record-actions{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+        .badge{font-size:11px;padding:2px 8px;border-radius:10px;display:inline-block;font-weight:500}
+        .badge-absent{background:#ffebee;color:var(--warning)}
+        .badge-complete{background:#e6ffed;color:var(--success)}
+        .badge-worker{background:#e7f5ff;color:#0c3c72}
+        .badge-photo{background:#e6ffed;color:var(--success)}
+        .badge-gps{background:#f3e5f5;color:#6a1b9a}
 
         /* STATS */
-        .stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+        .stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
         .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px;text-align:center}
-        .stat-value{font-size:28px;font-weight:700;color:var(--primary);line-height:1}
+        .stat-value{font-size:26px;font-weight:700;color:var(--primary);line-height:1}
         .stat-label{font-size:11px;color:var(--text2);margin-top:4px;text-transform:uppercase;letter-spacing:0.5px}
+        .stat-card.warning .stat-value{color:var(--warning)}
 
         /* ADMIN */
-        .admin-header{background:linear-gradient(135deg,#1e3a5f,#2c5282);color:white;padding:16px;border-radius:8px;margin-bottom:16px}
-        .admin-badge{background:rgba(255,215,0,0.3);border:1px solid rgba(255,215,0,0.5);padding:3px 10px;border-radius:10px;font-size:11px;font-weight:600;color:#ffd700;display:inline-block;margin-bottom:8px}
+        .admin-header{background:linear-gradient(135deg,#1e3a5f,#2c5282);color:white;padding:14px 16px;border-radius:8px;margin-bottom:14px}
+        .admin-badge{background:rgba(255,215,0,0.3);border:1px solid rgba(255,215,0,0.5);padding:2px 10px;border-radius:10px;font-size:11px;font-weight:600;color:#ffd700;display:inline-block;margin-bottom:6px}
         .worker-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:10px}
         .worker-name{font-weight:600;font-size:15px;color:var(--primary)}
         .worker-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px}
         .worker-stat{text-align:center;background:var(--bg);border-radius:6px;padding:8px}
-        .worker-stat-val{font-size:20px;font-weight:700;color:var(--primary)}
+        .worker-stat-val{font-size:18px;font-weight:700;color:var(--primary)}
         .worker-stat-lbl{font-size:10px;color:var(--text2);text-transform:uppercase}
         .filter-bar{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
-        .filter-bar select{flex:1;min-width:120px;font-size:13px;padding:8px}
+        .filter-bar select{flex:1;min-width:110px;font-size:12px;padding:7px}
+
+        /* ADD WORKER FORM */
+        .add-worker-box{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:16px}
 
         /* ALERTS */
         .alert{padding:10px 14px;border-radius:6px;margin-bottom:12px;font-size:13px}
         .alert-success{background:#e6ffed;color:#22863a;border:1px solid #28a745}
         .alert-error{background:#ffebee;color:#cb2431;border:1px solid #ea4c89}
         .alert-info{background:#e7f5ff;color:#0c3c72;border:1px solid #74c0fc}
+        .alert-warning{background:#fff3cd;color:#856404;border:1px solid #ffc107}
 
         /* MODAL */
-        .modal{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center}
+        .modal{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;padding:16px}
         .modal.active{display:flex}
-        .modal-content{background:var(--surface);border-radius:10px;padding:20px;max-width:500px;width:90%;max-height:85vh;overflow-y:auto;box-shadow:0 4px 20px rgba(0,0,0,0.2);position:relative}
+        .modal-content{background:var(--surface);border-radius:10px;padding:20px;max-width:500px;width:100%;max-height:88vh;overflow-y:auto;box-shadow:0 4px 20px rgba(0,0,0,0.2);position:relative}
         .modal-close{position:absolute;top:12px;right:12px;background:none;border:none;font-size:22px;cursor:pointer;color:var(--text2);padding:4px 8px}
         .modal-header{font-size:17px;font-weight:600;margin-bottom:14px;padding-right:30px}
 
         /* MISC */
         .hidden{display:none!important}
-        .sync-status{font-size:11px;padding:3px 8px;border-radius:10px;display:inline-block}
-        .sync-ok{background:#e6ffed;color:#22863a}
-        .sync-pending{background:#fff3cd;color:#856404}
-        .sync-error{background:#ffebee;color:#cb2431}
         .empty-state{text-align:center;padding:40px 20px;color:var(--text2)}
         .empty-state-icon{font-size:48px;margin-bottom:12px}
-        .divider{margin:16px 0;border:none;border-top:1px solid var(--border)}
-        .section-title{font-size:14px;font-weight:600;margin-bottom:10px}
-        .loading{text-align:center;padding:20px;color:var(--text2);font-size:14px}
-        @media(max-width:480px){.stats-grid{grid-template-columns:1fr 1fr}.worker-stats{grid-template-columns:repeat(3,1fr)}}
+        .divider{margin:14px 0;border:none;border-top:1px solid var(--border)}
+        .section-title{font-size:14px;font-weight:600;margin-bottom:10px;color:var(--text)}
+        .info-box{background:#e7f5ff;border:1px solid #74c0fc;border-radius:8px;padding:12px;font-size:13px;color:#0c3c72;margin-bottom:12px}
+        .follow-up-banner{background:#fff3cd;border:1px solid #ffc107;border-radius:6px;padding:8px 12px;font-size:13px;color:#856404;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center}
+        @media(max-width:480px){.stats-grid{grid-template-columns:1fr 1fr}}
     </style>
 </head>
 <body>
@@ -134,17 +149,15 @@
 <div id="authScreen" class="auth-screen">
     <div class="auth-box">
         <div class="auth-logo">
-            <div style="font-size:40px">🏘️</div>
+            <div style="font-size:42px">🏘️</div>
             <h1>Property Tax Collector</h1>
             <p>Village Council Field Data App</p>
         </div>
         <div id="authAlert"></div>
         <div class="auth-tabs">
-            <button class="auth-tab active" onclick="switchAuthTab('login')">Login</button>
-            <button class="auth-tab" onclick="switchAuthTab('register')">Register</button>
+            <button class="auth-tab active" onclick="switchAuthTab('login',this)">Login</button>
+            <button class="auth-tab" onclick="switchAuthTab('register',this)">Register</button>
         </div>
-
-        <!-- Login Form -->
         <div id="loginForm">
             <div class="form-group">
                 <label>Email Address</label>
@@ -155,37 +168,15 @@
                 <input type="password" id="loginPassword" placeholder="Enter password">
             </div>
             <button class="btn-primary" onclick="loginUser()" style="margin-top:8px">🔐 Login</button>
-            <div style="text-align:center;margin-top:14px;font-size:12px;color:var(--text2)">
-                Don't have an account? <a href="#" onclick="switchAuthTab('register')" style="color:var(--primary)">Register here</a>
-            </div>
         </div>
-
-        <!-- Register Form -->
         <div id="registerForm" class="hidden">
-            <div class="form-group">
-                <label>Full Name</label>
-                <input type="text" id="regName" placeholder="Your full name">
-            </div>
-            <div class="form-group">
-                <label>Phone Number</label>
-                <input type="tel" id="regPhone" placeholder="10-digit mobile number">
-            </div>
-            <div class="form-group">
-                <label>Email Address</label>
-                <input type="email" id="regEmail" placeholder="your@email.com">
-            </div>
-            <div class="form-group">
-                <label>Password</label>
-                <input type="password" id="regPassword" placeholder="Minimum 6 characters">
-            </div>
+            <div class="info-box">📋 Register your account. Your supervisor will activate it.</div>
+            <div class="form-group"><label>Full Name</label><input type="text" id="regName" placeholder="Your full name"></div>
+            <div class="form-group"><label>Phone Number</label><input type="tel" id="regPhone" placeholder="10-digit mobile number"></div>
+            <div class="form-group"><label>Email Address</label><input type="email" id="regEmail" placeholder="your@email.com"></div>
+            <div class="form-group"><label>Password</label><input type="password" id="regPassword" placeholder="Minimum 6 characters"></div>
             <button class="btn-primary" onclick="registerUser()" style="margin-top:8px">✅ Create Account</button>
-            <div style="text-align:center;margin-top:14px;font-size:12px;color:var(--text2)">
-                Already have an account? <a href="#" onclick="switchAuthTab('login')" style="color:var(--primary)">Login here</a>
-            </div>
         </div>
-    </div>
-    <div style="margin-top:16px;font-size:11px;color:#999;text-align:center">
-        Contact your supervisor to get registered
     </div>
 </div>
 
@@ -193,23 +184,21 @@
 <div id="mainApp" class="container hidden">
 
     <!-- WORKER VIEW -->
-    <div id="workerView">
+    <div id="workerView" class="hidden">
         <div class="header">
             <div class="header-left">
                 <h1>🏘️ Property Tax Collector</h1>
-                <p id="vcNameDisplay"></p>
+                <p id="vcNameDisplay">Loading...</p>
             </div>
             <div class="header-right">
                 <span class="user-badge" id="userNameBadge">👤</span>
-                <span class="sync-status sync-ok" id="syncStatus">✓ Online</span>
                 <button class="btn-logout" onclick="logoutUser()">Logout</button>
             </div>
         </div>
-
         <div class="tabs">
-            <button class="tab-btn active" onclick="switchTab('collect', this)">Collect</button>
-            <button class="tab-btn" onclick="switchTab('myrecords', this)">My Records</button>
-            <button class="tab-btn" onclick="switchTab('summary', this)">Summary</button>
+            <button class="tab-btn active" onclick="switchTab('collect',this)">📋 Collect</button>
+            <button class="tab-btn" onclick="switchTab('myrecords',this)">📁 My Records</button>
+            <button class="tab-btn" onclick="switchTab('followup',this)">🔴 Follow Up</button>
         </div>
 
         <!-- COLLECT TAB -->
@@ -217,12 +206,12 @@
             <div id="alertBox"></div>
             <form id="propertyForm" onsubmit="saveRecord(event)">
                 <div class="form-group">
-                    <label>Property ID *</label>
+                    <label>Property ID <span class="required-star">*</span></label>
                     <input type="text" id="propertyId" placeholder="Enter ID from door sticker" required>
                 </div>
                 <div class="form-group">
-                    <label>Property Type *</label>
-                    <select id="propertyType" onchange="updateOwnerLabel()" required>
+                    <label>Property Type <span class="required-star">*</span></label>
+                    <select id="propertyType" onchange="updateFormFields()" required>
                         <option value="">Select type</option>
                         <option value="Residential">Residential</option>
                         <option value="Commercial">Commercial</option>
@@ -234,7 +223,7 @@
                     </select>
                 </div>
                 <div class="form-group">
-                    <label>Building Type * (for tax calculation)</label>
+                    <label>Building Type <span class="required-star">*</span></label>
                     <select id="buildingType" required>
                         <option value="">Select building type</option>
                         <option value="RCC">RCC (Reinforced Concrete)</option>
@@ -242,66 +231,76 @@
                         <option value="Assam Type">Assam Type</option>
                     </select>
                 </div>
-                <hr class="divider">
-                <div class="section-title">Owner Information</div>
 
-                <!-- Residential/Commercial fields -->
+                <hr class="divider">
+
+                <!-- RESIDENTIAL FIELDS -->
                 <div id="residentialFields">
+                    <div class="section-title">Owner Information <span style="font-size:12px;color:var(--text2);font-weight:400">(optional if owner absent)</span></div>
                     <div class="form-group">
-                        <label>Owner Name *</label>
+                        <label>Owner Name</label>
                         <input type="text" id="ownerName" placeholder="Full name of property owner">
                     </div>
                     <div class="form-group">
-                        <label>Father/Husband Name *</label>
+                        <label>Father/Husband Name</label>
                         <input type="text" id="fatherHusbandName" placeholder="Father's or Husband's name">
+                    </div>
+                    <div class="form-group">
+                        <label>Contact Number</label>
+                        <input type="tel" id="contact" placeholder="10-digit mobile number" pattern="[0-9]{10}">
                     </div>
                 </div>
 
-                <!-- Institution fields -->
+                <!-- INSTITUTION FIELDS -->
                 <div id="institutionFields" class="hidden">
+                    <div class="section-title">Institution Information</div>
                     <div class="form-group">
-                        <label>Organization/Institution Name *</label>
+                        <label>Organization/Institution Name <span class="required-star">*</span></label>
                         <input type="text" id="organizationName" placeholder="e.g., ABC School, St. John's Church">
                     </div>
                     <div class="form-group">
-                        <label>Contact Person *</label>
+                        <label>Contact Person <span style="font-size:12px;color:var(--text2);font-weight:400">(optional)</span></label>
                         <input type="text" id="contactPerson" placeholder="Name of contact person">
                     </div>
                     <div class="form-group">
-                        <label>Designation *</label>
+                        <label>Designation <span style="font-size:12px;color:var(--text2);font-weight:400">(optional)</span></label>
                         <input type="text" id="designation" placeholder="e.g., Principal, Pastor, Manager">
+                    </div>
+                    <div class="form-group">
+                        <label>Contact Number <span style="font-size:12px;color:var(--text2);font-weight:400">(optional)</span></label>
+                        <input type="tel" id="instContact" placeholder="10-digit mobile number" pattern="[0-9]{10}">
                     </div>
                 </div>
 
-                <div class="form-group">
-                    <label>Contact Number *</label>
-                    <input type="tel" id="contact" placeholder="10-digit mobile number" pattern="[0-9]{10}" required>
-                </div>
                 <hr class="divider">
-                <div class="section-title">Location & Photo</div>
+                <div class="section-title">📍 GPS Location <span class="required-star">*</span></div>
                 <div class="form-group">
-                    <button type="button" class="btn-photo" onclick="captureLocation()" style="width:100%">📍 Capture GPS Location</button>
+                    <button type="button" class="btn-photo" onclick="captureLocation()" style="background:var(--success)">📍 Capture GPS Location</button>
                     <div id="locationStatus" class="location-status hidden"></div>
                     <input type="hidden" id="latitude">
                     <input type="hidden" id="longitude">
                     <input type="hidden" id="accuracy">
                 </div>
+
+                <div class="section-title">📷 Property Photo <span class="required-star">*</span></div>
                 <div class="form-group">
                     <img id="photoPreview" class="photo-preview">
+                    <div id="photoStatus" class="photo-status needed">📷 Photo required — tap to take</div>
                     <div class="photo-buttons">
-                        <button type="button" class="btn-photo" onclick="document.getElementById('photoInput').click()">📷 Take Photo</button>
-                        <button type="button" class="btn-photo" onclick="clearPhoto()" style="background:#666">✕ Clear</button>
+                        <button type="button" class="btn-photo" onclick="document.getElementById('photoInput').click()" style="flex:1">📷 Take Photo</button>
+                        <button type="button" class="btn-photo" onclick="clearPhoto()" style="background:#666;flex:0 0 auto;width:auto;padding:10px 14px">✕</button>
                     </div>
                     <input type="file" id="photoInput" accept="image/*" capture="environment" onchange="handlePhotoCapture(event)">
                 </div>
+
                 <hr class="divider">
                 <div class="form-group">
                     <label>Remarks / Notes</label>
-                    <textarea id="remarks" placeholder="Any additional information..."></textarea>
+                    <textarea id="remarks" placeholder="e.g., Owner absent, locked, under construction..."></textarea>
                 </div>
                 <div class="button-group">
                     <button type="button" class="btn-secondary" onclick="resetForm()" style="flex:1">Clear</button>
-                    <button type="submit" class="btn-primary" style="flex:2">💾 Save & Sync</button>
+                    <button type="submit" id="submitBtn" class="btn-primary" style="flex:2">💾 Save & Sync</button>
                 </div>
             </form>
         </div>
@@ -310,87 +309,80 @@
         <div id="myrecords" class="form-section">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
                 <div class="section-title" style="margin:0">My Records</div>
-                <button class="btn-small btn-secondary" onclick="exportMyData()" style="width:auto">⬇️ Export</button>
+                <select id="myRecordFilter" onchange="renderMyRecords(myRecordsCache)" style="font-size:12px;padding:5px 8px;width:auto;border-radius:6px;border:1px solid var(--border)">
+                    <option value="all">All Records</option>
+                    <option value="complete">✅ Complete</option>
+                    <option value="absent">🔴 Owner Absent</option>
+                </select>
+            </div>
+            <div id="myStats" class="stats-grid">
+                <div class="stat-card"><div class="stat-value" id="myTotal">0</div><div class="stat-label">Total</div></div>
+                <div class="stat-card warning"><div class="stat-value" id="myAbsent">0</div><div class="stat-label">Owner Absent</div></div>
             </div>
             <div id="myRecordsList" class="records-list"></div>
-            <div id="myEmptyRecords" class="empty-state">
-                <div class="empty-state-icon">📋</div>
-                <p>No records yet. Start collecting!</p>
+            <div id="myEmptyRecords" class="empty-state hidden">
+                <div class="empty-state-icon">📋</div><p>No records yet.</p>
             </div>
         </div>
 
-        <!-- SUMMARY TAB -->
-        <div id="summary" class="form-section">
-            <div class="section-title">My Collection Summary</div>
-            <div class="stats-grid">
-                <div class="stat-card"><div class="stat-value" id="myTotal">0</div><div class="stat-label">Total</div></div>
-                <div class="stat-card"><div class="stat-value" id="myPhotos">0</div><div class="stat-label">With Photos</div></div>
-                <div class="stat-card"><div class="stat-value" id="myGPS">0</div><div class="stat-label">With GPS</div></div>
-                <div class="stat-card"><div class="stat-value" id="myToday">0</div><div class="stat-label">Today</div></div>
+        <!-- FOLLOW UP TAB -->
+        <div id="followup" class="form-section">
+            <div class="alert alert-warning">🔴 These properties need a follow-up visit — owner was absent.</div>
+            <div id="followUpList" class="records-list"></div>
+            <div id="followUpEmpty" class="empty-state hidden">
+                <div class="empty-state-icon">✅</div><p>No follow-ups needed!</p>
             </div>
-            <div class="stat-card" style="margin-bottom:10px">
-                <div class="section-title">Building Types</div>
-                <div id="myBuildingBreakdown" style="font-size:13px;color:var(--text2)"></div>
-            </div>
-            <div class="stat-card">
-                <div class="section-title">Property Types</div>
-                <div id="myPropertyBreakdown" style="font-size:13px;color:var(--text2)"></div>
-            </div>
-            <button class="btn-primary" onclick="exportMyData()" style="margin-top:12px">⬇️ Export My Data (CSV)</button>
         </div>
     </div>
 
     <!-- ADMIN VIEW -->
     <div id="adminView" class="hidden">
         <div class="admin-header">
-            <div class="admin-badge">👑 ADMIN</div>
-            <div style="display:flex;justify-content:space-between;align-items:center">
+            <div style="display:flex;justify-content:space-between;align-items:start">
                 <div>
-                    <h1 style="font-size:18px;font-weight:600">🏘️ Admin Dashboard</h1>
-                    <p id="adminVcName" style="font-size:12px;opacity:0.9;margin-top:2px"></p>
+                    <div class="admin-badge">👑 ADMIN</div>
+                    <h1 style="font-size:17px;font-weight:600;margin-top:4px">🏘️ Admin Dashboard</h1>
+                    <p id="adminVcName" style="font-size:11px;opacity:0.9;margin-top:2px"></p>
                 </div>
                 <button class="btn-logout" onclick="logoutUser()">Logout</button>
             </div>
         </div>
-
         <div class="tabs">
-            <button class="tab-btn active" onclick="switchAdminTab('overview', this)">Overview</button>
-            <button class="tab-btn" onclick="switchAdminTab('allrecords', this)">All Records</button>
-            <button class="tab-btn" onclick="switchAdminTab('workers', this)">Workers</button>
-            <button class="tab-btn" onclick="switchAdminTab('adminsettings', this)">Settings</button>
+            <button class="tab-btn active" onclick="switchAdminTab('overview',this)">📊 Overview</button>
+            <button class="tab-btn" onclick="switchAdminTab('allrecords',this)">📁 Records</button>
+            <button class="tab-btn" onclick="switchAdminTab('workers',this)">👥 Workers</button>
+            <button class="tab-btn" onclick="switchAdminTab('adminsettings',this)">⚙️ Settings</button>
         </div>
 
         <!-- OVERVIEW -->
         <div id="overview" class="form-section active">
             <div class="stats-grid">
                 <div class="stat-card"><div class="stat-value" id="adminTotal">0</div><div class="stat-label">Total Records</div></div>
-                <div class="stat-card"><div class="stat-value" id="adminWorkers">0</div><div class="stat-label">Active Workers</div></div>
                 <div class="stat-card"><div class="stat-value" id="adminToday">0</div><div class="stat-label">Today</div></div>
-                <div class="stat-card"><div class="stat-value" id="adminPhotos">0</div><div class="stat-label">With Photos</div></div>
+                <div class="stat-card warning"><div class="stat-value" id="adminAbsent">0</div><div class="stat-label">Owner Absent</div></div>
+                <div class="stat-card"><div class="stat-value" id="adminWorkerCount">0</div><div class="stat-label">Workers</div></div>
             </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
                 <div class="stat-card">
-                    <div class="section-title">Building Types</div>
-                    <div id="adminBuildingBreakdown" style="font-size:13px;color:var(--text2);line-height:1.9"></div>
+                    <div class="section-title">🏗️ Building Types</div>
+                    <div id="adminBuildingBreakdown" style="font-size:13px;color:var(--text2);line-height:2"></div>
                 </div>
                 <div class="stat-card">
-                    <div class="section-title">Property Types</div>
-                    <div id="adminPropertyBreakdown" style="font-size:13px;color:var(--text2);line-height:1.9"></div>
+                    <div class="section-title">🏠 Property Types</div>
+                    <div id="adminPropertyBreakdown" style="font-size:13px;color:var(--text2);line-height:2"></div>
                 </div>
             </div>
-            <div class="stat-card">
-                <div class="section-title">Worker Performance Today</div>
+            <div class="stat-card" style="margin-bottom:12px">
+                <div class="section-title">👥 Worker Activity Today</div>
                 <div id="adminWorkerToday" style="font-size:13px;color:var(--text2)"></div>
             </div>
-            <button class="btn-primary" onclick="exportAllData()" style="margin-top:12px">⬇️ Export All Data (CSV)</button>
+            <button class="btn-primary" onclick="exportAllData()">⬇️ Export All Data (CSV)</button>
         </div>
 
         <!-- ALL RECORDS -->
         <div id="allrecords" class="form-section">
             <div class="filter-bar">
-                <select id="filterWorker" onchange="filterRecords()">
-                    <option value="">All Workers</option>
-                </select>
+                <select id="filterWorker" onchange="filterRecords()"><option value="">All Workers</option></select>
                 <select id="filterType" onchange="filterRecords()">
                     <option value="">All Types</option>
                     <option value="Residential">Residential</option>
@@ -401,28 +393,35 @@
                     <option value="NGO">NGO</option>
                     <option value="Government">Government</option>
                 </select>
-                <select id="filterBuilding" onchange="filterRecords()">
-                    <option value="">All Buildings</option>
-                    <option value="RCC">RCC</option>
-                    <option value="Semi RCC">Semi RCC</option>
-                    <option value="Assam Type">Assam Type</option>
+                <select id="filterStatus" onchange="filterRecords()">
+                    <option value="">All Status</option>
+                    <option value="complete">✅ Complete</option>
+                    <option value="absent">🔴 Owner Absent</option>
                 </select>
             </div>
             <div style="font-size:12px;color:var(--text2);margin-bottom:8px" id="recordCount"></div>
             <div id="allRecordsList" class="records-list"></div>
-            <div id="allEmptyRecords" class="empty-state">
-                <div class="empty-state-icon">📋</div>
-                <p>No records found.</p>
+            <div id="allEmptyRecords" class="empty-state hidden">
+                <div class="empty-state-icon">📋</div><p>No records found.</p>
             </div>
         </div>
 
         <!-- WORKERS -->
         <div id="workers" class="form-section">
-            <div class="section-title" style="margin-bottom:12px">Registered Workers</div>
+            <div class="add-worker-box">
+                <div class="section-title">➕ Add Worker Account</div>
+                <div id="addWorkerAlert"></div>
+                <div class="form-group"><label>Full Name</label><input type="text" id="newWorkerName" placeholder="Worker's full name"></div>
+                <div class="form-group"><label>Phone Number</label><input type="tel" id="newWorkerPhone" placeholder="10-digit mobile number"></div>
+                <div class="form-group"><label>Email Address</label><input type="email" id="newWorkerEmail" placeholder="worker@email.com"></div>
+                <div class="form-group"><label>Password</label><input type="password" id="newWorkerPassword" placeholder="Minimum 6 characters"></div>
+                <button class="btn-primary" onclick="addWorker()">➕ Create Worker Account</button>
+            </div>
+            <div class="section-title">Registered Workers</div>
             <div id="workersList"></div>
         </div>
 
-        <!-- ADMIN SETTINGS -->
+        <!-- SETTINGS -->
         <div id="adminsettings" class="form-section">
             <div class="section-title">App Settings</div>
             <div class="form-group">
@@ -431,11 +430,9 @@
             </div>
             <button class="btn-primary" onclick="saveAdminSettings()">💾 Save Settings</button>
             <hr class="divider">
-            <div class="section-title">Add Worker Account</div>
-            <div class="alert alert-info">Workers register themselves using the app's Register tab. Their accounts appear here once created.</div>
-            <hr class="divider">
             <div class="section-title">Data Management</div>
-            <button class="btn-primary" onclick="exportAllData()">⬇️ Export All Data (CSV)</button>
+            <button class="btn-primary" onclick="exportAllData()" style="margin-bottom:8px">⬇️ Export All Data (CSV)</button>
+            <button class="btn-primary" onclick="exportAbsentData()" style="background:#e65100">⬇️ Export Owner Absent Only</button>
         </div>
     </div>
 </div>
@@ -444,14 +441,13 @@
 <div id="detailModal" class="modal">
     <div class="modal-content">
         <button class="modal-close" onclick="closeModal()">×</button>
-        <div class="modal-header">Property Details</div>
+        <div class="modal-header" id="modalTitle">Property Details</div>
         <div id="modalBody"></div>
     </div>
 </div>
 
 <script>
 // ========== FIREBASE CONFIG ==========
-// REPLACE THESE VALUES with your Firebase project config
 const firebaseConfig = {
     apiKey: "AIzaSyA52OUpDLqbV0x57QP_Nen48BFzYlJb0tc",
     authDomain: "property-tax-collector-96db4.firebaseapp.com",
@@ -460,11 +456,8 @@ const firebaseConfig = {
     messagingSenderId: "610573950046",
     appId: "1:610573950046:web:2b545f876953a4eb18a8cf"
 };
-
-// Admin email - only this user sees admin view
 const ADMIN_EMAIL = "enga018@gmail.com";
 
-// ========== INIT ==========
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
@@ -473,6 +466,7 @@ let currentUser = null;
 let isAdmin = false;
 let allRecords = [];
 let allUsers = {};
+let myRecordsCache = [];
 
 // ========== AUTH ==========
 auth.onAuthStateChanged(async user => {
@@ -482,12 +476,11 @@ auth.onAuthStateChanged(async user => {
         document.getElementById('authScreen').classList.add('hidden');
         document.getElementById('mainApp').classList.remove('hidden');
         if (isAdmin) {
-            document.getElementById('workerView').classList.add('hidden');
             document.getElementById('adminView').classList.remove('hidden');
             loadAdminData();
+            loadAdminSettings();
         } else {
             document.getElementById('workerView').classList.remove('hidden');
-            document.getElementById('adminView').classList.add('hidden');
             const profile = await getUserProfile(user.uid);
             document.getElementById('userNameBadge').textContent = '👤 ' + (profile?.name || user.email);
             loadVCName();
@@ -497,19 +490,19 @@ auth.onAuthStateChanged(async user => {
         currentUser = null;
         document.getElementById('authScreen').classList.remove('hidden');
         document.getElementById('mainApp').classList.add('hidden');
+        document.getElementById('workerView').classList.add('hidden');
+        document.getElementById('adminView').classList.add('hidden');
     }
 });
 
 async function getUserProfile(uid) {
-    try {
-        const doc = await db.collection('users').doc(uid).get();
-        return doc.exists ? doc.data() : null;
-    } catch(e) { return null; }
+    try { const d = await db.collection('users').doc(uid).get(); return d.exists ? d.data() : null; }
+    catch(e) { return null; }
 }
 
-function switchAuthTab(tab) {
+function switchAuthTab(tab, btn) {
     document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
-    event.target.classList.add('active');
+    btn.classList.add('active');
     document.getElementById('loginForm').classList.toggle('hidden', tab !== 'login');
     document.getElementById('registerForm').classList.toggle('hidden', tab !== 'register');
     document.getElementById('authAlert').innerHTML = '';
@@ -522,9 +515,7 @@ async function loginUser() {
     try {
         showAuthAlert('Logging in...', 'info');
         await auth.signInWithEmailAndPassword(email, pass);
-    } catch(e) {
-        showAuthAlert(friendlyError(e.code), 'error');
-    }
+    } catch(e) { showAuthAlert(friendlyError(e.code), 'error'); }
 }
 
 async function registerUser() {
@@ -533,7 +524,7 @@ async function registerUser() {
     const email = document.getElementById('regEmail').value.trim();
     const pass = document.getElementById('regPassword').value;
     if (!name || !phone || !email || !pass) return showAuthAlert('Please fill all fields', 'error');
-    if (phone.length !== 10 || isNaN(phone)) return showAuthAlert('Phone must be 10 digits', 'error');
+    if (!/^[0-9]{10}$/.test(phone)) return showAuthAlert('Phone must be exactly 10 digits', 'error');
     if (pass.length < 6) return showAuthAlert('Password must be at least 6 characters', 'error');
     try {
         showAuthAlert('Creating account...', 'info');
@@ -542,131 +533,181 @@ async function registerUser() {
             name, phone, email, role: 'worker',
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
         });
-    } catch(e) {
-        showAuthAlert(friendlyError(e.code), 'error');
-    }
+    } catch(e) { showAuthAlert(friendlyError(e.code), 'error'); }
+}
+
+async function addWorker() {
+    const name = document.getElementById('newWorkerName').value.trim();
+    const phone = document.getElementById('newWorkerPhone').value.trim();
+    const email = document.getElementById('newWorkerEmail').value.trim();
+    const pass = document.getElementById('newWorkerPassword').value;
+    if (!name || !phone || !email || !pass) return showAddWorkerAlert('Please fill all fields', 'error');
+    if (!/^[0-9]{10}$/.test(phone)) return showAddWorkerAlert('Phone must be exactly 10 digits', 'error');
+    if (pass.length < 6) return showAddWorkerAlert('Password must be at least 6 characters', 'error');
+    try {
+        showAddWorkerAlert('Creating worker account...', 'info');
+        // Create secondary auth instance to avoid logging out admin
+        const secondaryApp = firebase.initializeApp(firebaseConfig, 'secondary');
+        const secondaryAuth = secondaryApp.auth();
+        const cred = await secondaryAuth.createUserWithEmailAndPassword(email, pass);
+        await db.collection('users').doc(cred.user.uid).set({
+            name, phone, email, role: 'worker',
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        await secondaryAuth.signOut();
+        secondaryApp.delete();
+        showAddWorkerAlert('✓ Worker account created successfully!', 'success');
+        document.getElementById('newWorkerName').value = '';
+        document.getElementById('newWorkerPhone').value = '';
+        document.getElementById('newWorkerEmail').value = '';
+        document.getElementById('newWorkerPassword').value = '';
+    } catch(e) { showAddWorkerAlert(friendlyError(e.code), 'error'); }
+}
+
+async function deleteWorker(uid, name) {
+    if (!confirm(`Delete worker "${name}"? Their collected records will remain.`)) return;
+    try {
+        await db.collection('users').doc(uid).delete();
+        showAlert('Worker removed from system', 'success');
+    } catch(e) { alert('Error: ' + e.message); }
 }
 
 function logoutUser() {
-    if (confirm('Are you sure you want to logout?')) auth.signOut();
+    if (confirm('Logout?')) auth.signOut();
 }
 
 function friendlyError(code) {
-    const errors = {
-        'auth/user-not-found': 'No account found with this email',
-        'auth/wrong-password': 'Incorrect password',
-        'auth/email-already-in-use': 'Email already registered',
-        'auth/weak-password': 'Password too weak (min 6 chars)',
-        'auth/invalid-email': 'Invalid email address',
-        'auth/too-many-requests': 'Too many attempts. Try again later',
-        'auth/invalid-credential': 'Invalid email or password'
+    const e = {
+        'auth/user-not-found':'No account found with this email',
+        'auth/wrong-password':'Incorrect password',
+        'auth/email-already-in-use':'Email already registered',
+        'auth/weak-password':'Password too weak (min 6 chars)',
+        'auth/invalid-email':'Invalid email address',
+        'auth/too-many-requests':'Too many attempts. Try again later',
+        'auth/invalid-credential':'Invalid email or password'
     };
-    return errors[code] || 'Something went wrong. Please try again.';
+    return e[code] || 'Something went wrong. Try again.';
 }
 
 function showAuthAlert(msg, type) {
     document.getElementById('authAlert').innerHTML = `<div class="alert alert-${type}">${msg}</div>`;
 }
+function showAddWorkerAlert(msg, type) {
+    document.getElementById('addWorkerAlert').innerHTML = `<div class="alert alert-${type}">${msg}</div>`;
+    setTimeout(() => { document.getElementById('addWorkerAlert').innerHTML = ''; }, 4000);
+}
 
 // ========== FORM ==========
-const INSTITUTION_TYPES = ['Education', 'Church', 'NGO', 'Government'];
+const INSTITUTION_TYPES = ['Education','Church','NGO','Government'];
 
-function updateOwnerLabel() {
+function updateFormFields() {
     const type = document.getElementById('propertyType').value;
     const isInst = INSTITUTION_TYPES.includes(type);
     document.getElementById('residentialFields').classList.toggle('hidden', isInst);
     document.getElementById('institutionFields').classList.toggle('hidden', !isInst);
-    // Handle required
-    ['ownerName','fatherHusbandName'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) isInst ? el.removeAttribute('required') : el.setAttribute('required','required');
-    });
-    ['organizationName','contactPerson','designation'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) !isInst ? el.removeAttribute('required') : el.setAttribute('required','required');
-    });
+    if (isInst) {
+        document.getElementById('organizationName').setAttribute('required','required');
+    } else {
+        document.getElementById('organizationName').removeAttribute('required');
+    }
 }
 
 async function saveRecord(e) {
     e.preventDefault();
+    const lat = document.getElementById('latitude').value;
+    const lng = document.getElementById('longitude').value;
+    const photoEl = document.getElementById('photoPreview');
+    const hasPhoto = photoEl.style.display !== 'none' && photoEl.src && photoEl.src !== window.location.href;
+
+    if (!lat || !lng) return showAlert('📍 GPS location is required. Please capture location first.', 'error');
+    if (!hasPhoto) return showAlert('📷 Photo is required. Please take a photo first.', 'error');
+
     const type = document.getElementById('propertyType').value;
     const isInst = INSTITUTION_TYPES.includes(type);
-    const photoEl = document.getElementById('photoPreview');
+    const ownerName = isInst ? '' : document.getElementById('ownerName').value.trim();
+    const contact = isInst ? document.getElementById('instContact').value.trim() : document.getElementById('contact').value.trim();
+    const isAbsent = !isInst && !ownerName;
 
+    const profile = await getUserProfile(currentUser.uid);
     const data = {
         propertyId: document.getElementById('propertyId').value.trim(),
         propertyType: type,
         buildingType: document.getElementById('buildingType').value,
-        contact: document.getElementById('contact').value.trim(),
+        isInstitution: isInst,
+        isAbsent,
+        contact: contact || '',
         remarks: document.getElementById('remarks').value.trim(),
-        latitude: document.getElementById('latitude').value ? parseFloat(document.getElementById('latitude').value) : null,
-        longitude: document.getElementById('longitude').value ? parseFloat(document.getElementById('longitude').value) : null,
-        accuracy: document.getElementById('accuracy').value ? parseFloat(document.getElementById('accuracy').value) : null,
-        photo: (photoEl.style.display !== 'none' && photoEl.src && photoEl.src !== window.location.href) ? photoEl.src : null,
+        latitude: parseFloat(lat),
+        longitude: parseFloat(lng),
+        accuracy: parseFloat(document.getElementById('accuracy').value) || null,
+        photo: hasPhoto ? photoEl.src : null,
         workerUid: currentUser.uid,
         workerEmail: currentUser.email,
+        workerName: profile?.name || currentUser.email,
         timestamp: firebase.firestore.FieldValue.serverTimestamp(),
         localTimestamp: new Date().toISOString()
     };
 
     if (isInst) {
-        data.isInstitution = true;
         data.organizationName = document.getElementById('organizationName').value.trim();
         data.contactPerson = document.getElementById('contactPerson').value.trim();
         data.designation = document.getElementById('designation').value.trim();
-        data.ownerName = data.contactPerson;
+        data.ownerName = data.contactPerson || data.organizationName;
         data.ownerType = 'Contact Person';
     } else {
-        data.isInstitution = false;
-        data.ownerName = document.getElementById('ownerName').value.trim();
+        data.ownerName = ownerName;
         data.fatherHusbandName = document.getElementById('fatherHusbandName').value.trim();
         data.ownerType = 'Owner';
     }
 
-    // Get worker name from profile
-    const profile = await getUserProfile(currentUser.uid);
-    data.workerName = profile?.name || currentUser.email;
-
     try {
-        document.querySelector('[type=submit]').textContent = '⏳ Saving...';
+        const btn = document.getElementById('submitBtn');
+        btn.textContent = '⏳ Saving...'; btn.disabled = true;
         await db.collection('records').add(data);
-        showAlert('✓ Record saved and synced to cloud!', 'success');
+        showAlert(isAbsent ? '✓ Saved — marked as Owner Absent for follow-up' : '✓ Record saved and synced!', 'success');
         resetForm();
-        loadMyRecords();
-        setTimeout(() => switchTab('myrecords', document.querySelectorAll('.tab-btn')[1]), 800);
+        setTimeout(() => switchTab('myrecords', document.querySelectorAll('#workerView .tab-btn')[1]), 1000);
     } catch(err) {
-        showAlert('❌ Error saving: ' + err.message, 'error');
+        showAlert('❌ Error: ' + err.message, 'error');
     } finally {
-        document.querySelector('[type=submit]').textContent = '💾 Save & Sync';
+        const btn = document.getElementById('submitBtn');
+        btn.textContent = '💾 Save & Sync'; btn.disabled = false;
     }
 }
 
 function resetForm() {
     document.getElementById('propertyForm').reset();
-    clearPhoto();
-    clearLocation();
+    clearPhoto(); clearLocation();
     document.getElementById('alertBox').innerHTML = '';
     document.getElementById('institutionFields').classList.add('hidden');
     document.getElementById('residentialFields').classList.remove('hidden');
-    ['ownerName','fatherHusbandName'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.setAttribute('required','required');
-    });
-    ['organizationName','contactPerson','designation'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.removeAttribute('required');
-    });
+    document.getElementById('organizationName').removeAttribute('required');
 }
 
 // ========== PHOTO & GPS ==========
 function handlePhotoCapture(e) {
     const file = e.target.files[0];
     if (!file) return;
+    // Compress image
     const reader = new FileReader();
     reader.onload = ev => {
-        const preview = document.getElementById('photoPreview');
-        preview.src = ev.target.result;
-        preview.style.display = 'block';
+        const img = new Image();
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const MAX = 800;
+            let w = img.width, h = img.height;
+            if (w > h) { if (w > MAX) { h = h*(MAX/w); w = MAX; } }
+            else { if (h > MAX) { w = w*(MAX/h); h = MAX; } }
+            canvas.width = w; canvas.height = h;
+            canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+            const compressed = canvas.toDataURL('image/jpeg', 0.7);
+            const preview = document.getElementById('photoPreview');
+            preview.src = compressed;
+            preview.style.display = 'block';
+            document.getElementById('photoStatus').className = 'photo-status ok';
+            document.getElementById('photoStatus').textContent = '✅ Photo captured';
+        };
+        img.src = ev.target.result;
     };
     reader.readAsDataURL(file);
 }
@@ -674,92 +715,100 @@ function handlePhotoCapture(e) {
 function clearPhoto() {
     document.getElementById('photoInput').value = '';
     const p = document.getElementById('photoPreview');
-    p.src = '';
-    p.style.display = 'none';
+    p.src = ''; p.style.display = 'none';
+    document.getElementById('photoStatus').className = 'photo-status needed';
+    document.getElementById('photoStatus').textContent = '📷 Photo required — tap to take';
 }
 
 function captureLocation() {
     const status = document.getElementById('locationStatus');
     if (!navigator.geolocation) {
-        status.className = 'location-status error'; status.textContent = '❌ Geolocation not supported'; status.classList.remove('hidden'); return;
+        status.className = 'location-status error'; status.textContent = '❌ GPS not supported'; status.classList.remove('hidden'); return;
     }
-    status.className = 'location-status'; status.textContent = '🔄 Capturing location...'; status.classList.remove('hidden');
+    status.className = 'location-status'; status.textContent = '🔄 Getting location...'; status.classList.remove('hidden');
     navigator.geolocation.getCurrentPosition(pos => {
         document.getElementById('latitude').value = pos.coords.latitude;
         document.getElementById('longitude').value = pos.coords.longitude;
         document.getElementById('accuracy').value = pos.coords.accuracy;
         status.className = 'location-status success';
-        status.textContent = `✓ ${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)} (±${pos.coords.accuracy.toFixed(0)}m)`;
+        status.textContent = `✅ ${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)} (±${pos.coords.accuracy.toFixed(0)}m)`;
     }, err => {
-        status.className = 'location-status error'; status.textContent = '❌ ' + err.message;
-    }, {enableHighAccuracy:true, timeout:10000});
+        status.className = 'location-status error';
+        status.textContent = '❌ ' + err.message + ' — Please enable location.';
+    }, {enableHighAccuracy:true, timeout:15000, maximumAge:0});
 }
 
 function clearLocation() {
     ['latitude','longitude','accuracy'].forEach(id => document.getElementById(id).value = '');
     const s = document.getElementById('locationStatus');
-    s.classList.add('hidden');
+    s.classList.add('hidden'); s.textContent = '';
 }
 
 // ========== WORKER DATA ==========
 async function loadMyRecords() {
     if (!currentUser) return;
     try {
-        const snap = await db.collection('records').where('workerUid','==',currentUser.uid).orderBy('localTimestamp','desc').get();
-        const records = snap.docs.map(d => ({id:d.id,...d.data()}));
-        renderMyRecords(records);
-        renderMySummary(records);
-    } catch(e) {
-        console.error(e);
-    }
+        db.collection('records').where('workerUid','==',currentUser.uid)
+            .orderBy('localTimestamp','desc').onSnapshot(snap => {
+            myRecordsCache = snap.docs.map(d => ({id:d.id,...d.data()}));
+            renderMyRecords(myRecordsCache);
+            renderFollowUp(myRecordsCache);
+        });
+    } catch(e) { console.error(e); }
 }
 
 function renderMyRecords(records) {
-    const list = document.getElementById('myRecordsList');
-    const empty = document.getElementById('myEmptyRecords');
-    if (!records.length) { list.innerHTML=''; empty.classList.remove('hidden'); return; }
-    empty.classList.add('hidden');
-    list.innerHTML = records.map(r => `
-        <div class="record-card">
-            <div style="display:flex;justify-content:space-between;align-items:start">
-                <div>
-                    <div class="record-id">ID: ${r.propertyId}</div>
-                    ${r.organizationName ? `<div class="record-detail"><b>Org:</b> ${r.organizationName}</div>` : ''}
-                    <div class="record-detail"><b>${r.ownerType||'Owner'}:</b> ${r.ownerName}</div>
-                </div>
-                <div style="text-align:right">
-                    <div style="font-size:11px;color:#999">${r.localTimestamp ? new Date(r.localTimestamp).toLocaleDateString() : ''}</div>
-                    ${r.photo ? '<span style="font-size:11px;background:#e6ffed;color:#22863a;padding:2px 6px;border-radius:8px">📷 Photo</span>' : ''}
-                </div>
-            </div>
-            <div class="record-detail">📱 ${r.contact} &nbsp;|&nbsp; 🏠 ${r.propertyType} &nbsp;|&nbsp; 🏗️ ${r.buildingType}</div>
-            ${r.latitude ? `<div class="record-detail">📍 ${r.latitude.toFixed(4)}, ${r.longitude.toFixed(4)}</div>` : ''}
-            <div class="record-actions">
-                <button class="btn-small btn-primary" onclick='showDetail(${JSON.stringify(r)})'>View</button>
-            </div>
-        </div>`).join('');
-}
+    const filter = document.getElementById('myRecordFilter')?.value || 'all';
+    let filtered = records;
+    if (filter === 'complete') filtered = records.filter(r => !r.isAbsent);
+    if (filter === 'absent') filtered = records.filter(r => r.isAbsent);
 
-function renderMySummary(records) {
     const today = new Date().toDateString();
     document.getElementById('myTotal').textContent = records.length;
-    document.getElementById('myPhotos').textContent = records.filter(r=>r.photo).length;
-    document.getElementById('myGPS').textContent = records.filter(r=>r.latitude).length;
-    document.getElementById('myToday').textContent = records.filter(r=>r.localTimestamp && new Date(r.localTimestamp).toDateString()===today).length;
+    document.getElementById('myAbsent').textContent = records.filter(r=>r.isAbsent).length;
 
-    const buildingCounts = {};
-    const propCounts = {};
-    records.forEach(r => {
-        buildingCounts[r.buildingType] = (buildingCounts[r.buildingType]||0)+1;
-        propCounts[r.propertyType] = (propCounts[r.propertyType]||0)+1;
-    });
-    document.getElementById('myBuildingBreakdown').innerHTML = Object.entries(buildingCounts).map(([k,v])=>`<div>${k}: <b>${v}</b></div>`).join('') || '<div>No data yet</div>';
-    document.getElementById('myPropertyBreakdown').innerHTML = Object.entries(propCounts).map(([k,v])=>`<div>${k}: <b>${v}</b></div>`).join('') || '<div>No data yet</div>';
+    const list = document.getElementById('myRecordsList');
+    const empty = document.getElementById('myEmptyRecords');
+    if (!filtered.length) { list.innerHTML=''; empty.classList.remove('hidden'); return; }
+    empty.classList.add('hidden');
+    list.innerHTML = filtered.map(r => recordCard(r, false)).join('');
+}
+
+function renderFollowUp(records) {
+    const absent = records.filter(r => r.isAbsent);
+    const list = document.getElementById('followUpList');
+    const empty = document.getElementById('followUpEmpty');
+    if (!absent.length) { list.innerHTML=''; empty.classList.remove('hidden'); return; }
+    empty.classList.add('hidden');
+    list.innerHTML = absent.map(r => recordCard(r, false)).join('');
+}
+
+function recordCard(r, showWorker) {
+    const absent = r.isAbsent;
+    return `<div class="record-card ${absent?'absent':'complete'}">
+        <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:6px">
+            <div>
+                <span class="record-id">ID: ${r.propertyId}</span>
+                ${absent ? '<span class="badge badge-absent" style="margin-left:8px">🔴 Owner Absent</span>' : '<span class="badge badge-complete" style="margin-left:8px">✅ Complete</span>'}
+            </div>
+            <div style="font-size:11px;color:#999;text-align:right">${r.localTimestamp ? new Date(r.localTimestamp).toLocaleDateString() : ''}</div>
+        </div>
+        ${r.organizationName ? `<div class="record-detail"><b>Org:</b> ${r.organizationName}</div>` : ''}
+        ${r.ownerName ? `<div class="record-detail"><b>${r.ownerType||'Owner'}:</b> ${r.ownerName}</div>` : ''}
+        <div class="record-detail">🏠 ${r.propertyType} &nbsp;|&nbsp; 🏗️ ${r.buildingType}</div>
+        <div style="margin-top:5px">
+            ${r.photo ? '<span class="badge badge-photo">📷 Photo</span> ' : ''}
+            ${r.latitude ? '<span class="badge badge-gps">📍 GPS</span> ' : ''}
+            ${showWorker ? `<span class="badge badge-worker">👤 ${r.workerName||'Unknown'}</span>` : ''}
+        </div>
+        <div class="record-actions">
+            <button class="btn-small btn-primary" onclick='showDetail(${JSON.stringify(r).replace(/'/g,"&#39;")})'>👁 View</button>
+        </div>
+    </div>`;
 }
 
 // ========== ADMIN DATA ==========
 async function loadAdminData() {
-    loadAdminSettings();
     try {
         db.collection('records').orderBy('localTimestamp','desc').onSnapshot(snap => {
             allRecords = snap.docs.map(d => ({id:d.id,...d.data()}));
@@ -767,7 +816,8 @@ async function loadAdminData() {
             renderAllRecords();
         });
         db.collection('users').onSnapshot(snap => {
-            snap.docs.forEach(d => { allUsers[d.id] = d.data(); });
+            allUsers = {};
+            snap.docs.forEach(d => { allUsers[d.id] = {...d.data(), uid:d.id}; });
             renderWorkers();
             populateWorkerFilter();
         });
@@ -778,74 +828,55 @@ function renderAdminOverview() {
     const today = new Date().toDateString();
     const workers = new Set(allRecords.map(r=>r.workerUid));
     document.getElementById('adminTotal').textContent = allRecords.length;
-    document.getElementById('adminWorkers').textContent = workers.size;
-    document.getElementById('adminToday').textContent = allRecords.filter(r=>r.localTimestamp && new Date(r.localTimestamp).toDateString()===today).length;
-    document.getElementById('adminPhotos').textContent = allRecords.filter(r=>r.photo).length;
+    document.getElementById('adminToday').textContent = allRecords.filter(r=>r.localTimestamp&&new Date(r.localTimestamp).toDateString()===today).length;
+    document.getElementById('adminAbsent').textContent = allRecords.filter(r=>r.isAbsent).length;
+    document.getElementById('adminWorkerCount').textContent = Object.values(allUsers).filter(u=>u.role==='worker').length;
 
-    const buildingCounts = {};
-    const propCounts = {};
-    allRecords.forEach(r => {
-        buildingCounts[r.buildingType] = (buildingCounts[r.buildingType]||0)+1;
-        propCounts[r.propertyType] = (propCounts[r.propertyType]||0)+1;
-    });
-    document.getElementById('adminBuildingBreakdown').innerHTML = Object.entries(buildingCounts).map(([k,v])=>`<div>${k}: <b>${v}</b></div>`).join('') || '<div>No data</div>';
-    document.getElementById('adminPropertyBreakdown').innerHTML = Object.entries(propCounts).map(([k,v])=>`<div>${k}: <b>${v}</b></div>`).join('') || '<div>No data</div>';
+    const bc={}, pc={};
+    allRecords.forEach(r=>{ bc[r.buildingType]=(bc[r.buildingType]||0)+1; pc[r.propertyType]=(pc[r.propertyType]||0)+1; });
+    document.getElementById('adminBuildingBreakdown').innerHTML = Object.entries(bc).map(([k,v])=>`<div>${k}: <b>${v}</b></div>`).join('') || '<div style="color:#999">No data</div>';
+    document.getElementById('adminPropertyBreakdown').innerHTML = Object.entries(pc).map(([k,v])=>`<div>${k}: <b>${v}</b></div>`).join('') || '<div style="color:#999">No data</div>';
 
-    // Worker performance today
-    const todayByWorker = {};
-    allRecords.filter(r=>r.localTimestamp && new Date(r.localTimestamp).toDateString()===today).forEach(r => {
-        const name = allUsers[r.workerUid]?.name || r.workerEmail || 'Unknown';
-        todayByWorker[name] = (todayByWorker[name]||0)+1;
-    });
-    document.getElementById('adminWorkerToday').innerHTML = Object.entries(todayByWorker).map(([k,v])=>
-        `<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border)"><span>${k}</span><b>${v} records</b></div>`
-    ).join('') || '<div style="color:#999">No submissions today</div>';
+    const tw={};
+    allRecords.filter(r=>r.localTimestamp&&new Date(r.localTimestamp).toDateString()===today)
+        .forEach(r=>{ const n=allUsers[r.workerUid]?.name||r.workerEmail||'Unknown'; tw[n]=(tw[n]||0)+1; });
+    document.getElementById('adminWorkerToday').innerHTML = Object.entries(tw).map(([k,v])=>
+        `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border)"><span>👤 ${k}</span><b>${v} records</b></div>`
+    ).join('') || '<div style="color:#999;padding:8px 0">No submissions today</div>';
 }
 
 function renderAllRecords(filtered) {
     const records = filtered || allRecords;
-    document.getElementById('recordCount').textContent = `Showing ${records.length} records`;
+    document.getElementById('recordCount').textContent = `Showing ${records.length} of ${allRecords.length} records`;
     const list = document.getElementById('allRecordsList');
     const empty = document.getElementById('allEmptyRecords');
     if (!records.length) { list.innerHTML=''; empty.classList.remove('hidden'); return; }
     empty.classList.add('hidden');
-    list.innerHTML = records.map(r => `
-        <div class="record-card">
-            <div style="display:flex;justify-content:space-between;align-items:start">
-                <div>
-                    <div class="record-id">ID: ${r.propertyId}</div>
-                    ${r.organizationName ? `<div class="record-detail"><b>Org:</b> ${r.organizationName}</div>` : ''}
-                    <div class="record-detail"><b>${r.ownerType||'Owner'}:</b> ${r.ownerName}</div>
-                </div>
-                <div style="text-align:right">
-                    <div style="font-size:11px;color:#999">${r.localTimestamp ? new Date(r.localTimestamp).toLocaleDateString() : ''}</div>
-                    ${r.photo ? '<span style="font-size:11px;background:#e6ffed;color:#22863a;padding:2px 6px;border-radius:8px">📷</span>' : ''}
-                </div>
-            </div>
-            <div class="record-detail">📱 ${r.contact} &nbsp;|&nbsp; 🏠 ${r.propertyType} &nbsp;|&nbsp; 🏗️ ${r.buildingType}</div>
-            <div class="worker-tag">👤 ${allUsers[r.workerUid]?.name || r.workerEmail || 'Unknown'}</div>
-            <div class="record-actions">
-                <button class="btn-small btn-primary" onclick='showDetail(${JSON.stringify(r)})'>View</button>
-            </div>
-        </div>`).join('');
+    list.innerHTML = records.map(r => recordCard(r, true)).join('');
 }
 
 function renderWorkers() {
-    const workers = Object.entries(allUsers).filter(([,u]) => u.role === 'worker');
+    const workers = Object.values(allUsers).filter(u => u.role === 'worker');
     const el = document.getElementById('workersList');
-    if (!workers.length) { el.innerHTML = '<div class="empty-state"><div class="empty-state-icon">👥</div><p>No workers registered yet.</p></div>'; return; }
-    el.innerHTML = workers.map(([uid, u]) => {
-        const workerRecords = allRecords.filter(r => r.workerUid === uid);
+    if (!workers.length) { el.innerHTML='<div class="empty-state"><div class="empty-state-icon">👥</div><p>No workers yet. Add one above.</p></div>'; return; }
+    el.innerHTML = workers.map(u => {
+        const recs = allRecords.filter(r=>r.workerUid===u.uid);
         const today = new Date().toDateString();
-        const todayCount = workerRecords.filter(r=>r.localTimestamp && new Date(r.localTimestamp).toDateString()===today).length;
-        const photoCount = workerRecords.filter(r=>r.photo).length;
+        const todayCount = recs.filter(r=>r.localTimestamp&&new Date(r.localTimestamp).toDateString()===today).length;
+        const absentCount = recs.filter(r=>r.isAbsent).length;
         return `<div class="worker-card">
-            <div class="worker-name">👤 ${u.name}</div>
-            <div style="font-size:12px;color:var(--text2)">${u.email} &nbsp;|&nbsp; 📱 ${u.phone||'N/A'}</div>
+            <div style="display:flex;justify-content:space-between;align-items:start">
+                <div>
+                    <div class="worker-name">👤 ${u.name}</div>
+                    <div style="font-size:12px;color:var(--text2)">📧 ${u.email}</div>
+                    <div style="font-size:12px;color:var(--text2)">📱 ${u.phone||'N/A'}</div>
+                </div>
+                <button class="btn-small btn-danger" onclick="deleteWorker('${u.uid}','${u.name}')">🗑 Remove</button>
+            </div>
             <div class="worker-stats">
-                <div class="worker-stat"><div class="worker-stat-val">${workerRecords.length}</div><div class="worker-stat-lbl">Total</div></div>
+                <div class="worker-stat"><div class="worker-stat-val">${recs.length}</div><div class="worker-stat-lbl">Total</div></div>
                 <div class="worker-stat"><div class="worker-stat-val">${todayCount}</div><div class="worker-stat-lbl">Today</div></div>
-                <div class="worker-stat"><div class="worker-stat-val">${photoCount}</div><div class="worker-stat-lbl">Photos</div></div>
+                <div class="worker-stat"><div class="worker-stat-val" style="color:var(--warning)">${absentCount}</div><div class="worker-stat-lbl">Absent</div></div>
             </div>
         </div>`;
     }).join('');
@@ -853,33 +884,32 @@ function renderWorkers() {
 
 function populateWorkerFilter() {
     const sel = document.getElementById('filterWorker');
-    const current = sel.value;
+    const cur = sel.value;
     sel.innerHTML = '<option value="">All Workers</option>' +
-        Object.entries(allUsers).filter(([,u])=>u.role==='worker').map(([uid,u])=>
-            `<option value="${uid}">${u.name}</option>`
-        ).join('');
-    sel.value = current;
+        Object.values(allUsers).filter(u=>u.role==='worker').map(u=>`<option value="${u.uid}">${u.name}</option>`).join('');
+    sel.value = cur;
 }
 
 function filterRecords() {
-    const workerFilter = document.getElementById('filterWorker').value;
-    const typeFilter = document.getElementById('filterType').value;
-    const buildingFilter = document.getElementById('filterBuilding').value;
-    let filtered = allRecords;
-    if (workerFilter) filtered = filtered.filter(r => r.workerUid === workerFilter);
-    if (typeFilter) filtered = filtered.filter(r => r.propertyType === typeFilter);
-    if (buildingFilter) filtered = filtered.filter(r => r.buildingType === buildingFilter);
-    renderAllRecords(filtered);
+    const wf = document.getElementById('filterWorker').value;
+    const tf = document.getElementById('filterType').value;
+    const sf = document.getElementById('filterStatus').value;
+    let f = allRecords;
+    if (wf) f = f.filter(r=>r.workerUid===wf);
+    if (tf) f = f.filter(r=>r.propertyType===tf);
+    if (sf==='complete') f = f.filter(r=>!r.isAbsent);
+    if (sf==='absent') f = f.filter(r=>r.isAbsent);
+    renderAllRecords(f);
 }
 
 // ========== SETTINGS ==========
 async function loadVCName() {
     try {
         const doc = await db.collection('settings').doc('app').get();
-        if (doc.exists && doc.data().vcName) {
+        if (doc.exists && doc.data().vcName)
             document.getElementById('vcNameDisplay').textContent = '📍 ' + doc.data().vcName;
-        }
-    } catch(e) {}
+        else document.getElementById('vcNameDisplay').textContent = 'Village Council';
+    } catch(e) { document.getElementById('vcNameDisplay').textContent = 'Village Council'; }
 }
 
 async function loadAdminSettings() {
@@ -896,33 +926,31 @@ async function saveAdminSettings() {
     const vcName = document.getElementById('adminVcInput').value.trim();
     if (!vcName) return;
     try {
-        await db.collection('settings').doc('app').set({ vcName }, { merge: true });
+        await db.collection('settings').doc('app').set({ vcName }, { merge:true });
         document.getElementById('adminVcName').textContent = '📍 ' + vcName;
         alert('✓ Settings saved!');
-    } catch(e) { alert('Error: ' + e.message); }
+    } catch(e) { alert('Error: '+e.message); }
 }
 
 // ========== EXPORT ==========
-function exportMyData() {
-    exportCSV(allRecords.filter(r=>r.workerUid===currentUser?.uid), 'my-records');
-}
-
-function exportAllData() {
-    exportCSV(allRecords, 'all-records');
-}
+function exportAllData() { exportCSV(allRecords, 'all-records'); }
+function exportAbsentData() { exportCSV(allRecords.filter(r=>r.isAbsent), 'owner-absent'); }
 
 function exportCSV(records, filename) {
     if (!records.length) { alert('No records to export'); return; }
     const rows = [
-        ['Property ID','Organization/Institution','Owner/Contact Person','Person Type','Father/Husband/Designation','Contact','Property Type','Building Type','Latitude','Longitude','Remarks','Worker Name','Date'],
-        ...records.map(r => [
-            r.propertyId, r.organizationName||'', r.ownerName||'', r.ownerType||'Owner',
-            r.fatherHusbandName||r.designation||'', r.contact, r.propertyType, r.buildingType,
-            r.latitude||'', r.longitude||'', r.remarks||'',
-            allUsers[r.workerUid]?.name||r.workerEmail||'', r.localTimestamp ? new Date(r.localTimestamp).toLocaleString() : ''
+        ['Property ID','Status','Organization/Institution','Owner/Contact Person','Person Type','Father/Husband','Designation','Contact','Property Type','Building Type','Latitude','Longitude','GPS Accuracy','Remarks','Worker Name','Date'],
+        ...records.map(r=>[
+            r.propertyId, r.isAbsent?'Owner Absent':'Complete',
+            r.organizationName||'', r.ownerName||'', r.ownerType||'Owner',
+            r.fatherHusbandName||'', r.designation||'', r.contact||'',
+            r.propertyType, r.buildingType,
+            r.latitude||'', r.longitude||'', r.accuracy||'',
+            r.remarks||'', allUsers[r.workerUid]?.name||r.workerEmail||'',
+            r.localTimestamp ? new Date(r.localTimestamp).toLocaleString() : ''
         ])
     ];
-    const csv = rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+    const csv = rows.map(r=>r.map(c=>`"${String(c||'').replace(/"/g,'""')}"`).join(',')).join('\n');
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
     a.download = `property-tax-${filename}-${new Date().toISOString().split('T')[0]}.csv`;
@@ -932,31 +960,31 @@ function exportCSV(records, filename) {
 // ========== MODAL ==========
 function showDetail(r) {
     if (typeof r === 'string') r = JSON.parse(r);
+    document.getElementById('modalTitle').textContent = `Property: ${r.propertyId}`;
     document.getElementById('modalBody').innerHTML = `
         <div style="background:var(--bg);padding:12px;border-radius:8px;margin-bottom:12px">
+            ${r.isAbsent ? '<div style="color:var(--warning);font-weight:600;margin-bottom:6px">🔴 Owner Absent — Needs Follow-up</div>' : '<div style="color:var(--success);font-weight:600;margin-bottom:6px">✅ Complete Record</div>'}
             <b>Property ID:</b> ${r.propertyId}<br>
             <b>Type:</b> ${r.propertyType} &nbsp;|&nbsp; <b>Building:</b> ${r.buildingType}<br>
             <b>Date:</b> ${r.localTimestamp ? new Date(r.localTimestamp).toLocaleString() : 'N/A'}
         </div>
         ${r.organizationName ? `<div style="margin-bottom:10px"><b>Organization:</b> ${r.organizationName}</div>` : ''}
-        <div style="margin-bottom:10px">
-            <b>${r.ownerType||'Owner'}:</b> ${r.ownerName}<br>
-            ${r.fatherHusbandName ? `<b>Father/Husband:</b> ${r.fatherHusbandName}<br>` : ''}
-            ${r.designation ? `<b>Designation:</b> ${r.designation}<br>` : ''}
-            <b>Contact:</b> ${r.contact}
-        </div>
-        ${r.latitude ? `<div style="margin-bottom:10px"><b>📍 GPS:</b> ${r.latitude.toFixed(6)}, ${r.longitude.toFixed(6)} (±${r.accuracy?.toFixed(0)||'?'}m)<br>
-        <a href="https://maps.google.com/?q=${r.latitude},${r.longitude}" target="_blank" style="color:var(--primary);font-size:13px">Open in Google Maps →</a></div>` : ''}
-        ${r.remarks ? `<div style="margin-bottom:10px"><b>Remarks:</b> ${r.remarks}</div>` : ''}
+        ${r.ownerName ? `<div style="margin-bottom:6px"><b>${r.ownerType||'Owner'}:</b> ${r.ownerName}</div>` : ''}
+        ${r.fatherHusbandName ? `<div style="margin-bottom:6px"><b>Father/Husband:</b> ${r.fatherHusbandName}</div>` : ''}
+        ${r.designation ? `<div style="margin-bottom:6px"><b>Designation:</b> ${r.designation}</div>` : ''}
+        ${r.contact ? `<div style="margin-bottom:10px"><b>Contact:</b> ${r.contact}</div>` : ''}
+        ${r.latitude ? `<div style="margin-bottom:10px">
+            <b>📍 GPS:</b> ${r.latitude.toFixed(6)}, ${r.longitude.toFixed(6)} (±${r.accuracy?.toFixed(0)||'?'}m)<br>
+            <a href="https://maps.google.com/?q=${r.latitude},${r.longitude}" target="_blank" style="color:var(--primary);font-size:13px">📌 Open in Google Maps →</a>
+        </div>` : ''}
+        ${r.remarks ? `<div style="margin-bottom:10px;background:var(--bg);padding:8px;border-radius:6px"><b>Remarks:</b> ${r.remarks}</div>` : ''}
         ${isAdmin ? `<div style="margin-bottom:10px"><b>Worker:</b> ${allUsers[r.workerUid]?.name||r.workerEmail||'Unknown'}</div>` : ''}
-        ${r.photo ? `<div><b>Photo:</b><br><img src="${r.photo}" style="width:100%;border-radius:8px;margin-top:6px;max-height:300px;object-fit:cover"></div>` : ''}
+        ${r.photo ? `<div><b>📷 Photo:</b><br><img src="${r.photo}" style="width:100%;border-radius:8px;margin-top:6px;max-height:280px;object-fit:cover"></div>` : '<div style="color:#999;font-size:13px">No photo</div>'}
     `;
     document.getElementById('detailModal').classList.add('active');
 }
 
-function closeModal() {
-    document.getElementById('detailModal').classList.remove('active');
-}
+function closeModal() { document.getElementById('detailModal').classList.remove('active'); }
 
 // ========== TAB SWITCHING ==========
 function switchTab(tabId, btn) {
@@ -964,8 +992,7 @@ function switchTab(tabId, btn) {
     document.querySelectorAll('#workerView .tab-btn').forEach(b=>b.classList.remove('active'));
     document.getElementById(tabId).classList.add('active');
     if (btn) btn.classList.add('active');
-    if (tabId === 'myrecords') loadMyRecords();
-    if (tabId === 'summary') loadMyRecords();
+    if (tabId==='myrecords'||tabId==='followup') loadMyRecords();
 }
 
 function switchAdminTab(tabId, btn) {
@@ -979,7 +1006,7 @@ function showAlert(msg, type) {
     const box = document.getElementById('alertBox');
     if (!box) return;
     box.innerHTML = `<div class="alert alert-${type}">${msg}</div>`;
-    setTimeout(()=>{ if(box.firstChild) box.innerHTML=''; }, 4000);
+    if (type==='success') setTimeout(()=>{ box.innerHTML=''; }, 4000);
 }
 </script>
 </body>
