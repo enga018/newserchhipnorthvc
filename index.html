@@ -1069,7 +1069,7 @@ function renderWorkers() {
         const recs = allRecords.filter(r=>r.workerUid===u.uid);
         const today = new Date().toDateString();
         const todayCount = recs.filter(r=>r.localTimestamp&&new Date(r.localTimestamp).toDateString()===today).length;
-        const absentCount = recs.filter(r=>isRecordAbsent(r)).length;
+        const absentCount = recs.filter(r=>needsFollowUp(r)).length;
         return `<div class="worker-card">
             <div style="display:flex;justify-content:space-between;align-items:start">
                 <div>
@@ -1082,7 +1082,7 @@ function renderWorkers() {
             <div class="worker-stats">
                 <div class="worker-stat"><div class="worker-stat-val">${recs.length}</div><div class="worker-stat-lbl">Total</div></div>
                 <div class="worker-stat"><div class="worker-stat-val">${todayCount}</div><div class="worker-stat-lbl">Today</div></div>
-                <div class="worker-stat"><div class="worker-stat-val" style="color:var(--warning)">${absentCount}</div><div class="worker-stat-lbl">Absent</div></div>
+                <div class="worker-stat"><div class="worker-stat-val" style="color:var(--warning)">${absentCount}</div><div class="worker-stat-lbl">Incomplete</div></div>
             </div>
         </div>`;
     }).join('');
