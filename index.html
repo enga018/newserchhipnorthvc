@@ -542,7 +542,7 @@ async function registerUser() {
             name, phone, email, role: 'worker',
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
         });
-    } catch(e) { showAuthAlert(friendlyError(e.code), "error"); if(btn){btn.textContent="🔐 Login";btn.disabled=false;} }
+    } catch(e) { showAuthAlert(friendlyError(e.code), "error"); }
 }
 
 async function addWorker() {
