@@ -146,7 +146,14 @@
 <body>
 
 <!-- AUTH SCREEN -->
-<div id="authScreen" class="auth-screen">
+<!-- Startup splash -->
+<div id="splashScreen" style="position:fixed;inset:0;background:#f5f7fa;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:2000">
+    <div style="font-size:48px">🏘️</div>
+    <div style="font-size:16px;color:#2c5282;font-weight:600;margin-top:12px">Property Tax Collector</div>
+    <div style="font-size:13px;color:#586069;margin-top:8px">Loading...</div>
+</div>
+
+<div id="authScreen" class="auth-screen hidden">
     <div class="auth-box">
         <div class="auth-logo">
             <div style="font-size:42px">🏘️</div>
@@ -479,6 +486,7 @@ auth.onAuthStateChanged(async user => {
     if (user) {
         currentUser = user;
         isAdmin = user.email === ADMIN_EMAIL;
+        document.getElementById('splashScreen').classList.add('hidden');
         document.getElementById('authScreen').classList.add('hidden');
         document.getElementById('mainApp').classList.remove('hidden');
         if (isAdmin) {
@@ -494,6 +502,7 @@ auth.onAuthStateChanged(async user => {
         }
     } else {
         currentUser = null;
+        document.getElementById('splashScreen').classList.add('hidden');
         document.getElementById('authScreen').classList.remove('hidden');
         document.getElementById('mainApp').classList.add('hidden');
         document.getElementById('workerView').classList.add('hidden');
@@ -758,10 +767,14 @@ async function loadMyRecords() {
     if (!currentUser) return;
     try {
         db.collection('records').where('workerUid','==',currentUser.uid)
-            .orderBy('localTimestamp','desc').onSnapshot(snap => {
+            .onSnapshot(snap => {
             myRecordsCache = snap.docs.map(d => ({id:d.id,...d.data()}));
+            myRecordsCache.sort((a,b) => (b.localTimestamp||'').localeCompare(a.localTimestamp||''));
             renderMyRecords(myRecordsCache);
             renderFollowUp(myRecordsCache);
+        }, err => {
+            console.error('Records query error:', err);
+            showAlert('Error loading records: ' + err.message, 'error');
         });
     } catch(e) { console.error(e); }
 }
@@ -769,12 +782,12 @@ async function loadMyRecords() {
 function renderMyRecords(records) {
     const filter = document.getElementById('myRecordFilter')?.value || 'all';
     let filtered = records;
-    if (filter === 'complete') filtered = records.filter(r => !r.isAbsent);
-    if (filter === 'absent') filtered = records.filter(r => r.isAbsent);
+    if (filter === 'complete') filtered = records.filter(r => !isRecordAbsent(r));
+    if (filter === 'absent') filtered = records.filter(r => isRecordAbsent(r));
 
     const today = new Date().toDateString();
     document.getElementById('myTotal').textContent = records.length;
-    document.getElementById('myAbsent').textContent = records.filter(r=>r.isAbsent).length;
+    document.getElementById('myAbsent').textContent = records.filter(r=>isRecordAbsent(r)).length;
 
     const list = document.getElementById('myRecordsList');
     const empty = document.getElementById('myEmptyRecords');
@@ -784,7 +797,7 @@ function renderMyRecords(records) {
 }
 
 function renderFollowUp(records) {
-    const absent = records.filter(r => r.isAbsent);
+    const absent = records.filter(r => isRecordAbsent(r));
     const list = document.getElementById('followUpList');
     const empty = document.getElementById('followUpEmpty');
     if (!absent.length) { list.innerHTML=''; empty.classList.remove('hidden'); return; }
@@ -792,8 +805,16 @@ function renderFollowUp(records) {
     list.innerHTML = absent.map(r => recordCard(r, false)).join('');
 }
 
+function isRecordAbsent(r) {
+    // Institutions are never "absent" (org name is required)
+    if (r.isInstitution) return false;
+    // Use stored field if present, else compute from missing owner name
+    if (typeof r.isAbsent === 'boolean') return r.isAbsent;
+    return !r.ownerName;
+}
+
 function recordCard(r, showWorker) {
-    const absent = r.isAbsent;
+    const absent = isRecordAbsent(r);
     return `<div class="record-card ${absent?'absent':'complete'}">
         <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:6px">
             <div>
@@ -838,7 +859,7 @@ function renderAdminOverview() {
     const workers = new Set(allRecords.map(r=>r.workerUid));
     document.getElementById('adminTotal').textContent = allRecords.length;
     document.getElementById('adminToday').textContent = allRecords.filter(r=>r.localTimestamp&&new Date(r.localTimestamp).toDateString()===today).length;
-    document.getElementById('adminAbsent').textContent = allRecords.filter(r=>r.isAbsent).length;
+    document.getElementById('adminAbsent').textContent = allRecords.filter(r=>isRecordAbsent(r)).length;
     document.getElementById('adminWorkerCount').textContent = Object.values(allUsers).filter(u=>u.role==='worker').length;
 
     const bc={}, pc={};
@@ -872,7 +893,7 @@ function renderWorkers() {
         const recs = allRecords.filter(r=>r.workerUid===u.uid);
         const today = new Date().toDateString();
         const todayCount = recs.filter(r=>r.localTimestamp&&new Date(r.localTimestamp).toDateString()===today).length;
-        const absentCount = recs.filter(r=>r.isAbsent).length;
+        const absentCount = recs.filter(r=>isRecordAbsent(r)).length;
         return `<div class="worker-card">
             <div style="display:flex;justify-content:space-between;align-items:start">
                 <div>
@@ -906,8 +927,8 @@ function filterRecords() {
     let f = allRecords;
     if (wf) f = f.filter(r=>r.workerUid===wf);
     if (tf) f = f.filter(r=>r.propertyType===tf);
-    if (sf==='complete') f = f.filter(r=>!r.isAbsent);
-    if (sf==='absent') f = f.filter(r=>r.isAbsent);
+    if (sf==='complete') f = f.filter(r=>!isRecordAbsent(r));
+    if (sf==='absent') f = f.filter(r=>isRecordAbsent(r));
     renderAllRecords(f);
 }
 
@@ -943,14 +964,14 @@ async function saveAdminSettings() {
 
 // ========== EXPORT ==========
 function exportAllData() { exportCSV(allRecords, 'all-records'); }
-function exportAbsentData() { exportCSV(allRecords.filter(r=>r.isAbsent), 'owner-absent'); }
+function exportAbsentData() { exportCSV(allRecords.filter(r=>isRecordAbsent(r)), 'owner-absent'); }
 
 function exportCSV(records, filename) {
     if (!records.length) { alert('No records to export'); return; }
     const rows = [
         ['Property ID','Status','Organization/Institution','Owner/Contact Person','Person Type','Father/Husband','Designation','Contact','Property Type','Building Type','Latitude','Longitude','GPS Accuracy','Remarks','Worker Name','Date'],
         ...records.map(r=>[
-            r.propertyId, r.isAbsent?'Owner Absent':'Complete',
+            r.propertyId, isRecordAbsent(r)?'Owner Absent':'Complete',
             r.organizationName||'', r.ownerName||'', r.ownerType||'Owner',
             r.fatherHusbandName||'', r.designation||'', r.contact||'',
             r.propertyType, r.buildingType,
@@ -972,7 +993,7 @@ function showDetail(r) {
     document.getElementById('modalTitle').textContent = `Property: ${r.propertyId}`;
     document.getElementById('modalBody').innerHTML = `
         <div style="background:var(--bg);padding:12px;border-radius:8px;margin-bottom:12px">
-            ${r.isAbsent ? '<div style="color:var(--warning);font-weight:600;margin-bottom:6px">🔴 Owner Absent — Needs Follow-up</div>' : '<div style="color:var(--success);font-weight:600;margin-bottom:6px">✅ Complete Record</div>'}
+            ${isRecordAbsent(r) ? '<div style="color:var(--warning);font-weight:600;margin-bottom:6px">🔴 Owner Absent — Needs Follow-up</div>' : '<div style="color:var(--success);font-weight:600;margin-bottom:6px">✅ Complete Record</div>'}
             <b>Property ID:</b> ${r.propertyId}<br>
             <b>Type:</b> ${r.propertyType} &nbsp;|&nbsp; <b>Building:</b> ${r.buildingType}<br>
             <b>Date:</b> ${r.localTimestamp ? new Date(r.localTimestamp).toLocaleString() : 'N/A'}
