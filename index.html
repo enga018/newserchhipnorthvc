@@ -207,7 +207,7 @@
             <form id="propertyForm" onsubmit="saveRecord(event)">
                 <div class="form-group">
                     <label>Property ID <span class="required-star">*</span></label>
-                    <div style="display:flex;align-items:center;gap:0"><span style="background:#e7f5ff;border:1.5px solid var(--border);border-right:none;padding:10px 12px;border-radius:6px 0 0 6px;font-size:14px;font-weight:600;color:var(--primary);white-space:nowrap">NSN-</span><input type="text" id="propertyId" placeholder="0001" pattern="[0-9]{4}" maxlength="4" required style="border-radius:0 6px 6px 0;border-left:none"></div><div class="text-muted" style="font-size:12px;margin-top:5px">Enter 4-digit number from sticker (e.g. 0001). NSN- is added automatically.</div>
+                    <div style="display:flex;align-items:center;gap:0"><span style="background:#e7f5ff;border:1.5px solid var(--border);border-right:none;padding:10px 12px;border-radius:6px 0 0 6px;font-size:14px;font-weight:600;color:var(--primary);white-space:nowrap">NSN-</span><input type="text" id="propertyId" placeholder="0001" pattern="(NSN-)?[0-9]{1,4}" maxlength="8" required style="border-radius:0 6px 6px 0;border-left:none"></div><div class="text-muted" style="font-size:12px;margin-top:5px">Enter 4-digit number from sticker (e.g. 0001). NSN- is added automatically.</div>
                 </div>
                 <div class="form-group">
                     <label>Property Type <span class="required-star">*</span></label>
@@ -630,7 +630,7 @@ async function saveRecord(e) {
 
     const profile = await getUserProfile(currentUser.uid);
     const data = {
-        propertyId: 'NSN-' + document.getElementById('propertyId').value.trim(),
+        const rawId = document.getElementById('propertyId').value.trim().replace(/^NSN-/i,'').replace(/^0+/,'').padStart(4,'0'); propertyId: 'NSN-' + rawId,
         propertyType: type,
         buildingType: document.getElementById('buildingType').value,
         isInstitution: isInst,
