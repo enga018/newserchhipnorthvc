@@ -733,8 +733,8 @@ async function saveRecord(e) {
     }
     const fullId = 'NSN-' + document.getElementById('propertyId').value.trim().replace(/^NSN-/i,'').replace(/^[0]*/,'').padStart(4,'0');
 
-    // RANGE CHECK (hard block if a range is assigned to this worker)
-    if (hasAssignedRange()) {
+    // RANGE CHECK (hard block for NEW records only; edits to own records always allowed)
+    if (!editingRecordId && hasAssignedRange()) {
         const num = parseInt(fullId.replace('NSN-',''), 10);
         if (num < myProfile.rangeStart || num > myProfile.rangeEnd) {
             showAlert(`⛔ ${fullId} is outside your assigned stickers (NSN-${String(myProfile.rangeStart).padStart(4,'0')} to NSN-${String(myProfile.rangeEnd).padStart(4,'0')}). Please check the sticker number.`, 'error');
