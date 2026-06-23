@@ -660,7 +660,23 @@ async function saveRecord(e) {
     const isInst = INSTITUTION_TYPES.includes(type);
     const ownerName = isInst ? '' : document.getElementById('ownerName').value.trim();
     const contact = isInst ? document.getElementById('instContact').value.trim() : document.getElementById('contact').value.trim();
-    const isAbsent = !isInst && !ownerName;
+
+    // Collect institution sub-fields
+    const orgName = isInst ? document.getElementById('organizationName').value.trim() : '';
+    const contactPerson = isInst ? document.getElementById('contactPerson').value.trim() : '';
+    const designation = isInst ? document.getElementById('designation').value.trim() : '';
+    const fatherHusband = isInst ? '' : document.getElementById('fatherHusbandName').value.trim();
+
+    // A record is INCOMPLETE (needs follow-up) if any expected detail is missing.
+    // Always-required (ID, GPS, photo, and org name for institutions) are enforced separately above.
+    let isAbsent;
+    if (isInst) {
+        // Institution: org name is mandatory; missing contact person, designation, or phone = needs follow-up
+        isAbsent = !contactPerson || !designation || !contact;
+    } else {
+        // Residential/Commercial: missing owner name, father/husband, or phone = needs follow-up
+        isAbsent = !ownerName || !fatherHusband || !contact;
+    }
     const fullId = 'NSN-' + document.getElementById('propertyId').value.trim().replace(/^NSN-/i,'').replace(/^[0]*/,'').padStart(4,'0');
 
     const btn = document.getElementById('submitBtn');
@@ -729,7 +745,7 @@ async function saveRecord(e) {
         } else {
             data.timestamp = firebase.firestore.FieldValue.serverTimestamp();
             await db.collection('records').add(data);
-            showAlert(isAbsent ? '✓ Saved — marked as Owner Absent for follow-up' : '✓ Record saved and synced!', 'success');
+            showAlert(isAbsent ? '✓ Saved — some details missing, marked for follow-up' : '✓ Record saved as complete!', 'success');
         }
         cancelEdit();
         resetForm();
@@ -908,10 +924,10 @@ function needsFollowUp(r) {
 }
 
 function isRecordAbsent(r) {
-    // Institutions are never "absent" (org name is required)
-    if (r.isInstitution) return false;
-    // Use stored field if present, else compute from missing owner name
+    // Trust the stored flag for all records saved by the app
     if (typeof r.isAbsent === 'boolean') return r.isAbsent;
+    // Fallback for very old records without the field
+    if (r.isInstitution) return false;
     return !r.ownerName;
 }
 
@@ -922,7 +938,11 @@ function recordCard(r, context) {
     const showWorker = isAdminView;
     let statusBadge;
     if (correction) statusBadge = '<span class="badge" style="margin-left:8px;background:#fff3cd;color:#856404">🟡 Needs Correction</span>';
-    else if (absent) statusBadge = '<span class="badge badge-absent" style="margin-left:8px">🔴 Owner Absent</span>';
+    else if (absent) {
+        // Residential with no owner name at all = "Owner Absent"; otherwise just "Incomplete"
+        const label = (!r.isInstitution && !r.ownerName) ? '🔴 Owner Absent' : '🔴 Incomplete';
+        statusBadge = `<span class="badge badge-absent" style="margin-left:8px">${label}</span>`;
+    }
     else statusBadge = '<span class="badge badge-complete" style="margin-left:8px">✅ Complete</span>';
     return `<div class="record-card ${absent||correction?'absent':'complete'}">
         <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:6px">
