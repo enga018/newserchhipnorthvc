@@ -459,9 +459,11 @@ const firebaseConfig = {
 };
 const ADMIN_EMAIL = "enga018@gmail.com";
 
+document.addEventListener("DOMContentLoaded", function() {
 firebase.initializeApp(firebaseConfig);
+
 // Show loading while auth state checks
-document.getElementById("authLoading").classList.remove("hidden");
+
 const auth = firebase.auth();
 const db = firebase.firestore();
 
@@ -473,7 +475,7 @@ let myRecordsCache = [];
 
 // ========== AUTH ==========
 auth.onAuthStateChanged(async user => {
-    document.getElementById("authLoading").classList.add("hidden");
+    
     if (user) {
         currentUser = user;
         isAdmin = user.email === ADMIN_EMAIL;
@@ -1015,6 +1017,7 @@ function showAlert(msg, type) {
     box.innerHTML = `<div class="alert alert-${type}">${msg}</div>`;
     if (type==='success') setTimeout(()=>{ box.innerHTML=''; }, 4000);
 }
+}); // end DOMContentLoaded
 </script>
 </body>
 </html>
