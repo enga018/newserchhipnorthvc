@@ -160,6 +160,7 @@
             <div style="font-size:42px">🏘️</div>
             <h1>Property Tax Collector</h1>
             <p>Village Council Field Data App</p>
+            <p id="authVersion" style="font-size:11px;color:#999;margin-top:6px"></p>
         </div>
         <div id="authAlert"></div>
         <div id="authLoading" class="hidden" style="text-align:center;padding:16px;color:var(--text2);font-size:14px">⏳ Please wait...</div>
@@ -461,6 +462,7 @@
             </div>
         </div>
     </div>
+    <div style="text-align:center;padding:16px 0 8px;font-size:11px;color:#999" id="versionFooter"></div>
 </div>
 
 <!-- Detail Modal -->
@@ -483,6 +485,7 @@ const firebaseConfig = {
     appId: "1:610573950046:web:2b545f876953a4eb18a8cf"
 };
 const ADMIN_EMAIL = "enga018@gmail.com";
+const APP_VERSION = "v1.0.1";
 
 
 firebase.initializeApp(firebaseConfig);
@@ -490,6 +493,13 @@ firebase.initializeApp(firebaseConfig);
 // Show loading while auth state checks
 
 const auth = firebase.auth();
+// Show app version
+(function(){
+    const av = document.getElementById('authVersion');
+    const vf = document.getElementById('versionFooter');
+    if (av) av.textContent = APP_VERSION;
+    if (vf) vf.textContent = 'Property Tax Collector ' + APP_VERSION;
+})();
 const db = firebase.firestore();
 
 let currentUser = null;
