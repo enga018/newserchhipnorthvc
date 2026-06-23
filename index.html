@@ -339,7 +339,7 @@
 
         <!-- FOLLOW UP TAB -->
         <div id="followup" class="form-section">
-            <div class="alert alert-warning">🔴 These properties need follow-up — owner was absent, or admin requested a correction (see notes).</div>
+            <div class="alert alert-warning">🔴 These properties need follow-up — some details are missing, or admin requested a correction (see notes).</div>
             <div id="followUpList" class="records-list"></div>
             <div id="followUpEmpty" class="empty-state hidden">
                 <div class="empty-state-icon">✅</div><p>No follow-ups needed!</p>
@@ -408,7 +408,7 @@
                 <select id="filterStatus" onchange="filterRecords()">
                     <option value="">All Status</option>
                     <option value="complete">✅ Complete</option>
-                    <option value="absent">🔴 Owner Absent</option>
+                    <option value="absent">🔴 Incomplete</option>
                     <option value="correction">🟡 Needs Correction</option>
                 </select>
             </div>
@@ -445,7 +445,7 @@
             <hr class="divider">
             <div class="section-title">Data Management</div>
             <button class="btn-primary" onclick="exportAllData()" style="margin-bottom:8px">⬇️ Export All Data (CSV)</button>
-            <button class="btn-primary" onclick="exportAbsentData()" style="background:#e65100">⬇️ Export Owner Absent Only</button>
+            <button class="btn-primary" onclick="exportAbsentData()" style="background:#e65100">⬇️ Export Incomplete Only</button>
             <hr class="divider">
             <div class="section-title" style="color:var(--warning)">⚠️ Danger Zone</div>
             <div style="background:#ffebee;border:1px solid #ea4c89;border-radius:8px;padding:12px">
@@ -923,6 +923,20 @@ function needsFollowUp(r) {
     return isRecordAbsent(r) || r.needsCorrection === true;
 }
 
+function missingFields(r) {
+    const m = [];
+    if (r.isInstitution) {
+        if (!r.contactPerson) m.push('Contact person');
+        if (!r.designation) m.push('Designation');
+        if (!r.contact) m.push('Phone number');
+    } else {
+        if (!r.ownerName) m.push('Owner name');
+        if (!r.fatherHusbandName) m.push('Father/Husband name');
+        if (!r.contact) m.push('Phone number');
+    }
+    return m;
+}
+
 function isRecordAbsent(r) {
     // Trust the stored flag for all records saved by the app
     if (typeof r.isAbsent === 'boolean') return r.isAbsent;
@@ -936,13 +950,10 @@ function recordCard(r, context) {
     const correction = r.needsCorrection === true;
     const isAdminView = context === 'admin';
     const showWorker = isAdminView;
+    const missing = missingFields(r);
     let statusBadge;
     if (correction) statusBadge = '<span class="badge" style="margin-left:8px;background:#fff3cd;color:#856404">🟡 Needs Correction</span>';
-    else if (absent) {
-        // Residential with no owner name at all = "Owner Absent"; otherwise just "Incomplete"
-        const label = (!r.isInstitution && !r.ownerName) ? '🔴 Owner Absent' : '🔴 Incomplete';
-        statusBadge = `<span class="badge badge-absent" style="margin-left:8px">${label}</span>`;
-    }
+    else if (absent) statusBadge = '<span class="badge badge-absent" style="margin-left:8px">🔴 Incomplete</span>';
     else statusBadge = '<span class="badge badge-complete" style="margin-left:8px">✅ Complete</span>';
     return `<div class="record-card ${absent||correction?'absent':'complete'}">
         <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:6px">
@@ -952,6 +963,7 @@ function recordCard(r, context) {
             </div>
             <div style="font-size:11px;color:#999;text-align:right">${r.localTimestamp ? new Date(r.localTimestamp).toLocaleDateString() : ''}</div>
         </div>
+        ${(absent && missing.length) ? `<div style="background:#ffebee;border-radius:4px;padding:5px 8px;margin-bottom:5px;font-size:12px;color:#cb2431">📋 Missing: ${missing.join(', ')}</div>` : ''}
         ${r.organizationName ? `<div class="record-detail"><b>Org:</b> ${r.organizationName}</div>` : ''}
         ${r.ownerName ? `<div class="record-detail"><b>${r.ownerType||'Owner'}:</b> ${r.ownerName}</div>` : ''}
         ${r.contact ? `<div class="record-detail">📱 ${r.contact}</div>` : ''}
@@ -1153,9 +1165,9 @@ async function resetEverything() {
 function exportCSV(records, filename) {
     if (!records.length) { alert('No records to export'); return; }
     const rows = [
-        ['Property ID','Status','Organization/Institution','Owner/Contact Person','Person Type','Father/Husband','Designation','Contact','Property Type','Building Type','Latitude','Longitude','GPS Accuracy','Remarks','Worker Name','Date'],
+        ['Property ID','Status','Missing Fields','Organization/Institution','Owner/Contact Person','Person Type','Father/Husband','Designation','Contact','Property Type','Building Type','Latitude','Longitude','GPS Accuracy','Remarks','Worker Name','Date'],
         ...records.map(r=>[
-            r.propertyId, r.needsCorrection?'Needs Correction':(isRecordAbsent(r)?'Owner Absent':'Complete'),
+            r.propertyId, r.needsCorrection?'Needs Correction':(isRecordAbsent(r)?'Incomplete':'Complete'), missingFields(r).join('; '),
             r.organizationName||'', r.ownerName||'', r.ownerType||'Owner',
             r.fatherHusbandName||'', r.designation||'', r.contact||'',
             r.propertyType, r.buildingType,
@@ -1177,7 +1189,7 @@ function showDetail(r) {
     document.getElementById('modalTitle').textContent = `Property: ${r.propertyId}`;
     document.getElementById('modalBody').innerHTML = `
         <div style="background:var(--bg);padding:12px;border-radius:8px;margin-bottom:12px">
-            ${r.needsCorrection ? '<div style="color:#856404;font-weight:600;margin-bottom:6px">🟡 Needs Correction — sent back to worker</div>' : (isRecordAbsent(r) ? '<div style="color:var(--warning);font-weight:600;margin-bottom:6px">🔴 Owner Absent — Needs Follow-up</div>' : '<div style="color:var(--success);font-weight:600;margin-bottom:6px">✅ Complete Record</div>')}
+            ${r.needsCorrection ? '<div style="color:#856404;font-weight:600;margin-bottom:6px">🟡 Needs Correction — sent back to worker</div>' : (isRecordAbsent(r) ? `<div style="color:var(--warning);font-weight:600;margin-bottom:6px">🔴 Incomplete — Needs Follow-up</div>${missingFields(r).length ? `<div style="background:#ffebee;border-radius:4px;padding:6px 8px;margin-bottom:6px;font-size:13px;color:#cb2431">📋 Missing: ${missingFields(r).join(', ')}</div>` : ''}` : '<div style="color:var(--success);font-weight:600;margin-bottom:6px">✅ Complete Record</div>')}
             ${r.adminFlagNote ? `<div style="background:#fff3cd;border-radius:4px;padding:6px 8px;margin-bottom:6px;font-size:13px;color:#856404">⚠️ <b>Fix needed:</b> ${r.adminFlagNote}</div>` : ''}
             <b>Property ID:</b> ${r.propertyId}<br>
             <b>Type:</b> ${r.propertyType} &nbsp;|&nbsp; <b>Building:</b> ${r.buildingType}<br>
