@@ -221,6 +221,7 @@
                 <div class="form-group">
                     <label>Property ID <span class="required-star">*</span></label>
                     <div style="display:flex;align-items:center;gap:0"><span style="background:#e7f5ff;border:1.5px solid var(--border);border-right:none;padding:10px 12px;border-radius:6px 0 0 6px;font-size:14px;font-weight:600;color:var(--primary);white-space:nowrap">NSN-</span><input type="text" id="propertyId" placeholder="0001" pattern="(NSN-)?[0-9]{1,4}" maxlength="8" required style="border-radius:0 6px 6px 0;border-left:none"></div><div class="text-muted" style="font-size:12px;margin-top:5px">Enter 4-digit number from sticker (e.g. 0001). NSN- is added automatically.</div>
+                    <div id="rangeHint" style="font-size:12px;margin-top:4px"></div>
                 </div>
                 <div class="form-group">
                     <label>Property Type <span class="required-star">*</span></label>
@@ -243,6 +244,27 @@
                         <option value="Semi RCC">Semi RCC</option>
                         <option value="Assam Type">Assam Type</option>
                     </select>
+                </div>
+
+                <hr class="divider">
+                <div class="section-title">📍 GPS Location <span class="required-star">*</span></div>
+                <div class="form-group">
+                    <button type="button" class="btn-photo" onclick="captureLocation()" style="background:var(--success)">📍 Capture GPS Location</button>
+                    <div id="locationStatus" class="location-status hidden"></div>
+                    <input type="hidden" id="latitude">
+                    <input type="hidden" id="longitude">
+                    <input type="hidden" id="accuracy">
+                </div>
+
+                <div class="section-title">📷 Property Photo <span class="required-star">*</span> <span style="font-size:11px;color:var(--text2);font-weight:400">(GPS auto-stamped on photo)</span></div>
+                <div class="form-group">
+                    <img id="photoPreview" class="photo-preview">
+                    <div id="photoStatus" class="photo-status needed">📷 Photo required — tap to take</div>
+                    <div class="photo-buttons">
+                        <button type="button" class="btn-photo" onclick="document.getElementById('photoInput').click()" style="flex:1">📷 Take Photo</button>
+                        <button type="button" class="btn-photo" onclick="clearPhoto()" style="background:#666;flex:0 0 auto;width:auto;padding:10px 14px">✕</button>
+                    </div>
+                    <input type="file" id="photoInput" accept="image/*" capture="environment" onchange="handlePhotoCapture(event)">
                 </div>
 
                 <hr class="divider">
@@ -283,27 +305,6 @@
                         <label>Contact Number <span style="font-size:12px;color:var(--text2);font-weight:400">(optional)</span></label>
                         <input type="tel" id="instContact" placeholder="10-digit mobile number" pattern="[0-9]{10}">
                     </div>
-                </div>
-
-                <hr class="divider">
-                <div class="section-title">📍 GPS Location <span class="required-star">*</span></div>
-                <div class="form-group">
-                    <button type="button" class="btn-photo" onclick="captureLocation()" style="background:var(--success)">📍 Capture GPS Location</button>
-                    <div id="locationStatus" class="location-status hidden"></div>
-                    <input type="hidden" id="latitude">
-                    <input type="hidden" id="longitude">
-                    <input type="hidden" id="accuracy">
-                </div>
-
-                <div class="section-title">📷 Property Photo <span class="required-star">*</span> <span style="font-size:11px;color:var(--text2);font-weight:400">(capture GPS first to stamp it on photo)</span></div>
-                <div class="form-group">
-                    <img id="photoPreview" class="photo-preview">
-                    <div id="photoStatus" class="photo-status needed">📷 Photo required — tap to take</div>
-                    <div class="photo-buttons">
-                        <button type="button" class="btn-photo" onclick="document.getElementById('photoInput').click()" style="flex:1">📷 Take Photo</button>
-                        <button type="button" class="btn-photo" onclick="clearPhoto()" style="background:#666;flex:0 0 auto;width:auto;padding:10px 14px">✕</button>
-                    </div>
-                    <input type="file" id="photoInput" accept="image/*" capture="environment" onchange="handlePhotoCapture(event)">
                 </div>
 
                 <hr class="divider">
@@ -497,6 +498,7 @@ let allRecords = [];
 let allUsers = {};
 let myRecordsCache = [];
 let currentVcName = 'Village Council';
+let myProfile = null;
 
 // ========== AUTH ==========
 auth.onAuthStateChanged(async user => {
@@ -514,9 +516,15 @@ auth.onAuthStateChanged(async user => {
         } else {
             document.getElementById('workerView').classList.remove('hidden');
             const profile = await getUserProfile(user.uid);
+            myProfile = profile;
             document.getElementById('userNameBadge').textContent = '👤 ' + (profile?.name || user.email);
+            // Live-listen for range/profile changes from admin
+            db.collection('users').doc(user.uid).onSnapshot(d => {
+                if (d.exists) { myProfile = d.data(); updateRangeHint(); }
+            });
             loadVCName();
             loadMyRecords();
+            updateRangeHint();
         }
     } else {
         currentUser = null;
@@ -600,6 +608,33 @@ async function addWorker() {
     } catch(e) { showAddWorkerAlert(friendlyError(e.code), 'error'); }
 }
 
+async function assignRange(uid, name, curStart, curEnd) {
+    const startStr = prompt(`Assign sticker range for ${name}.\n\nEnter START number (e.g. 1 for NSN-0001):`, curStart!==null?curStart:'');
+    if (startStr === null) return;
+    const endStr = prompt(`Enter END number (e.g. 150 for NSN-0150):`, curEnd!==null?curEnd:'');
+    if (endStr === null) return;
+    const start = parseInt(startStr,10);
+    const end = parseInt(endStr,10);
+    if (isNaN(start) || isNaN(end)) { alert('Please enter valid numbers.'); return; }
+    if (start < 1 || end < 1) { alert('Numbers must be 1 or higher.'); return; }
+    if (start > end) { alert('Start number cannot be greater than end number.'); return; }
+    try {
+        await db.collection('users').doc(uid).update({ rangeStart: start, rangeEnd: end });
+        showAlert(`${name} assigned NSN-${String(start).padStart(4,'0')} to NSN-${String(end).padStart(4,'0')}`, 'success');
+    } catch(e) { alert('Error: ' + e.message); }
+}
+
+async function clearRange(uid, name) {
+    if (!confirm(`Remove sticker range for ${name}? They will be able to enter any ID again.`)) return;
+    try {
+        await db.collection('users').doc(uid).update({
+            rangeStart: firebase.firestore.FieldValue.delete(),
+            rangeEnd: firebase.firestore.FieldValue.delete()
+        });
+        showAlert(`Range cleared for ${name}`, 'success');
+    } catch(e) { alert('Error: ' + e.message); }
+}
+
 async function deleteWorker(uid, name) {
     if (!confirm(`Delete worker "${name}"? Their collected records will remain.`)) return;
     try {
@@ -650,6 +685,21 @@ function updateFormFields() {
 
 let editingRecordId = null;
 
+function hasAssignedRange() {
+    return myProfile && typeof myProfile.rangeStart === 'number' && typeof myProfile.rangeEnd === 'number';
+}
+
+function updateRangeHint() {
+    const hint = document.getElementById('rangeHint');
+    if (!hint) return;
+    if (hasAssignedRange()) {
+        hint.innerHTML = `🎫 Your stickers: <b>NSN-${String(myProfile.rangeStart).padStart(4,'0')}</b> to <b>NSN-${String(myProfile.rangeEnd).padStart(4,'0')}</b>`;
+        hint.style.color = '#22863a';
+    } else {
+        hint.innerHTML = '';
+    }
+}
+
 async function saveRecord(e) {
     e.preventDefault();
     const lat = document.getElementById('latitude').value;
@@ -682,6 +732,15 @@ async function saveRecord(e) {
         isAbsent = !ownerName || !fatherHusband || !contact;
     }
     const fullId = 'NSN-' + document.getElementById('propertyId').value.trim().replace(/^NSN-/i,'').replace(/^[0]*/,'').padStart(4,'0');
+
+    // RANGE CHECK (hard block if a range is assigned to this worker)
+    if (hasAssignedRange()) {
+        const num = parseInt(fullId.replace('NSN-',''), 10);
+        if (num < myProfile.rangeStart || num > myProfile.rangeEnd) {
+            showAlert(`⛔ ${fullId} is outside your assigned stickers (NSN-${String(myProfile.rangeStart).padStart(4,'0')} to NSN-${String(myProfile.rangeEnd).padStart(4,'0')}). Please check the sticker number.`, 'error');
+            return;
+        }
+    }
 
     const btn = document.getElementById('submitBtn');
     btn.textContent = '⏳ Checking...'; btn.disabled = true;
@@ -1108,6 +1167,10 @@ function renderWorkers() {
         const today = new Date().toDateString();
         const todayCount = recs.filter(r=>r.localTimestamp&&new Date(r.localTimestamp).toDateString()===today).length;
         const absentCount = recs.filter(r=>needsFollowUp(r)).length;
+        const hasRange = (typeof u.rangeStart === 'number' && typeof u.rangeEnd === 'number');
+        const rangeText = hasRange
+            ? `🎫 Stickers: NSN-${String(u.rangeStart).padStart(4,'0')} to NSN-${String(u.rangeEnd).padStart(4,'0')}`
+            : '🎫 No range assigned (can enter any ID)';
         return `<div class="worker-card">
             <div style="display:flex;justify-content:space-between;align-items:start">
                 <div>
@@ -1116,6 +1179,11 @@ function renderWorkers() {
                     <div style="font-size:12px;color:var(--text2)">📱 ${u.phone||'N/A'}</div>
                 </div>
                 <button class="btn-small btn-danger" onclick="deleteWorker('${u.uid}','${u.name}')">🗑 Remove</button>
+            </div>
+            <div style="background:${hasRange?'#e6ffed':'#fff3cd'};border-radius:6px;padding:6px 10px;margin-top:8px;font-size:12px;color:${hasRange?'#22863a':'#856404'}">
+                ${rangeText}
+                <button class="btn-small" style="background:var(--primary);color:white;margin-left:8px;padding:3px 8px" onclick="assignRange('${u.uid}','${u.name}',${hasRange?u.rangeStart:'null'},${hasRange?u.rangeEnd:'null'})">${hasRange?'Change':'Assign'}</button>
+                ${hasRange?`<button class="btn-small" style="background:#999;color:white;margin-left:4px;padding:3px 8px" onclick="clearRange('${u.uid}','${u.name}')">Clear</button>`:''}
             </div>
             <div class="worker-stats">
                 <div class="worker-stat"><div class="worker-stat-val">${recs.length}</div><div class="worker-stat-lbl">Total</div></div>
