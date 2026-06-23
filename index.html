@@ -154,6 +154,7 @@
             <p>Village Council Field Data App</p>
         </div>
         <div id="authAlert"></div>
+        <div id="authLoading" class="hidden" style="text-align:center;padding:16px;color:var(--text2);font-size:14px">⏳ Please wait...</div>
         <div class="auth-tabs">
             <button class="auth-tab active" onclick="switchAuthTab('login',this)">Login</button>
             <button class="auth-tab" onclick="switchAuthTab('register',this)">Register</button>
@@ -459,6 +460,8 @@ const firebaseConfig = {
 const ADMIN_EMAIL = "enga018@gmail.com";
 
 firebase.initializeApp(firebaseConfig);
+// Show loading while auth state checks
+document.getElementById("authLoading").classList.remove("hidden");
 const auth = firebase.auth();
 const db = firebase.firestore();
 
@@ -470,6 +473,7 @@ let myRecordsCache = [];
 
 // ========== AUTH ==========
 auth.onAuthStateChanged(async user => {
+    document.getElementById("authLoading").classList.add("hidden");
     if (user) {
         currentUser = user;
         isAdmin = user.email === ADMIN_EMAIL;
@@ -509,13 +513,16 @@ function switchAuthTab(tab, btn) {
 }
 
 async function loginUser() {
+    const btn = document.querySelector("#loginForm .btn-primary");
+    if(btn){btn.textContent="⏳ Logging in...";btn.disabled=true;}
     const email = document.getElementById('loginEmail').value.trim();
     const pass = document.getElementById('loginPassword').value;
     if (!email || !pass) return showAuthAlert('Please fill all fields', 'error');
     try {
         showAuthAlert('Logging in...', 'info');
         await auth.signInWithEmailAndPassword(email, pass);
-    } catch(e) { showAuthAlert(friendlyError(e.code), 'error'); }
+        if(btn){btn.textContent="🔐 Login";btn.disabled=false;}
+    } catch(e) { showAuthAlert(friendlyError(e.code), "error"); if(btn){btn.textContent="🔐 Login";btn.disabled=false;} }
 }
 
 async function registerUser() {
@@ -533,7 +540,7 @@ async function registerUser() {
             name, phone, email, role: 'worker',
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
         });
-    } catch(e) { showAuthAlert(friendlyError(e.code), 'error'); }
+    } catch(e) { showAuthAlert(friendlyError(e.code), "error"); if(btn){btn.textContent="🔐 Login";btn.disabled=false;} }
 }
 
 async function addWorker() {
