@@ -212,6 +212,10 @@
         <!-- COLLECT TAB -->
         <div id="collect" class="form-section active">
             <div id="alertBox"></div>
+            <div id="editBanner" class="hidden" style="background:#fff3cd;border:1px solid #ffc107;border-radius:6px;padding:10px 12px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center">
+                <span style="font-size:13px;color:#856404">✏️ Editing existing record</span>
+                <button type="button" onclick="cancelEdit();resetForm()" style="background:#856404;color:white;padding:4px 12px;font-size:12px;border-radius:4px">Cancel Edit</button>
+            </div>
             <form id="propertyForm" onsubmit="saveRecord(event)">
                 <div class="form-group">
                     <label>Property ID <span class="required-star">*</span></label>
@@ -307,7 +311,7 @@
                     <textarea id="remarks" placeholder="e.g., Owner absent, locked, under construction..."></textarea>
                 </div>
                 <div class="button-group">
-                    <button type="button" class="btn-secondary" onclick="resetForm()" style="flex:1">Clear</button>
+                    <button type="button" class="btn-secondary" onclick="cancelEdit();resetForm()" style="flex:1">Clear</button>
                     <button type="submit" id="submitBtn" class="btn-primary" style="flex:2">💾 Save & Sync</button>
                 </div>
             </form>
@@ -630,6 +634,8 @@ function updateFormFields() {
     }
 }
 
+let editingRecordId = null;
+
 async function saveRecord(e) {
     e.preventDefault();
     const lat = document.getElementById('latitude').value;
@@ -645,10 +651,31 @@ async function saveRecord(e) {
     const ownerName = isInst ? '' : document.getElementById('ownerName').value.trim();
     const contact = isInst ? document.getElementById('instContact').value.trim() : document.getElementById('contact').value.trim();
     const isAbsent = !isInst && !ownerName;
+    const fullId = 'NSN-' + document.getElementById('propertyId').value.trim().replace(/^NSN-/i,'').replace(/^[0]*/,'').padStart(4,'0');
+
+    const btn = document.getElementById('submitBtn');
+    btn.textContent = '⏳ Checking...'; btn.disabled = true;
+
+    // DUPLICATE CHECK (skip if editing this same record)
+    try {
+        const dupSnap = await db.collection('records').where('propertyId','==',fullId).get();
+        const duplicate = dupSnap.docs.find(d => d.id !== editingRecordId);
+        if (duplicate) {
+            const dupData = duplicate.data();
+            const who = dupData.workerName || 'another worker';
+            showAlert(`⚠️ Property ID ${fullId} already exists (entered by ${who}). Cannot save duplicate.`, 'error');
+            btn.textContent = editingRecordId ? '💾 Update Record' : '💾 Save & Sync'; btn.disabled = false;
+            return;
+        }
+    } catch(err) {
+        showAlert('❌ Could not verify duplicate: ' + err.message, 'error');
+        btn.textContent = editingRecordId ? '💾 Update Record' : '💾 Save & Sync'; btn.disabled = false;
+        return;
+    }
 
     const profile = await getUserProfile(currentUser.uid);
     const data = {
-        propertyId: 'NSN-' + document.getElementById('propertyId').value.trim().replace(/^NSN-/i,'').replace(/^[0]*/,'').padStart(4,'0'),
+        propertyId: fullId,
         propertyType: type,
         buildingType: document.getElementById('buildingType').value,
         isInstitution: isInst,
@@ -662,7 +689,6 @@ async function saveRecord(e) {
         workerUid: currentUser.uid,
         workerEmail: currentUser.email,
         workerName: profile?.name || currentUser.email,
-        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
         localTimestamp: new Date().toISOString()
     };
 
@@ -672,25 +698,84 @@ async function saveRecord(e) {
         data.designation = document.getElementById('designation').value.trim();
         data.ownerName = data.contactPerson || data.organizationName;
         data.ownerType = 'Contact Person';
+        data.fatherHusbandName = '';
     } else {
         data.ownerName = ownerName;
         data.fatherHusbandName = document.getElementById('fatherHusbandName').value.trim();
         data.ownerType = 'Owner';
+        data.organizationName = '';
+        data.contactPerson = '';
+        data.designation = '';
     }
 
     try {
-        const btn = document.getElementById('submitBtn');
-        btn.textContent = '⏳ Saving...'; btn.disabled = true;
-        await db.collection('records').add(data);
-        showAlert(isAbsent ? '✓ Saved — marked as Owner Absent for follow-up' : '✓ Record saved and synced!', 'success');
+        btn.textContent = '⏳ Saving...';
+        if (editingRecordId) {
+            await db.collection('records').doc(editingRecordId).update(data);
+            showAlert('✓ Record updated successfully!', 'success');
+        } else {
+            data.timestamp = firebase.firestore.FieldValue.serverTimestamp();
+            await db.collection('records').add(data);
+            showAlert(isAbsent ? '✓ Saved — marked as Owner Absent for follow-up' : '✓ Record saved and synced!', 'success');
+        }
+        cancelEdit();
         resetForm();
         setTimeout(() => switchTab('myrecords', document.querySelectorAll('#workerView .tab-btn')[1]), 1000);
     } catch(err) {
         showAlert('❌ Error: ' + err.message, 'error');
     } finally {
-        const btn = document.getElementById('submitBtn');
         btn.textContent = '💾 Save & Sync'; btn.disabled = false;
     }
+}
+
+function startEditRecord(r) {
+    if (typeof r === 'string') r = JSON.parse(r);
+    editingRecordId = r.id;
+    closeModal();
+    // Switch to collect tab
+    switchTab('collect', document.querySelectorAll('#workerView .tab-btn')[0]);
+    // Fill the form
+    document.getElementById('propertyId').value = (r.propertyId||'').replace(/^NSN-/,'');
+    document.getElementById('propertyType').value = r.propertyType;
+    document.getElementById('buildingType').value = r.buildingType;
+    updateFormFields();
+    if (r.isInstitution) {
+        document.getElementById('organizationName').value = r.organizationName||'';
+        document.getElementById('contactPerson').value = r.contactPerson||'';
+        document.getElementById('designation').value = r.designation||'';
+        document.getElementById('instContact').value = r.contact||'';
+    } else {
+        document.getElementById('ownerName').value = r.ownerName||'';
+        document.getElementById('fatherHusbandName').value = r.fatherHusbandName||'';
+        document.getElementById('contact').value = r.contact||'';
+    }
+    document.getElementById('remarks').value = r.remarks||'';
+    // Restore photo
+    if (r.photo) {
+        const p = document.getElementById('photoPreview');
+        p.src = r.photo; p.style.display = 'block';
+        document.getElementById('photoStatus').className = 'photo-status ok';
+        document.getElementById('photoStatus').textContent = '✅ Existing photo (retake to change)';
+    }
+    // Restore GPS
+    if (r.latitude) {
+        document.getElementById('latitude').value = r.latitude;
+        document.getElementById('longitude').value = r.longitude;
+        document.getElementById('accuracy').value = r.accuracy||'';
+        const s = document.getElementById('locationStatus');
+        s.className = 'location-status success';
+        s.textContent = `✅ Existing: ${r.latitude.toFixed(5)}, ${r.longitude.toFixed(5)}`;
+        s.classList.remove('hidden');
+    }
+    document.getElementById('submitBtn').textContent = '💾 Update Record';
+    document.getElementById('editBanner').classList.remove('hidden');
+    showAlert('✏️ Editing record ' + r.propertyId + ' — update the details and save.', 'info');
+}
+
+function cancelEdit() {
+    editingRecordId = null;
+    document.getElementById('editBanner').classList.add('hidden');
+    document.getElementById('submitBtn').textContent = '💾 Save & Sync';
 }
 
 function resetForm() {
@@ -833,8 +918,18 @@ function recordCard(r, showWorker) {
         </div>
         <div class="record-actions">
             <button class="btn-small btn-primary" onclick='showDetail(${JSON.stringify(r).replace(/'/g,"&#39;")})'>👁 View</button>
+            ${!showWorker ? `<button class="btn-small" style="background:#e65100;color:white" onclick='startEditRecord(${JSON.stringify(r).replace(/'/g,"&#39;")})'>✏️ Edit</button>` : ''}
+            ${isAdmin ? `<button class="btn-small btn-danger" onclick="adminDeleteRecord('${r.id}','${r.propertyId}')">🗑 Delete</button>` : ''}
         </div>
     </div>`;
+}
+
+async function adminDeleteRecord(id, propId) {
+    if (!confirm(`Permanently delete record ${propId}? This cannot be undone.`)) return;
+    try {
+        await db.collection('records').doc(id).delete();
+        showAlert('Record ' + propId + ' deleted', 'success');
+    } catch(e) { alert('Error: ' + e.message); }
 }
 
 // ========== ADMIN DATA ==========
