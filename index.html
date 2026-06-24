@@ -577,7 +577,7 @@ const firebaseConfig = {
     appId: "1:610573950046:web:2b545f876953a4eb18a8cf"
 };
 const ADMIN_EMAIL = "enga018@gmail.com";
-const APP_VERSION = "v1.9.2";
+const APP_VERSION = "v1.10.0";
 
 
 firebase.initializeApp(firebaseConfig);
@@ -1122,65 +1122,116 @@ function resetForm() {
 }
 
 // ========== PHOTO & GPS ==========
+// Read EXIF orientation (1-8) from a JPEG ArrayBuffer. Returns 1 if none found.
+function getExifOrientation(arrayBuffer) {
+    try {
+        const view = new DataView(arrayBuffer);
+        if (view.getUint16(0, false) !== 0xFFD8) return 1; // not a JPEG
+        const length = view.byteLength;
+        let offset = 2;
+        while (offset < length) {
+            const marker = view.getUint16(offset, false);
+            offset += 2;
+            if (marker === 0xFFE1) { // APP1 (EXIF)
+                if (view.getUint32(offset + 2, false) !== 0x45786966) return 1; // "Exif"
+                const little = view.getUint16(offset + 8, false) === 0x4949;
+                const tiffOffset = offset + 8;
+                const dirOffset = tiffOffset + view.getUint32(offset + 12, little);
+                const entries = view.getUint16(dirOffset, little);
+                for (let i = 0; i < entries; i++) {
+                    const entryOffset = dirOffset + 2 + i * 12;
+                    if (view.getUint16(entryOffset, little) === 0x0112) {
+                        return view.getUint16(entryOffset + 8, little);
+                    }
+                }
+            } else if ((marker & 0xFF00) !== 0xFF00) {
+                break;
+            } else {
+                offset += view.getUint16(offset, false);
+            }
+        }
+    } catch(e) { /* fall through */ }
+    return 1;
+}
+
 function handlePhotoCapture(e) {
     const file = e.target.files[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = ev => {
-        const img = new Image();
-        img.onload = () => {
-            const canvas = document.createElement('canvas');
-            const MAX = 800;
-            let w = img.width, h = img.height;
-            if (w > h) { if (w > MAX) { h = h*(MAX/w); w = MAX; } }
-            else { if (h > MAX) { w = w*(MAX/h); h = MAX; } }
-            canvas.width = w; canvas.height = h;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0, w, h);
+    // First read raw bytes to detect EXIF orientation
+    const arrBufReader = new FileReader();
+    arrBufReader.onload = (abEv) => {
+        const orientation = getExifOrientation(abEv.target.result);
+        const reader = new FileReader();
+        reader.onload = ev => {
+            const img = new Image();
+            img.onload = () => {
+                const MAX = 800;
+                let iw = img.width, ih = img.height;
+                // Scale down keeping aspect
+                let sw = iw, sh = ih;
+                if (sw > sh) { if (sw > MAX) { sh = sh*(MAX/sw); sw = MAX; } }
+                else { if (sh > MAX) { sw = sw*(MAX/sh); sh = MAX; } }
 
-            // ===== STAMP DETAILS ONTO PHOTO =====
-            const rawId = document.getElementById('propertyId').value.trim().replace(/^NSN-/i,'').replace(/^[0]*/,'');
-            const propId = rawId ? 'NSN-' + rawId.padStart(4,'0') : 'NSN-____';
-            const lat = document.getElementById('latitude').value;
-            const lng = document.getElementById('longitude').value;
-            const gpsText = (lat && lng) ? `${parseFloat(lat).toFixed(5)}, ${parseFloat(lng).toFixed(5)}` : 'GPS not captured';
-            const now = new Date();
-            const dateText = now.toLocaleDateString() + ' ' + now.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+                // For orientation 5-8 the image is rotated 90°, so final canvas swaps width/height
+                const swap = orientation >= 5 && orientation <= 8;
+                const canvas = document.createElement('canvas');
+                canvas.width = swap ? sh : sw;
+                canvas.height = swap ? sw : sh;
+                const ctx = canvas.getContext('2d');
 
-            const lines = [
-                propId,
-                '📍 ' + gpsText,
-                '🕒 ' + dateText,
-                currentVcName
-            ];
+                // Apply the transform that makes the image upright
+                switch (orientation) {
+                    case 2: ctx.transform(-1, 0, 0, 1, sw, 0); break;
+                    case 3: ctx.transform(-1, 0, 0, -1, sw, sh); break;
+                    case 4: ctx.transform(1, 0, 0, -1, 0, sh); break;
+                    case 5: ctx.transform(0, 1, 1, 0, 0, 0); break;
+                    case 6: ctx.transform(0, 1, -1, 0, sh, 0); break;
+                    case 7: ctx.transform(0, -1, -1, 0, sh, sw); break;
+                    case 8: ctx.transform(0, -1, 1, 0, 0, sw); break;
+                    default: break; // 1 = no transform
+                }
+                ctx.drawImage(img, 0, 0, sw, sh);
+                // Reset transform so the stamp is drawn in normal (upright) coordinates
+                ctx.setTransform(1, 0, 0, 1, 0, 0);
 
-            // Banner sizing
-            const fontSize = Math.max(13, Math.round(w/40));
-            const lineH = fontSize + 6;
-            const pad = 8;
-            const bannerH = lines.length * lineH + pad*2;
-            // Semi-transparent black banner at bottom
-            ctx.fillStyle = 'rgba(0,0,0,0.55)';
-            ctx.fillRect(0, h - bannerH, w, bannerH);
-            // Text
-            ctx.fillStyle = '#ffffff';
-            ctx.font = `${fontSize}px Arial, sans-serif`;
-            ctx.textBaseline = 'top';
-            lines.forEach((ln, i) => {
-                ctx.fillText(ln, pad, h - bannerH + pad + i*lineH);
-            });
-            // ===== END STAMP =====
+                // Now w/h are the UPRIGHT canvas dimensions
+                const w = canvas.width, h = canvas.height;
 
-            const compressed = canvas.toDataURL('image/jpeg', 0.7);
-            const preview = document.getElementById('photoPreview');
-            preview.src = compressed;
-            preview.style.display = 'block';
-            document.getElementById('photoStatus').className = 'photo-status ok';
-            document.getElementById('photoStatus').textContent = '✅ Photo captured & stamped';
+                // ===== STAMP DETAILS ONTO PHOTO (always at true visual bottom) =====
+                const rawId = document.getElementById('propertyId').value.trim().replace(/^NSN-/i,'').replace(/^[0]*/,'');
+                const propId = rawId ? 'NSN-' + rawId.padStart(4,'0') : 'NSN-____';
+                const lat = document.getElementById('latitude').value;
+                const lng = document.getElementById('longitude').value;
+                const gpsText = (lat && lng) ? `${parseFloat(lat).toFixed(5)}, ${parseFloat(lng).toFixed(5)}` : 'GPS not captured';
+                const now = new Date();
+                const dateText = now.toLocaleDateString() + ' ' + now.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+
+                const lines = [ propId, '📍 ' + gpsText, '🕒 ' + dateText, currentVcName ];
+
+                const fontSize = Math.max(13, Math.round(w/40));
+                const lineH = fontSize + 6;
+                const pad = 8;
+                const bannerH = lines.length * lineH + pad*2;
+                ctx.fillStyle = 'rgba(0,0,0,0.55)';
+                ctx.fillRect(0, h - bannerH, w, bannerH);
+                ctx.fillStyle = '#ffffff';
+                ctx.font = `${fontSize}px Arial, sans-serif`;
+                ctx.textBaseline = 'top';
+                lines.forEach((ln, i) => { ctx.fillText(ln, pad, h - bannerH + pad + i*lineH); });
+                // ===== END STAMP =====
+
+                const compressed = canvas.toDataURL('image/jpeg', 0.7);
+                const preview = document.getElementById('photoPreview');
+                preview.src = compressed;
+                preview.style.display = 'block';
+                document.getElementById('photoStatus').className = 'photo-status ok';
+                document.getElementById('photoStatus').textContent = '✅ Photo captured & stamped';
+            };
+            img.src = ev.target.result;
         };
-        img.src = ev.target.result;
+        reader.readAsDataURL(file);
     };
-    reader.readAsDataURL(file);
+    arrBufReader.readAsArrayBuffer(file);
 }
 
 function clearPhoto() {
