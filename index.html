@@ -225,15 +225,22 @@
                     <div id="rangeHint" style="font-size:12px;margin-top:4px"></div>
                 </div>
                 <div class="form-group">
-                    <label>Property Type <span class="required-star">*</span></label>
-                    <select id="propertyType" onchange="updateFormFields()" required>
+                    <label>Property Type <span class="required-star">*</span> <span style="font-size:11px;color:var(--text2);font-weight:400">(what the building is)</span></label>
+                    <select id="propertyType" required>
                         <option value="">Select type</option>
                         <option value="Residential">Residential</option>
                         <option value="Commercial">Commercial</option>
                         <option value="Mixed Use">Mixed Use</option>
-                        <option value="Education">Education (School/College)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Owner Type <span class="required-star">*</span> <span style="font-size:11px;color:var(--text2);font-weight:400">(who pays the tax)</span></label>
+                    <select id="ownerCategory" onchange="updateFormFields()" required>
+                        <option value="">Select owner type</option>
+                        <option value="Individual">Individual</option>
                         <option value="Church">Church</option>
                         <option value="NGO">NGO</option>
+                        <option value="Education">Education</option>
                         <option value="Government">Government</option>
                     </select>
                 </div>
@@ -399,13 +406,17 @@
             <div class="filter-bar">
                 <select id="filterWorker" onchange="filterRecords()"><option value="">All Workers</option></select>
                 <select id="filterType" onchange="filterRecords()">
-                    <option value="">All Types</option>
+                    <option value="">All Property Types</option>
                     <option value="Residential">Residential</option>
                     <option value="Commercial">Commercial</option>
                     <option value="Mixed Use">Mixed Use</option>
-                    <option value="Education">Education</option>
+                </select>
+                <select id="filterOwner" onchange="filterRecords()">
+                    <option value="">All Owner Types</option>
+                    <option value="Individual">Individual</option>
                     <option value="Church">Church</option>
                     <option value="NGO">NGO</option>
+                    <option value="Education">Education</option>
                     <option value="Government">Government</option>
                 </select>
                 <select id="filterStatus" onchange="filterRecords()">
@@ -485,7 +496,7 @@ const firebaseConfig = {
     appId: "1:610573950046:web:2b545f876953a4eb18a8cf"
 };
 const ADMIN_EMAIL = "enga018@gmail.com";
-const APP_VERSION = "v1.0.1";
+const APP_VERSION = "v1.1.0";
 
 
 firebase.initializeApp(firebaseConfig);
@@ -679,11 +690,11 @@ function showAddWorkerAlert(msg, type) {
 }
 
 // ========== FORM ==========
-const INSTITUTION_TYPES = ['Education','Church','NGO','Government'];
+const INSTITUTION_CATEGORIES = ['Church','NGO','Education','Government'];
 
 function updateFormFields() {
-    const type = document.getElementById('propertyType').value;
-    const isInst = INSTITUTION_TYPES.includes(type);
+    const cat = document.getElementById('ownerCategory').value;
+    const isInst = INSTITUTION_CATEGORIES.includes(cat);
     document.getElementById('residentialFields').classList.toggle('hidden', isInst);
     document.getElementById('institutionFields').classList.toggle('hidden', !isInst);
     document.getElementById('organizationName').removeAttribute('required');
@@ -717,7 +728,8 @@ async function saveRecord(e) {
     if (!hasPhoto) return showAlert('📷 Photo is required. Please take a photo first.', 'error');
 
     const type = document.getElementById('propertyType').value;
-    const isInst = INSTITUTION_TYPES.includes(type);
+    const ownerCategory = document.getElementById('ownerCategory').value;
+    const isInst = INSTITUTION_CATEGORIES.includes(ownerCategory);
     const ownerName = isInst ? '' : document.getElementById('ownerName').value.trim();
     const contact = isInst ? document.getElementById('instContact').value.trim() : document.getElementById('contact').value.trim();
 
@@ -772,6 +784,7 @@ async function saveRecord(e) {
     const data = {
         propertyId: fullId,
         propertyType: type,
+        ownerCategory: ownerCategory,
         buildingType: document.getElementById('buildingType').value,
         isInstitution: isInst,
         isAbsent,
@@ -834,7 +847,13 @@ function startEditRecord(r) {
     switchTab('collect', document.querySelectorAll('#workerView .tab-btn')[0]);
     // Fill the form
     document.getElementById('propertyId').value = (r.propertyId||'').replace(/^NSN-/,'');
-    document.getElementById('propertyType').value = r.propertyType;
+    // For old records, propertyType may hold an institution value (Church/NGO/etc) - default those to Residential
+    const validPropTypes = ['Residential','Commercial','Mixed Use'];
+    document.getElementById('propertyType').value = validPropTypes.includes(r.propertyType) ? r.propertyType : 'Residential';
+    // Restore owner category (fallback for old records that used propertyType for institution)
+    let cat = r.ownerCategory;
+    if (!cat) cat = r.isInstitution ? (INSTITUTION_CATEGORIES.includes(r.propertyType)?r.propertyType:'Church') : 'Individual';
+    document.getElementById('ownerCategory').value = cat;
     document.getElementById('buildingType').value = r.buildingType;
     updateFormFields();
     if (r.isInstitution) {
@@ -1078,7 +1097,7 @@ function recordCard(r, context) {
         ${r.organizationName ? `<div class="record-detail"><b>Org:</b> ${r.organizationName}</div>` : ''}
         ${r.ownerName ? `<div class="record-detail"><b>${r.ownerType||'Owner'}:</b> ${r.ownerName}</div>` : ''}
         ${r.contact ? `<div class="record-detail">📱 ${r.contact}</div>` : ''}
-        <div class="record-detail">🏠 ${r.propertyType} &nbsp;|&nbsp; 🏗️ ${r.buildingType}</div>
+        <div class="record-detail">🏠 ${r.propertyType} &nbsp;|&nbsp; 🏗️ ${r.buildingType}${r.ownerCategory && r.ownerCategory!=='Individual' ? ' &nbsp;|&nbsp; 🏛️ '+r.ownerCategory : ''}</div>
         <div style="margin-top:5px">
             ${r.photo ? '<span class="badge badge-photo">📷 Photo</span> ' : ''}
             ${r.latitude ? '<span class="badge badge-gps">📍 GPS</span> ' : ''}
@@ -1212,10 +1231,12 @@ function populateWorkerFilter() {
 function filterRecords() {
     const wf = document.getElementById('filterWorker').value;
     const tf = document.getElementById('filterType').value;
+    const of = document.getElementById('filterOwner').value;
     const sf = document.getElementById('filterStatus').value;
     let f = allRecords;
     if (wf) f = f.filter(r=>r.workerUid===wf);
     if (tf) f = f.filter(r=>r.propertyType===tf);
+    if (of) f = f.filter(r=>(r.ownerCategory||'Individual')===of);
     if (sf==='complete') f = f.filter(r=>!needsFollowUp(r));
     if (sf==='absent') f = f.filter(r=>isRecordAbsent(r));
     if (sf==='correction') f = f.filter(r=>r.needsCorrection===true);
@@ -1320,10 +1341,10 @@ async function resetEverything() {
 function exportCSV(records, filename) {
     if (!records.length) { alert('No records to export'); return; }
     const rows = [
-        ['Property ID','Latitude','Longitude','Property Type','Building Type','Status','Missing Fields','Organization/Institution','Owner/Contact Person','Person Type','Father/Husband','Designation','Contact','GPS Accuracy','Remarks','Worker Name','Date'],
+        ['Property ID','Latitude','Longitude','Property Type','Owner Type','Building Type','Status','Missing Fields','Organization/Institution','Owner/Contact Person','Person Type','Father/Husband','Designation','Contact','GPS Accuracy','Remarks','Worker Name','Date'],
         ...records.map(r=>[
             r.propertyId, r.latitude||'', r.longitude||'',
-            r.propertyType, r.buildingType,
+            r.propertyType, r.ownerCategory||'Individual', r.buildingType,
             r.needsCorrection?'Needs Correction':(isRecordAbsent(r)?'Incomplete':'Complete'), missingFields(r).join('; '),
             r.organizationName||'', r.ownerName||'', r.ownerType||'Owner',
             r.fatherHusbandName||'', r.designation||'', r.contact||'',
@@ -1349,6 +1370,7 @@ function showDetail(r) {
             ${r.adminFlagNote ? `<div style="background:#fff3cd;border-radius:4px;padding:6px 8px;margin-bottom:6px;font-size:13px;color:#856404">⚠️ <b>Fix needed:</b> ${r.adminFlagNote}</div>` : ''}
             <b>Property ID:</b> ${r.propertyId}<br>
             <b>Type:</b> ${r.propertyType} &nbsp;|&nbsp; <b>Building:</b> ${r.buildingType}<br>
+            ${r.ownerCategory ? `<b>Owner Type:</b> ${r.ownerCategory}<br>` : ''}
             <b>Date:</b> ${r.localTimestamp ? new Date(r.localTimestamp).toLocaleString() : 'N/A'}
         </div>
         ${r.organizationName ? `<div style="margin-bottom:10px"><b>Organization:</b> ${r.organizationName}</div>` : ''}
