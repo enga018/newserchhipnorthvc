@@ -567,7 +567,7 @@
         <p style="font-size:14px;color:var(--text);margin-bottom:16px">Are you sure you want to log out?</p>
         <div style="display:flex;gap:8px">
             <button class="btn-secondary" onclick="document.getElementById('logoutModal').classList.remove('active')" style="flex:1">Cancel</button>
-            <button class="btn-primary" onclick="auth.signOut()" style="flex:1">Logout</button>
+            <button class="btn-primary" onclick="doLogout()" style="flex:1">Logout</button>
         </div>
     </div>
 </div>
@@ -692,7 +692,7 @@ const firebaseConfig = {
     appId: "1:610573950046:web:2b545f876953a4eb18a8cf"
 };
 const ADMIN_EMAIL = "enga018@gmail.com";
-const APP_VERSION = "v1.12.5";
+const APP_VERSION = "v1.12.6";
 
 
 firebase.initializeApp(firebaseConfig);
@@ -761,6 +761,8 @@ auth.onAuthStateChanged(async user => {
         }
     } else {
         currentUser = null;
+        // Close any open modals on logout
+        document.querySelectorAll('.modal.active').forEach(m => m.classList.remove('active'));
         document.getElementById('splashScreen').classList.add('hidden');
         document.getElementById('authScreen').classList.remove('hidden');
         document.getElementById('mainApp').classList.add('hidden');
@@ -1020,6 +1022,11 @@ async function changePassword() {
 
 function logoutUser() {
     document.getElementById('logoutModal').classList.add('active');
+}
+
+function doLogout() {
+    document.getElementById('logoutModal').classList.remove('active');
+    auth.signOut();
 }
 
 function friendlyError(code) {
