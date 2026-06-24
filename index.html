@@ -265,7 +265,8 @@
                 <hr class="divider">
                 <div class="section-title">📍 GPS Location <span class="required-star">*</span></div>
                 <div class="form-group">
-                    <button type="button" class="btn-photo" onclick="captureLocation()" style="background:var(--success)">📍 Capture GPS Location</button>
+                    <button type="button" id="captureGpsBtn" class="btn-photo" onclick="captureLocation()" style="background:var(--success)">📍 Capture GPS Location</button>
+                    <div id="gpsRecaptureWarn" style="display:none;background:#fff3cd;color:#856404;font-size:12px;padding:6px 8px;border-radius:4px;margin-top:6px">⚠️ Re-capture GPS only while standing at the property.</div>
                     <div id="locationStatus" class="location-status hidden"></div>
                     <input type="hidden" id="latitude">
                     <input type="hidden" id="longitude">
@@ -276,8 +277,9 @@
                 <div class="form-group">
                     <img id="photoPreview" class="photo-preview">
                     <div id="photoStatus" class="photo-status needed">📷 Photo required — tap to take</div>
+                    <div id="photoRecaptureWarn" style="display:none;background:#fff3cd;color:#856404;font-size:12px;padding:6px 8px;border-radius:4px;margin-bottom:6px">⚠️ Re-take photo only while standing at the property.</div>
                     <div class="photo-buttons">
-                        <button type="button" class="btn-photo" onclick="document.getElementById('photoInput').click()" style="flex:1">📷 Take Photo</button>
+                        <button type="button" id="takePhotoBtn" class="btn-photo" onclick="document.getElementById('photoInput').click()" style="flex:1">📷 Take Photo</button>
                         <button type="button" class="btn-photo" onclick="clearPhoto()" style="background:#666;flex:0 0 auto;width:auto;padding:10px 14px">✕</button>
                     </div>
                     <input type="file" id="photoInput" accept="image/*" capture="environment" onchange="handlePhotoCapture(event)">
@@ -495,6 +497,28 @@
     <div class="save-success-box" id="saveSuccessMsg"></div>
 </div>
 
+<!-- Send for Correction Modal (admin) -->
+<div id="correctionModal" class="modal">
+    <div class="modal-content">
+        <button class="modal-close" onclick="document.getElementById('correctionModal').classList.remove('active')">×</button>
+        <div class="modal-header">↩️ Send for Correction</div>
+        <div id="corrAlert"></div>
+        <input type="hidden" id="corrRecordId">
+        <div style="font-size:13px;color:var(--text2);margin-bottom:10px">Record: <b id="corrPropId"></b></div>
+        <div class="form-group">
+            <label>What needs to be fixed? <span class="required-star">*</span></label>
+            <textarea id="corrNote" rows="2" placeholder="e.g. GPS is wrong, re-take at property" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px"></textarea>
+        </div>
+        <div class="form-group">
+            <label style="margin-bottom:6px;display:block">Allow worker to re-do:</label>
+            <label style="display:flex;align-items:center;gap:8px;font-weight:400;margin-bottom:6px"><input type="checkbox" id="corrGps" style="width:auto"> 📍 Re-capture GPS</label>
+            <label style="display:flex;align-items:center;gap:8px;font-weight:400;margin-bottom:6px"><input type="checkbox" id="corrPhoto" style="width:auto"> 📷 Re-take Photo</label>
+            <label style="display:flex;align-items:center;gap:8px;font-weight:400"><input type="checkbox" id="corrDetails" checked style="width:auto"> ✏️ Fix Details (name, phone, etc.)</label>
+        </div>
+        <button class="btn-primary" onclick="submitCorrection()">↩️ Send to Worker</button>
+    </div>
+</div>
+
 <!-- Worker Profile Modal -->
 <div id="workerProfileModal" class="modal">
     <div class="modal-content">
@@ -577,7 +601,7 @@ const firebaseConfig = {
     appId: "1:610573950046:web:2b545f876953a4eb18a8cf"
 };
 const ADMIN_EMAIL = "enga018@gmail.com";
-const APP_VERSION = "v1.10.2";
+const APP_VERSION = "v1.11.0";
 
 
 firebase.initializeApp(firebaseConfig);
@@ -1037,6 +1061,9 @@ async function saveRecord(e) {
             data.adminFlagNote = firebase.firestore.FieldValue.delete();
             data.adminFlaggedAt = firebase.firestore.FieldValue.delete();
             data.needsCorrection = firebase.firestore.FieldValue.delete();
+            data.correctionAllowGps = firebase.firestore.FieldValue.delete();
+            data.correctionAllowPhoto = firebase.firestore.FieldValue.delete();
+            data.correctionAllowDetails = firebase.firestore.FieldValue.delete();
             await db.collection('records').doc(editingRecordId).update(data);
             cancelEdit();
             resetForm();
@@ -1103,7 +1130,58 @@ function startEditRecord(r) {
     }
     document.getElementById('submitBtn').textContent = '💾 Update Record';
     document.getElementById('editBanner').classList.remove('hidden');
+
+    // Apply correction permissions: if admin sent this for correction with specific
+    // allowances, lock GPS/Photo unless explicitly permitted. Property ID is always locked on edit.
+    applyEditLocks(r);
+
     showAlert('✏️ Editing record ' + r.propertyId + ' — update the details and save.', 'info');
+}
+
+function applyEditLocks(r) {
+    const gpsBtn = document.getElementById('captureGpsBtn');
+    const photoTakeBtn = document.getElementById('takePhotoBtn');
+    const idInput = document.getElementById('propertyId');
+
+    // Property ID: always locked during any edit (tied to physical sticker + photo stamp)
+    idInput.readOnly = true;
+    idInput.style.background = '#f0f0f0';
+
+    // Determine if this is a correction with explicit permissions
+    const isCorrection = r.needsCorrection === true;
+    // If it's a correction, respect the flags. If it's a plain incomplete follow-up,
+    // allow GPS/photo (worker may be completing a record they're standing at).
+    const allowGps = !isCorrection || r.correctionAllowGps === true;
+    const allowPhoto = !isCorrection || r.correctionAllowPhoto === true;
+
+    setCaptureEnabled(gpsBtn, allowGps, '📍 Capture GPS Location', '🔒 GPS locked (not requested)');
+    setCaptureEnabled(photoTakeBtn, allowPhoto, '📷 Take Photo', '🔒 Photo locked (not requested)');
+
+    // Warning hints when re-capture is allowed during a correction
+    const gpsWarn = document.getElementById('gpsRecaptureWarn');
+    const photoWarn = document.getElementById('photoRecaptureWarn');
+    if (gpsWarn) gpsWarn.style.display = (isCorrection && allowGps) ? 'block' : 'none';
+    if (photoWarn) photoWarn.style.display = (isCorrection && allowPhoto) ? 'block' : 'none';
+}
+
+function setCaptureEnabled(btn, enabled, normalLabel, lockedLabel) {
+    if (!btn) return;
+    btn.disabled = !enabled;
+    btn.style.opacity = enabled ? '1' : '0.5';
+    btn.textContent = enabled ? normalLabel : lockedLabel;
+}
+
+function clearEditLocks() {
+    // Restore full editability for fresh new-record collection
+    const idInput = document.getElementById('propertyId');
+    idInput.readOnly = false;
+    idInput.style.background = '';
+    setCaptureEnabled(document.getElementById('captureGpsBtn'), true, '📍 Capture GPS Location', '');
+    setCaptureEnabled(document.getElementById('takePhotoBtn'), true, '📷 Take Photo', '');
+    const gpsWarn = document.getElementById('gpsRecaptureWarn');
+    const photoWarn = document.getElementById('photoRecaptureWarn');
+    if (gpsWarn) gpsWarn.style.display = 'none';
+    if (photoWarn) photoWarn.style.display = 'none';
 }
 
 function cancelEdit() {
@@ -1119,6 +1197,7 @@ function resetForm() {
     document.getElementById('institutionFields').classList.add('hidden');
     document.getElementById('residentialFields').classList.remove('hidden');
     document.getElementById('organizationName').removeAttribute('required');
+    clearEditLocks();
 }
 
 // ========== PHOTO & GPS ==========
@@ -1378,7 +1457,7 @@ function recordCard(r, context) {
             ${r.latitude ? '<span class="badge badge-gps">📍 GPS</span> ' : ''}
             ${showWorker ? `<span class="badge badge-worker">👤 ${r.workerName||'Unknown'}</span>` : ''}
         </div>
-        ${r.adminFlagNote ? `<div style="background:#fff3cd;border-radius:4px;padding:5px 8px;margin-top:5px;font-size:12px;color:#856404">⚠️ <b>Fix needed:</b> ${r.adminFlagNote}</div>` : ''}
+        ${r.adminFlagNote ? `<div style="background:#fff3cd;border-radius:4px;padding:5px 8px;margin-top:5px;font-size:12px;color:#856404">⚠️ <b>Fix needed:</b> ${r.adminFlagNote}${r.needsCorrection ? `<br><span style="font-size:11px">Redo: ${[r.correctionAllowGps?'📍 GPS':'', r.correctionAllowPhoto?'📷 Photo':'', r.correctionAllowDetails?'✏️ Details':''].filter(Boolean).join(', ')||'Details'}</span>` : ''}</div>` : ''}
         <div class="record-actions">
             <button class="btn-small btn-primary" onclick='showDetail(${JSON.stringify(r).replace(/'/g,"&#39;")})'>👁 View</button>
             ${context === 'followup' ? `<button class="btn-small" style="background:#e65100;color:white" onclick='startEditRecord(${JSON.stringify(r).replace(/'/g,"&#39;")})'>✏️ Edit</button>` : ''}
@@ -1388,18 +1467,39 @@ function recordCard(r, context) {
     </div>`;
 }
 
-async function adminMarkIncomplete(id, propId) {
-    const reason = prompt(`Send ${propId} back to the worker for correction.\n\nWhat needs to be fixed? (required)\ne.g. "Phone number is wrong", "Owner name misspelled"`);
-    if (reason === null) return;
-    if (!reason.trim()) { alert('Please enter what needs to be corrected.'); return; }
+function adminMarkIncomplete(id, propId) {
+    document.getElementById('corrAlert').innerHTML = '';
+    document.getElementById('corrRecordId').value = id;
+    document.getElementById('corrPropId').textContent = propId;
+    document.getElementById('corrNote').value = '';
+    document.getElementById('corrGps').checked = false;
+    document.getElementById('corrPhoto').checked = false;
+    document.getElementById('corrDetails').checked = true;
+    document.getElementById('correctionModal').classList.add('active');
+}
+
+async function submitCorrection() {
+    const id = document.getElementById('corrRecordId').value;
+    const propId = document.getElementById('corrPropId').textContent;
+    const note = document.getElementById('corrNote').value.trim();
+    const allowGps = document.getElementById('corrGps').checked;
+    const allowPhoto = document.getElementById('corrPhoto').checked;
+    const allowDetails = document.getElementById('corrDetails').checked;
+    const box = document.getElementById('corrAlert');
+    if (!note) { box.innerHTML = '<div class="alert alert-error">Please describe what needs fixing</div>'; return; }
+    if (!allowGps && !allowPhoto && !allowDetails) { box.innerHTML = '<div class="alert alert-error">Tick at least one thing to allow</div>'; return; }
     try {
         await db.collection('records').doc(id).update({
             needsCorrection: true,
-            adminFlagNote: reason.trim(),
+            adminFlagNote: note,
+            correctionAllowGps: allowGps,
+            correctionAllowPhoto: allowPhoto,
+            correctionAllowDetails: allowDetails,
             adminFlaggedAt: new Date().toISOString()
         });
+        document.getElementById('correctionModal').classList.remove('active');
         showAlert(propId + ' sent back to worker for correction', 'success');
-    } catch(e) { alert('Error: ' + e.message); }
+    } catch(e) { box.innerHTML = `<div class="alert alert-error">${e.message}</div>`; }
 }
 
 async function adminDeleteRecord(id, propId) {
