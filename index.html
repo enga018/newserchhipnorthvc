@@ -487,6 +487,7 @@
                 <input type="text" id="adminVcInput" placeholder="Enter Village Council name">
             </div>
             <button class="btn-primary" onclick="saveAdminSettings()">💾 Save Settings</button>
+            <div id="settingsAlert" style="margin-top:8px"></div>
             <hr class="divider">
             <div class="section-title" style="color:var(--warning)">⚠️ Danger Zone</div>
             <div style="background:#ffebee;border:1px solid #ea4c89;border-radius:8px;padding:12px">
@@ -555,6 +556,19 @@
         <button class="btn-primary" onclick="saveAdminProfile()">💾 Save Name</button>
         <hr class="divider">
         <button class="btn-secondary" onclick="document.getElementById('adminProfileModal').classList.remove('active');openChangePassword()">🔑 Change Password</button>
+    </div>
+</div>
+
+<!-- Logout Confirm Modal -->
+<div id="logoutModal" class="modal">
+    <div class="modal-content">
+        <button class="modal-close" onclick="document.getElementById('logoutModal').classList.remove('active')">×</button>
+        <div class="modal-header">Logout</div>
+        <p style="font-size:14px;color:var(--text);margin-bottom:16px">Are you sure you want to log out?</p>
+        <div style="display:flex;gap:8px">
+            <button class="btn-secondary" onclick="document.getElementById('logoutModal').classList.remove('active')" style="flex:1">Cancel</button>
+            <button class="btn-primary" onclick="auth.signOut()" style="flex:1">Logout</button>
+        </div>
     </div>
 </div>
 
@@ -638,8 +652,9 @@
 
 <!-- Full Photo Viewer -->
 <div id="fullPhotoOverlay" onclick="this.classList.remove('active')" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:2000;align-items:center;justify-content:center;padding:10px;flex-direction:column">
-    <div style="color:#fff;font-size:13px;margin-bottom:8px;opacity:0.7">Tap anywhere to close · pinch to zoom</div>
-    <img id="fullPhotoImg" style="max-width:100%;max-height:90%;object-fit:contain;border-radius:6px">
+    <button onclick="event.stopPropagation();document.getElementById('fullPhotoOverlay').classList.remove('active')" style="position:absolute;top:calc(16px + env(safe-area-inset-top));right:16px;width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,0.2);border:none;color:#fff;font-size:24px;line-height:1;cursor:pointer;z-index:2001;display:flex;align-items:center;justify-content:center">✕</button>
+    <img id="fullPhotoImg" style="max-width:100%;max-height:88%;object-fit:contain;border-radius:6px">
+    <div style="color:#fff;font-size:13px;margin-top:12px;opacity:0.7">Tap anywhere to close · pinch to zoom</div>
 </div>
 
 <!-- Change Password Modal -->
@@ -675,7 +690,7 @@ const firebaseConfig = {
     appId: "1:610573950046:web:2b545f876953a4eb18a8cf"
 };
 const ADMIN_EMAIL = "enga018@gmail.com";
-const APP_VERSION = "v1.12.1";
+const APP_VERSION = "v1.12.2";
 
 
 firebase.initializeApp(firebaseConfig);
@@ -1002,7 +1017,7 @@ async function changePassword() {
 }
 
 function logoutUser() {
-    if (confirm('Logout?')) auth.signOut();
+    document.getElementById('logoutModal').classList.add('active');
 }
 
 function friendlyError(code) {
@@ -1767,12 +1782,14 @@ async function loadAdminSettings() {
 
 async function saveAdminSettings() {
     const vcName = document.getElementById('adminVcInput').value.trim();
+    const box = document.getElementById('settingsAlert');
     if (!vcName) return;
     try {
         await db.collection('settings').doc('app').set({ vcName }, { merge:true });
         document.getElementById('adminVcName').textContent = '📍 ' + vcName;
-        alert('✓ Settings saved!');
-    } catch(e) { alert('Error: '+e.message); }
+        box.innerHTML = '<div class="alert alert-success">✓ Settings saved!</div>';
+        setTimeout(()=>{ box.innerHTML=''; }, 3000);
+    } catch(e) { box.innerHTML = `<div class="alert alert-error">${e.message}</div>`; }
 }
 
 // ========== EXPORT ==========
