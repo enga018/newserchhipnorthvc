@@ -212,7 +212,7 @@
         </div>
         <div class="tabs">
             <button class="tab-btn active" onclick="switchTab('collect',this)">📋 Collect</button>
-            <button class="tab-btn" onclick="switchTab('myrecords',this)">📁 My Records</button>
+            <button class="tab-btn" onclick="switchTab('myrecords',this)">📊 My Work</button>
             <button class="tab-btn" onclick="switchTab('followup',this)">🔴 Follow Up</button>
         </div>
 
@@ -335,21 +335,19 @@
 
         <!-- MY RECORDS TAB -->
         <div id="myrecords" class="form-section">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-                <div class="section-title" style="margin:0">My Records</div>
-                <select id="myRecordFilter" onchange="renderMyRecords(myRecordsCache)" style="font-size:12px;padding:5px 8px;width:auto;border-radius:6px;border:1px solid var(--border)">
-                    <option value="all">All Records</option>
-                    <option value="complete">✅ Complete</option>
-                    <option value="absent">🔴 Needs Follow Up</option>
-                </select>
+            <div class="section-title">My Work Summary</div>
+            <div class="stats-grid">
+                <div class="stat-card"><div class="stat-value" id="myTotal">0</div><div class="stat-label">Total Done</div></div>
+                <div class="stat-card"><div class="stat-value" id="myComplete" style="color:var(--success)">0</div><div class="stat-label">Complete</div></div>
+                <div class="stat-card"><div class="stat-value" id="myAbsent" style="color:var(--warning)">0</div><div class="stat-label">Incomplete</div></div>
+                <div class="stat-card"><div class="stat-value" id="myToday">0</div><div class="stat-label">Today</div></div>
             </div>
-            <div id="myStats" class="stats-grid">
-                <div class="stat-card"><div class="stat-value" id="myTotal">0</div><div class="stat-label">Total</div></div>
-                <div class="stat-card warning"><div class="stat-value" id="myAbsent">0</div><div class="stat-label">Need Follow Up</div></div>
+            <div class="stat-card" style="margin-bottom:10px">
+                <div class="section-title">🏗️ Building Types</div>
+                <div id="myBuildingBreakdown" style="font-size:13px;color:var(--text2);line-height:2"></div>
             </div>
-            <div id="myRecordsList" class="records-list"></div>
-            <div id="myEmptyRecords" class="empty-state hidden">
-                <div class="empty-state-icon">📋</div><p>No records yet.</p>
+            <div class="info-box" style="margin-top:4px">
+                💡 Records still needing details are in the <b>Follow Up</b> tab. Your <b>Complete</b> count is your finished work.
             </div>
         </div>
 
@@ -508,7 +506,7 @@ const firebaseConfig = {
     appId: "1:610573950046:web:2b545f876953a4eb18a8cf"
 };
 const ADMIN_EMAIL = "enga018@gmail.com";
-const APP_VERSION = "v1.3.1";
+const APP_VERSION = "v1.4.0";
 
 
 firebase.initializeApp(firebaseConfig);
@@ -1032,20 +1030,21 @@ async function loadMyRecords() {
 }
 
 function renderMyRecords(records) {
-    const filter = document.getElementById('myRecordFilter')?.value || 'all';
-    let filtered = records;
-    if (filter === 'complete') filtered = records.filter(r => !needsFollowUp(r));
-    if (filter === 'absent') filtered = records.filter(r => needsFollowUp(r));
-
     const today = new Date().toDateString();
-    document.getElementById('myTotal').textContent = records.length;
-    document.getElementById('myAbsent').textContent = records.filter(r=>needsFollowUp(r)).length;
+    const incomplete = records.filter(r=>needsFollowUp(r)).length;
+    const complete = records.length - incomplete;
+    const todayCount = records.filter(r=>r.localTimestamp && new Date(r.localTimestamp).toDateString()===today).length;
 
-    const list = document.getElementById('myRecordsList');
-    const empty = document.getElementById('myEmptyRecords');
-    if (!filtered.length) { list.innerHTML=''; empty.classList.remove('hidden'); return; }
-    empty.classList.add('hidden');
-    list.innerHTML = filtered.map(r => recordCard(r, 'myrecords')).join('');
+    document.getElementById('myTotal').textContent = records.length;
+    document.getElementById('myComplete').textContent = complete;
+    document.getElementById('myAbsent').textContent = incomplete;
+    document.getElementById('myToday').textContent = todayCount;
+
+    // Building type breakdown
+    const bc = {};
+    records.forEach(r => { bc[r.buildingType] = (bc[r.buildingType]||0)+1; });
+    const el = document.getElementById('myBuildingBreakdown');
+    if (el) el.innerHTML = Object.entries(bc).map(([k,v])=>`<div>${k}: <b>${v}</b></div>`).join('') || '<div style="color:#999">No records yet</div>';
 }
 
 function renderFollowUp(records) {
