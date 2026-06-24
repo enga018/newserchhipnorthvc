@@ -508,7 +508,7 @@ const firebaseConfig = {
     appId: "1:610573950046:web:2b545f876953a4eb18a8cf"
 };
 const ADMIN_EMAIL = "enga018@gmail.com";
-const APP_VERSION = "v1.3.0";
+const APP_VERSION = "v1.3.1";
 
 
 firebase.initializeApp(firebaseConfig);
@@ -837,9 +837,9 @@ async function saveRecord(e) {
             await db.collection('records').doc(editingRecordId).update(data);
             cancelEdit();
             resetForm();
-            showAlert('✓ Record updated successfully!', 'success');
-            // After an edit (from Follow Up), return to records so they see it updated
-            setTimeout(() => switchTab('myrecords', document.querySelectorAll('#workerView .tab-btn')[1]), 1000);
+            showAlert('✓ Record updated! Pick the next one to follow up.', 'success');
+            // Return to Follow Up tab so they can continue with the next follow-up
+            setTimeout(() => switchTab('followup', document.querySelectorAll('#workerView .tab-btn')[2]), 1000);
         } else {
             data.timestamp = firebase.firestore.FieldValue.serverTimestamp();
             await db.collection('records').add(data);
