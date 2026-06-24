@@ -181,6 +181,9 @@
                 <input type="password" id="loginPassword" placeholder="Enter password">
             </div>
             <button class="btn-primary" onclick="loginUser()" style="margin-top:8px">🔐 Login</button>
+            <div style="text-align:center;margin-top:12px">
+                <a href="#" onclick="forgotPassword();return false;" style="color:var(--primary);font-size:13px">Forgot password?</a>
+            </div>
         </div>
         <div id="registerForm" class="hidden">
             <div class="info-box">📋 Register your account. Your supervisor will activate it.</div>
@@ -353,6 +356,7 @@
             <div class="info-box" style="margin-top:4px">
                 💡 Records still needing details are in the <b>Follow Up</b> tab. Your <b>Complete</b> count is your finished work.
             </div>
+            <button class="btn-secondary" onclick="openChangePassword()" style="margin-top:12px">🔑 Change My Password</button>
         </div>
 
         <!-- FOLLOW UP TAB -->
@@ -466,6 +470,9 @@
             </div>
             <button class="btn-primary" onclick="saveAdminSettings()">💾 Save Settings</button>
             <hr class="divider">
+            <div class="section-title">🔑 Account</div>
+            <button class="btn-primary" onclick="openChangePassword()">🔑 Change My Password</button>
+            <hr class="divider">
             <div class="section-title">Data Management</div>
             <button class="btn-primary" onclick="exportAllData()" style="margin-bottom:8px">⬇️ Export All Data (CSV)</button>
             <button class="btn-primary" onclick="exportAbsentData()" style="background:#e65100">⬇️ Export Needs-Follow-Up Only</button>
@@ -490,6 +497,19 @@
     <div class="save-success-box" id="saveSuccessMsg"></div>
 </div>
 
+<!-- Change Password Modal -->
+<div id="changePwModal" class="modal">
+    <div class="modal-content">
+        <button class="modal-close" onclick="document.getElementById('changePwModal').classList.remove('active')">×</button>
+        <div class="modal-header">🔑 Change My Password</div>
+        <div id="cpAlert"></div>
+        <div class="form-group"><label>Current Password</label><input type="password" id="cpCurrent" placeholder="Current password"></div>
+        <div class="form-group"><label>New Password</label><input type="password" id="cpNew" placeholder="At least 6 characters"></div>
+        <div class="form-group"><label>Confirm New Password</label><input type="password" id="cpConfirm" placeholder="Re-enter new password"></div>
+        <button class="btn-primary" onclick="changePassword()">🔑 Update Password</button>
+    </div>
+</div>
+
 <!-- Detail Modal -->
 <div id="detailModal" class="modal">
     <div class="modal-content">
@@ -510,7 +530,7 @@ const firebaseConfig = {
     appId: "1:610573950046:web:2b545f876953a4eb18a8cf"
 };
 const ADMIN_EMAIL = "enga018@gmail.com";
-const APP_VERSION = "v1.5.1";
+const APP_VERSION = "v1.6.0";
 
 
 firebase.initializeApp(firebaseConfig);
@@ -676,6 +696,50 @@ async function deleteWorker(uid, name) {
         await db.collection('users').doc(uid).delete();
         showAlert('Worker removed from system', 'success');
     } catch(e) { alert('Error: ' + e.message); }
+}
+
+async function forgotPassword() {
+    const email = (document.getElementById('loginEmail').value || '').trim() || prompt('Enter your registered email address:');
+    if (!email) return;
+    try {
+        await auth.sendPasswordResetEmail(email);
+        showAuthAlert('✓ Password reset link sent to ' + email + '. Check your email (and spam folder).', 'success');
+    } catch(e) {
+        showAuthAlert(friendlyError(e.code), 'error');
+    }
+}
+
+function openChangePassword() {
+    document.getElementById('cpAlert').innerHTML = '';
+    document.getElementById('cpCurrent').value = '';
+    document.getElementById('cpNew').value = '';
+    document.getElementById('cpConfirm').value = '';
+    document.getElementById('changePwModal').classList.add('active');
+}
+
+async function changePassword() {
+    const current = document.getElementById('cpCurrent').value;
+    const newPass = document.getElementById('cpNew').value;
+    const confirmPass = document.getElementById('cpConfirm').value;
+    const box = document.getElementById('cpAlert');
+    if (!current || !newPass || !confirmPass) { box.innerHTML = '<div class="alert alert-error">Please fill all fields</div>'; return; }
+    if (newPass.length < 6) { box.innerHTML = '<div class="alert alert-error">New password must be at least 6 characters</div>'; return; }
+    if (newPass !== confirmPass) { box.innerHTML = '<div class="alert alert-error">New passwords do not match</div>'; return; }
+    try {
+        box.innerHTML = '<div class="alert alert-info">Updating...</div>';
+        // Re-authenticate with current password first
+        const cred = firebase.auth.EmailAuthProvider.credential(currentUser.email, current);
+        await currentUser.reauthenticateWithCredential(cred);
+        await currentUser.updatePassword(newPass);
+        box.innerHTML = '<div class="alert alert-success">✓ Password changed successfully!</div>';
+        document.getElementById('cpCurrent').value = '';
+        document.getElementById('cpNew').value = '';
+        document.getElementById('cpConfirm').value = '';
+        setTimeout(()=>{ document.getElementById('changePwModal').classList.remove('active'); }, 2000);
+    } catch(e) {
+        const msg = e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential' ? 'Current password is incorrect' : friendlyError(e.code);
+        box.innerHTML = `<div class="alert alert-error">${msg}</div>`;
+    }
 }
 
 function logoutUser() {
