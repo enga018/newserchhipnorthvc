@@ -570,7 +570,7 @@ const firebaseConfig = {
     appId: "1:610573950046:web:2b545f876953a4eb18a8cf"
 };
 const ADMIN_EMAIL = "enga018@gmail.com";
-const APP_VERSION = "v1.9.0";
+const APP_VERSION = "v1.9.1";
 
 
 firebase.initializeApp(firebaseConfig);
@@ -1350,7 +1350,7 @@ async function loadAdminData() {
         db.collection('records').orderBy('localTimestamp','desc').onSnapshot(snap => {
             allRecords = snap.docs.map(d => ({id:d.id,...d.data()}));
             renderAdminOverview();
-            renderAllRecords();
+            filterRecords();
         });
         db.collection('users').onSnapshot(snap => {
             allUsers = {};
