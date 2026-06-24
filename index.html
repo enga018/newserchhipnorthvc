@@ -373,11 +373,14 @@
         <div class="admin-header">
             <div style="display:flex;justify-content:space-between;align-items:start">
                 <div>
-                    <div class="admin-badge" onclick="openAdminProfile()" style="cursor:pointer">👑 ADMIN ⚙️</div>
+                    <div class="admin-badge">👑 ADMIN</div>
                     <h1 style="font-size:17px;font-weight:600;margin-top:4px">🏘️ Admin Dashboard</h1>
                     <p id="adminVcName" style="font-size:11px;opacity:0.9;margin-top:2px"></p>
                 </div>
-                <button class="btn-logout" onclick="logoutUser()">Logout</button>
+                <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+                    <span class="user-badge" id="adminNameBadge" onclick="openAdminProfile()" style="cursor:pointer">⚙️ Profile</span>
+                    <button class="btn-logout" onclick="logoutUser()">Logout</button>
+                </div>
             </div>
         </div>
         <div class="tabs">
@@ -569,7 +572,7 @@ const firebaseConfig = {
     appId: "1:610573950046:web:2b545f876953a4eb18a8cf"
 };
 const ADMIN_EMAIL = "enga018@gmail.com";
-const APP_VERSION = "v1.7.0";
+const APP_VERSION = "v1.7.1";
 
 
 firebase.initializeApp(firebaseConfig);
