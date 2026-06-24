@@ -340,9 +340,15 @@
                 <div class="stat-card"><div class="stat-value" id="myAbsent" style="color:var(--warning)">0</div><div class="stat-label">Incomplete</div></div>
                 <div class="stat-card"><div class="stat-value" id="myToday">0</div><div class="stat-label">Today</div></div>
             </div>
-            <div class="stat-card" style="margin-bottom:10px">
-                <div class="section-title">🏗️ Building Types</div>
-                <div id="myBuildingBreakdown" style="font-size:13px;color:var(--text2);line-height:2"></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+                <div class="stat-card">
+                    <div class="section-title">🏗️ Building Types</div>
+                    <div id="myBuildingBreakdown" style="font-size:13px;color:var(--text2);line-height:2"></div>
+                </div>
+                <div class="stat-card">
+                    <div class="section-title">🏠 Property Types</div>
+                    <div id="myPropertyBreakdown" style="font-size:13px;color:var(--text2);line-height:2"></div>
+                </div>
             </div>
             <div class="info-box" style="margin-top:4px">
                 💡 Records still needing details are in the <b>Follow Up</b> tab. Your <b>Complete</b> count is your finished work.
@@ -504,7 +510,7 @@ const firebaseConfig = {
     appId: "1:610573950046:web:2b545f876953a4eb18a8cf"
 };
 const ADMIN_EMAIL = "enga018@gmail.com";
-const APP_VERSION = "v1.5.0";
+const APP_VERSION = "v1.5.1";
 
 
 firebase.initializeApp(firebaseConfig);
@@ -1041,6 +1047,12 @@ function renderMyRecords(records) {
     records.forEach(r => { bc[r.buildingType] = (bc[r.buildingType]||0)+1; });
     const el = document.getElementById('myBuildingBreakdown');
     if (el) el.innerHTML = Object.entries(bc).map(([k,v])=>`<div>${k}: <b>${v}</b></div>`).join('') || '<div style="color:#999">No records yet</div>';
+
+    // Property type breakdown
+    const pc = {};
+    records.forEach(r => { pc[r.propertyType] = (pc[r.propertyType]||0)+1; });
+    const pel = document.getElementById('myPropertyBreakdown');
+    if (pel) pel.innerHTML = Object.entries(pc).map(([k,v])=>`<div>${k}: <b>${v}</b></div>`).join('') || '<div style="color:#999">No records yet</div>';
 }
 
 function renderFollowUp(records) {
