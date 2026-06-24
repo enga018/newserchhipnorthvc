@@ -231,6 +231,7 @@
                         <option value="Residential">Residential</option>
                         <option value="Commercial">Commercial</option>
                         <option value="Mixed Use">Mixed Use</option>
+                        <option value="Institutional/Public">Institutional/Public</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -238,7 +239,7 @@
                     <select id="ownerCategory" onchange="updateFormFields()" required>
                         <option value="">Select owner type</option>
                         <option value="Individual">Individual</option>
-                        <option value="Church">Church</option>
+                        <option value="Religious">Religious (Church/Temple/Mosque)</option>
                         <option value="NGO">NGO</option>
                         <option value="Education">Education</option>
                         <option value="Government">Government</option>
@@ -410,11 +411,12 @@
                     <option value="Residential">Residential</option>
                     <option value="Commercial">Commercial</option>
                     <option value="Mixed Use">Mixed Use</option>
+                    <option value="Institutional/Public">Institutional/Public</option>
                 </select>
                 <select id="filterOwner" onchange="filterRecords()">
                     <option value="">All Owner Types</option>
                     <option value="Individual">Individual</option>
-                    <option value="Church">Church</option>
+                    <option value="Religious">Religious</option>
                     <option value="NGO">NGO</option>
                     <option value="Education">Education</option>
                     <option value="Government">Government</option>
@@ -496,7 +498,7 @@ const firebaseConfig = {
     appId: "1:610573950046:web:2b545f876953a4eb18a8cf"
 };
 const ADMIN_EMAIL = "enga018@gmail.com";
-const APP_VERSION = "v1.1.0";
+const APP_VERSION = "v1.2.0";
 
 
 firebase.initializeApp(firebaseConfig);
@@ -690,7 +692,7 @@ function showAddWorkerAlert(msg, type) {
 }
 
 // ========== FORM ==========
-const INSTITUTION_CATEGORIES = ['Church','NGO','Education','Government'];
+const INSTITUTION_CATEGORIES = ['Religious','Church','NGO','Education','Government'];
 
 function updateFormFields() {
     const cat = document.getElementById('ownerCategory').value;
@@ -852,7 +854,7 @@ function startEditRecord(r) {
     document.getElementById('propertyType').value = validPropTypes.includes(r.propertyType) ? r.propertyType : 'Residential';
     // Restore owner category (fallback for old records that used propertyType for institution)
     let cat = r.ownerCategory;
-    if (!cat) cat = r.isInstitution ? (INSTITUTION_CATEGORIES.includes(r.propertyType)?r.propertyType:'Church') : 'Individual';
+    if (!cat) cat = r.isInstitution ? (INSTITUTION_CATEGORIES.includes(r.propertyType)?r.propertyType:'Religious') : 'Individual';
     document.getElementById('ownerCategory').value = cat;
     document.getElementById('buildingType').value = r.buildingType;
     updateFormFields();
