@@ -142,6 +142,11 @@
         .info-box{background:#e7f5ff;border:1px solid #74c0fc;border-radius:8px;padding:12px;font-size:13px;color:#0c3c72;margin-bottom:12px}
         .follow-up-banner{background:#fff3cd;border:1px solid #ffc107;border-radius:6px;padding:8px 12px;font-size:13px;color:#856404;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center}
         @media(max-width:480px){.stats-grid{grid-template-columns:1fr 1fr}}
+        .save-success-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.35);z-index:1500;align-items:center;justify-content:center;padding:20px}
+        .save-success-overlay.active{display:flex;animation:fadeIn 0.2s}
+        .save-success-box{background:#fff;border-radius:14px;padding:28px 32px;text-align:center;box-shadow:0 8px 30px rgba(0,0,0,0.25);max-width:320px;animation:popIn 0.25s}
+        @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+        @keyframes popIn{from{transform:scale(0.85);opacity:0}to{transform:scale(1);opacity:1}}
     </style>
 </head>
 <body>
@@ -478,6 +483,11 @@
     <div style="text-align:center;padding:16px 0 8px;font-size:11px;color:#999" id="versionFooter"></div>
 </div>
 
+<!-- Save Success Popup -->
+<div id="saveSuccessOverlay" class="save-success-overlay">
+    <div class="save-success-box" id="saveSuccessMsg"></div>
+</div>
+
 <!-- Detail Modal -->
 <div id="detailModal" class="modal">
     <div class="modal-content">
@@ -498,7 +508,7 @@ const firebaseConfig = {
     appId: "1:610573950046:web:2b545f876953a4eb18a8cf"
 };
 const ADMIN_EMAIL = "enga018@gmail.com";
-const APP_VERSION = "v1.2.1";
+const APP_VERSION = "v1.3.0";
 
 
 firebase.initializeApp(firebaseConfig);
@@ -825,15 +835,19 @@ async function saveRecord(e) {
             data.adminFlaggedAt = firebase.firestore.FieldValue.delete();
             data.needsCorrection = firebase.firestore.FieldValue.delete();
             await db.collection('records').doc(editingRecordId).update(data);
+            cancelEdit();
+            resetForm();
             showAlert('✓ Record updated successfully!', 'success');
+            // After an edit (from Follow Up), return to records so they see it updated
+            setTimeout(() => switchTab('myrecords', document.querySelectorAll('#workerView .tab-btn')[1]), 1000);
         } else {
             data.timestamp = firebase.firestore.FieldValue.serverTimestamp();
             await db.collection('records').add(data);
-            showAlert(isAbsent ? '✓ Saved — some details missing, marked for follow-up' : '✓ Record saved as complete!', 'success');
+            const savedId = data.propertyId;
+            resetForm();
+            // Stay on Collect tab so worker can enter the next property immediately
+            showSaveSuccess(savedId, isAbsent);
         }
-        cancelEdit();
-        resetForm();
-        setTimeout(() => switchTab('myrecords', document.querySelectorAll('#workerView .tab-btn')[1]), 1000);
     } catch(err) {
         showAlert('❌ Error: ' + err.message, 'error');
     } finally {
@@ -1411,10 +1425,28 @@ function switchAdminTab(tabId, btn) {
     if (btn) btn.classList.add('active');
 }
 
+function showSaveSuccess(propId, isAbsent) {
+    const overlay = document.getElementById('saveSuccessOverlay');
+    const msg = document.getElementById('saveSuccessMsg');
+    msg.innerHTML = `<div style="font-size:42px;margin-bottom:8px">✅</div>
+        <div style="font-size:18px;font-weight:700;color:#22863a;margin-bottom:4px">Saved & Synced</div>
+        <div style="font-size:15px;color:var(--text);margin-bottom:4px">${propId}</div>
+        <div style="font-size:13px;color:${isAbsent?'#856404':'#22863a'}">${isAbsent?'⚠️ Some details missing — flagged for follow-up':'Complete record'}</div>
+        <div style="font-size:12px;color:var(--text2);margin-top:10px">Ready for next property</div>`;
+    overlay.classList.add('active');
+    setTimeout(() => overlay.classList.remove('active'), 1800);
+    // Scroll form back to top for next entry
+    window.scrollTo({top:0, behavior:'smooth'});
+    setTimeout(() => { document.getElementById('propertyId').focus(); }, 300);
+}
+
 function showAlert(msg, type) {
     const box = document.getElementById('alertBox');
     if (!box) return;
     box.innerHTML = `<div class="alert alert-${type}">${msg}</div>`;
+    // Scroll to top so the notification is always seen (especially errors)
+    try { box.scrollIntoView({behavior:'smooth', block:'start'}); } catch(e) {}
+    window.scrollTo({top:0, behavior:'smooth'});
     if (type==='success') setTimeout(()=>{ box.innerHTML=''; }, 4000);
 }
 
