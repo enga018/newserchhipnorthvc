@@ -15,6 +15,7 @@
             --warning:#cb2431;--bg:#f5f7fa;--surface:#fff;--text:#24292e;
             --text2:#586069;--border:#d1d5da;--focus:#0366d6;--orange:#e65100
         }
+        body.modal-open{overflow:hidden;position:fixed;width:100%;height:100%}
         body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);line-height:1.5}
         .container{max-width:620px;margin:0 auto;padding:10px;min-height:100vh}
 
@@ -691,7 +692,7 @@ const firebaseConfig = {
     appId: "1:610573950046:web:2b545f876953a4eb18a8cf"
 };
 const ADMIN_EMAIL = "enga018@gmail.com";
-const APP_VERSION = "v1.12.7";
+const APP_VERSION = "v1.13.0";
 
 
 firebase.initializeApp(firebaseConfig);
@@ -699,6 +700,32 @@ firebase.initializeApp(firebaseConfig);
 // Show loading while auth state checks
 
 const auth = firebase.auth();
+
+// Lock background scroll whenever any modal/overlay is open (prevents swipe bleed-through)
+(function setupModalScrollLock() {
+    function anyOverlayOpen() {
+        const modals = document.querySelectorAll('.modal.active');
+        const photo = document.getElementById('fullPhotoOverlay');
+        const photoOpen = photo && photo.classList.contains('active');
+        const saveSuccess = document.querySelector('.save-success-overlay.active');
+        return modals.length > 0 || photoOpen || !!saveSuccess;
+    }
+    let savedScrollY = 0;
+    const observer = new MutationObserver(() => {
+        const open = anyOverlayOpen();
+        const locked = document.body.classList.contains('modal-open');
+        if (open && !locked) {
+            savedScrollY = window.scrollY;
+            document.body.style.top = `-${savedScrollY}px`;
+            document.body.classList.add('modal-open');
+        } else if (!open && locked) {
+            document.body.classList.remove('modal-open');
+            document.body.style.top = '';
+            window.scrollTo(0, savedScrollY);
+        }
+    });
+    observer.observe(document.body, { attributes:true, subtree:true, attributeFilter:['class','style'] });
+})();
 // Show app version
 (function(){
     const av = document.getElementById('authVersion');
