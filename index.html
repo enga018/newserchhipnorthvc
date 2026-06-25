@@ -11,9 +11,9 @@
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
         :root{
-            --primary:#2c5282;--primary-dark:#1e3a5f;--success:#22863a;
-            --warning:#cb2431;--bg:#f5f7fa;--surface:#fff;--text:#24292e;
-            --text2:#586069;--border:#d1d5da;--focus:#0366d6;--orange:#e65100
+            --primary:#2c5282;--primary-dark:#1e3a5f;--primary-light:#3a6ea5;--success:#22863a;
+            --warning:#cb2431;--bg:#eef2f7;--surface:#fff;--text:#1a2533;
+            --text2:#586069;--border:#dde3ea;--focus:#0366d6;--orange:#e65100
         }
         body.modal-open{overflow:hidden;position:fixed;width:100%;height:100%}
         body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);line-height:1.5}
@@ -30,7 +30,7 @@
         .auth-tab.active{background:var(--primary);color:white}
 
         /* HEADER */
-        .header{background:var(--primary);color:white;padding:14px 16px;border-radius:8px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center}
+        .header{background:linear-gradient(135deg,#2c5282,#3a6ea5);color:white;padding:18px 18px;border-radius:16px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 4px 14px rgba(44,82,130,0.25)}
         .header-left h1{font-size:17px;font-weight:600}
         .header-left p{font-size:11px;opacity:0.9;margin-top:2px}
         .header-right{display:flex;flex-direction:column;align-items:flex-end;gap:5px}
@@ -38,16 +38,16 @@
         .btn-logout{background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:white;padding:3px 10px;border-radius:4px;font-size:11px;cursor:pointer}
 
         /* TABS */
-        .tabs{display:flex;gap:0;margin-bottom:14px;background:var(--surface);border-radius:8px;padding:3px;border:1px solid var(--border)}
-        .tab-btn{flex:1;padding:7px 2px;background:none;border:none;color:var(--text2);font-size:11px;font-weight:500;cursor:pointer;border-radius:6px;transition:all 0.2s}
-        .tab-btn.active{background:var(--primary);color:white}
+        .tabs{display:flex;gap:0;margin-bottom:16px;background:var(--surface);border-radius:14px;padding:4px;border:1px solid var(--border);box-shadow:0 2px 8px rgba(26,37,51,0.05)}
+        .tab-btn{flex:1;padding:9px 2px;background:none;border:none;color:var(--text2);font-size:11px;font-weight:600;cursor:pointer;border-radius:10px;transition:all 0.2s}
+        .tab-btn.active{background:linear-gradient(135deg,#2c5282,#3a6ea5);color:white;box-shadow:0 2px 6px rgba(44,82,130,0.3)}
 
         /* FORMS */
         .form-section{display:none}.form-section.active{display:block}
         .form-group{margin-bottom:13px}
         label{display:block;font-size:13px;font-weight:600;margin-bottom:5px;color:var(--text)}
         input[type=text],input[type=email],input[type=tel],input[type=password],select,textarea{
-            width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:6px;
+            width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:11px;
             font-size:14px;font-family:inherit;background:var(--surface);transition:border-color 0.2s
         }
         input:focus,select:focus,textarea:focus{outline:none;border-color:var(--focus);box-shadow:0 0 0 3px rgba(3,102,214,0.1)}
@@ -55,15 +55,15 @@
         .required-star{color:var(--warning)}
 
         /* BUTTONS */
-        button{padding:10px 16px;border:none;border-radius:6px;font-size:14px;font-weight:500;cursor:pointer;transition:all 0.2s;font-family:inherit}
-        .btn-primary{background:var(--primary);color:white;width:100%}
+        button{padding:12px 16px;border:none;border-radius:11px;font-size:14px;font-weight:600;cursor:pointer;transition:all 0.2s;font-family:inherit}
+        .btn-primary{background:linear-gradient(135deg,#2c5282,#3a6ea5);color:white;width:100%;box-shadow:0 2px 8px rgba(44,82,130,0.25)}
         .btn-primary:hover{background:var(--primary-dark)}
-        .btn-secondary{background:var(--border);color:var(--text);width:100%}
+        .btn-secondary{background:var(--bg);color:var(--text);width:100%;border:1px solid var(--border)}
         .btn-danger{background:var(--warning);color:white}
         .btn-danger:hover{background:#a61d1d}
         .btn-success{background:var(--success);color:white}
-        .btn-photo{background:var(--primary);color:white;padding:10px;font-size:13px;border-radius:6px;width:100%}
-        .btn-small{padding:5px 10px;font-size:12px;border-radius:4px}
+        .btn-photo{background:linear-gradient(135deg,#2c5282,#3a6ea5);color:white;padding:12px;font-size:13px;border-radius:11px;width:100%}
+        .btn-small{padding:6px 12px;font-size:12px;border-radius:8px}
         .button-group{display:flex;gap:8px;margin-top:18px}
         input[type=file]{display:none}
 
@@ -85,7 +85,7 @@
 
         /* RECORDS */
         .records-list{display:flex;flex-direction:column;gap:10px}
-        .record-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px}
+        .record-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;box-shadow:0 2px 8px rgba(26,37,51,0.05)}
         .record-card.absent{border-left:4px solid var(--warning)}
         .record-card.complete{border-left:4px solid var(--success)}
         .record-id{font-weight:600;color:var(--primary);font-size:14px}
@@ -100,13 +100,13 @@
 
         /* STATS */
         .stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
-        .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px;text-align:center}
+        .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px;text-align:center;box-shadow:0 2px 8px rgba(26,37,51,0.05)}
         .stat-value{font-size:26px;font-weight:700;color:var(--primary);line-height:1}
         .stat-label{font-size:11px;color:var(--text2);margin-top:4px;text-transform:uppercase;letter-spacing:0.5px}
         .stat-card.warning .stat-value{color:var(--warning)}
 
         /* ADMIN */
-        .admin-header{background:linear-gradient(135deg,#1e3a5f,#2c5282);color:white;padding:14px 16px;border-radius:8px;margin-bottom:14px}
+        .admin-header{background:linear-gradient(135deg,#1e3a5f,#3a6ea5);color:white;padding:18px 18px;border-radius:16px;margin-bottom:16px;box-shadow:0 4px 14px rgba(44,82,130,0.25)}
         .admin-badge{background:rgba(255,215,0,0.3);border:1px solid rgba(255,215,0,0.5);padding:2px 10px;border-radius:10px;font-size:11px;font-weight:600;color:#ffd700;display:inline-block;margin-bottom:6px}
         .worker-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:10px}
         .worker-name{font-weight:600;font-size:15px;color:var(--primary)}
@@ -235,7 +235,7 @@
                 <span style="font-size:13px;color:#856404">✏️ Editing existing record</span>
                 <button type="button" onclick="cancelEdit();resetForm()" style="background:#856404;color:white;padding:4px 12px;font-size:12px;border-radius:4px">Cancel Edit</button>
             </div>
-            <form id="propertyForm" onsubmit="saveRecord(event)">
+            <form id="propertyForm" onsubmit="saveRecord(event)" style="background:var(--surface);border-radius:16px;padding:18px;box-shadow:0 2px 10px rgba(26,37,51,0.06);border:1px solid var(--border)">
                 <div class="form-group">
                     <label>Property ID <span class="required-star">*</span></label>
                     <div style="display:flex;align-items:center;gap:0"><span style="background:#e7f5ff;border:1.5px solid var(--border);border-right:none;padding:10px 12px;border-radius:6px 0 0 6px;font-size:14px;font-weight:600;color:var(--primary);white-space:nowrap">NSN-</span><input type="text" id="propertyId" placeholder="0001" pattern="(NSN-)?[0-9]{1,4}" maxlength="8" required style="border-radius:0 6px 6px 0;border-left:none"></div><div class="text-muted" style="font-size:12px;margin-top:5px">Enter 4-digit number from sticker (e.g. 0001). NSN- is added automatically.</div>
@@ -690,7 +690,7 @@ const firebaseConfig = {
     appId: "1:610573950046:web:2b545f876953a4eb18a8cf"
 };
 const ADMIN_EMAIL = "enga018@gmail.com";
-const APP_VERSION = "v1.13.1";
+const APP_VERSION = "v1.14.0";
 
 
 firebase.initializeApp(firebaseConfig);
