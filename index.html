@@ -652,7 +652,6 @@
 
 <!-- Full Photo Viewer -->
 <div id="fullPhotoOverlay" onclick="this.classList.remove('active')" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:2000;align-items:center;justify-content:center;padding:10px;flex-direction:column">
-    <button onclick="event.stopPropagation();document.getElementById('fullPhotoOverlay').classList.remove('active')" style="position:absolute;top:calc(16px + env(safe-area-inset-top));right:16px;width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,0.2);border:none;color:#fff;font-size:24px;line-height:1;cursor:pointer;z-index:2001;display:flex;align-items:center;justify-content:center">✕</button>
     <img id="fullPhotoImg" style="max-width:100%;max-height:88%;object-fit:contain;border-radius:6px">
     <div style="color:#fff;font-size:13px;margin-top:12px;opacity:0.7">Tap anywhere to close · pinch to zoom</div>
 </div>
@@ -692,7 +691,7 @@ const firebaseConfig = {
     appId: "1:610573950046:web:2b545f876953a4eb18a8cf"
 };
 const ADMIN_EMAIL = "enga018@gmail.com";
-const APP_VERSION = "v1.12.6";
+const APP_VERSION = "v1.12.7";
 
 
 firebase.initializeApp(firebaseConfig);
