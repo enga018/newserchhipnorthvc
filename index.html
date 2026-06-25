@@ -365,6 +365,10 @@
                     <div id="myPropertyBreakdown" style="font-size:13px;color:var(--text2);line-height:2"></div>
                 </div>
             </div>
+            <div class="stat-card" style="margin-bottom:10px">
+                <div class="section-title">🏛️ Owner Types</div>
+                <div id="myOwnerBreakdown" style="font-size:13px;color:var(--text2);line-height:2"></div>
+            </div>
             <div class="info-box" style="margin-top:4px">
                 💡 Records still needing details are in the <b>Follow Up</b> tab. Your <b>Complete</b> count is your finished work.
             </div>
@@ -419,6 +423,10 @@
                     <div class="section-title">🏠 Property Types</div>
                     <div id="adminPropertyBreakdown" style="font-size:13px;color:var(--text2);line-height:2"></div>
                 </div>
+            </div>
+            <div class="stat-card" style="margin-bottom:12px">
+                <div class="section-title">🏛️ Owner Types</div>
+                <div id="adminOwnerBreakdown" style="font-size:13px;color:var(--text2);line-height:2"></div>
             </div>
             <div class="stat-card" style="margin-bottom:12px">
                 <div class="section-title">👥 Worker Activity Today</div>
@@ -690,7 +698,7 @@ const firebaseConfig = {
     appId: "1:610573950046:web:2b545f876953a4eb18a8cf"
 };
 const ADMIN_EMAIL = "enga018@gmail.com";
-const APP_VERSION = "v1.14.0";
+const APP_VERSION = "v1.14.1";
 
 
 firebase.initializeApp(firebaseConfig);
@@ -1530,6 +1538,12 @@ function renderMyRecords(records) {
     records.forEach(r => { pc[r.propertyType] = (pc[r.propertyType]||0)+1; });
     const pel = document.getElementById('myPropertyBreakdown');
     if (pel) pel.innerHTML = Object.entries(pc).map(([k,v])=>`<div>${k}: <b>${v}</b></div>`).join('') || '<div style="color:#999">No records yet</div>';
+
+    // Owner type breakdown
+    const oc = {};
+    records.forEach(r => { const k = r.ownerCategory||'Individual'; oc[k] = (oc[k]||0)+1; });
+    const oel = document.getElementById('myOwnerBreakdown');
+    if (oel) oel.innerHTML = Object.entries(oc).map(([k,v])=>`<div>${k}: <b>${v}</b></div>`).join('') || '<div style="color:#999">No records yet</div>';
 }
 
 function renderFollowUp(records) {
@@ -1690,10 +1704,11 @@ function renderAdminOverview() {
     document.getElementById('adminAbsent').textContent = allRecords.filter(r=>needsFollowUp(r)).length;
     document.getElementById('adminWorkerCount').textContent = Object.values(allUsers).filter(u=>u.email!==ADMIN_EMAIL).length;
 
-    const bc={}, pc={};
-    allRecords.forEach(r=>{ bc[r.buildingType]=(bc[r.buildingType]||0)+1; pc[r.propertyType]=(pc[r.propertyType]||0)+1; });
+    const bc={}, pc={}, oc={};
+    allRecords.forEach(r=>{ bc[r.buildingType]=(bc[r.buildingType]||0)+1; pc[r.propertyType]=(pc[r.propertyType]||0)+1; const ok=r.ownerCategory||'Individual'; oc[ok]=(oc[ok]||0)+1; });
     document.getElementById('adminBuildingBreakdown').innerHTML = Object.entries(bc).map(([k,v])=>`<div>${k}: <b>${v}</b></div>`).join('') || '<div style="color:#999">No data</div>';
     document.getElementById('adminPropertyBreakdown').innerHTML = Object.entries(pc).map(([k,v])=>`<div>${k}: <b>${v}</b></div>`).join('') || '<div style="color:#999">No data</div>';
+    document.getElementById('adminOwnerBreakdown').innerHTML = Object.entries(oc).map(([k,v])=>`<div>${k}: <b>${v}</b></div>`).join('') || '<div style="color:#999">No data</div>';
 
     const tw={};
     allRecords.filter(r=>r.localTimestamp&&new Date(r.localTimestamp).toDateString()===today)
