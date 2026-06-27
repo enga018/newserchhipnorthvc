@@ -335,6 +335,13 @@
                 </div>
 
                 <hr class="divider">
+                <div class="section-title">👨‍👩‍👧 Households / Families <span style="font-size:11px;color:var(--text2);font-weight:400">(who lives here)</span></div>
+                <div class="text-muted" style="font-size:12px;margin-bottom:8px">Add each family living in this property and its members. Leave empty for a vacant/empty house.</div>
+                <div id="householdSummary" style="font-size:13px;font-weight:600;color:var(--primary);background:#e7f5ff;border-radius:8px;padding:8px 10px;margin-bottom:10px;display:none"></div>
+                <div id="familiesContainer"></div>
+                <button type="button" class="btn-secondary" onclick="addFamily()" style="width:100%;margin-bottom:4px">➕ Add Family</button>
+
+                <hr class="divider">
                 <div class="form-group">
                     <label>Remarks / Notes</label>
                     <textarea id="remarks" placeholder="e.g., Owner absent, locked, under construction..."></textarea>
@@ -377,6 +384,16 @@
             <div class="stat-card" style="margin-bottom:10px">
                 <div class="section-title">🏛️ Owner Types</div>
                 <div id="myOwnerBreakdown" style="font-size:13px;color:var(--text2);line-height:2"></div>
+            </div>
+            <div class="stat-card" style="margin-bottom:10px">
+                <div class="section-title">👨‍👩‍👧 Population & Households</div>
+                <div class="stats-grid" style="margin-top:8px">
+                    <div class="stat-card"><div class="stat-value" id="myFamilies">0</div><div class="stat-label">Families</div></div>
+                    <div class="stat-card"><div class="stat-value" id="myPopulation">0</div><div class="stat-label">Population</div></div>
+                    <div class="stat-card"><div class="stat-value" id="myChildren">0</div><div class="stat-label">Children</div></div>
+                    <div class="stat-card"><div class="stat-value" id="myMale">0</div><div class="stat-label">Male</div></div>
+                    <div class="stat-card"><div class="stat-value" id="myFemale">0</div><div class="stat-label">Female</div></div>
+                </div>
             </div>
             <div class="info-box" style="margin-top:4px">
                 💡 Records still needing details are in the <b>Follow Up</b> tab. Your <b>Complete</b> count is your finished work.
@@ -448,6 +465,16 @@
                 <div id="adminOwnerBreakdown" style="font-size:13px;color:var(--text2);line-height:2"></div>
             </div>
             <div class="stat-card" style="margin-bottom:12px">
+                <div class="section-title">👨‍👩‍👧 Population & Households</div>
+                <div class="stats-grid" style="margin-top:8px">
+                    <div class="stat-card"><div class="stat-value" id="adminFamilies">0</div><div class="stat-label">Families</div></div>
+                    <div class="stat-card"><div class="stat-value" id="adminPopulation">0</div><div class="stat-label">Population</div></div>
+                    <div class="stat-card"><div class="stat-value" id="adminChildren">0</div><div class="stat-label">Children</div></div>
+                    <div class="stat-card"><div class="stat-value" id="adminMale">0</div><div class="stat-label">Male</div></div>
+                    <div class="stat-card"><div class="stat-value" id="adminFemale">0</div><div class="stat-label">Female</div></div>
+                </div>
+            </div>
+            <div class="stat-card" style="margin-bottom:12px">
                 <div class="section-title">👥 Worker Activity Today</div>
                 <div id="adminWorkerToday" style="font-size:13px;color:var(--text2)"></div>
             </div>
@@ -481,6 +508,9 @@
             <div style="display:flex;gap:8px;margin-bottom:8px">
                 <button class="btn-primary" onclick="exportFilteredData()" style="flex:1">⬇️ Export CSV</button>
                 <button class="btn-primary" onclick="exportFilteredPhotos()" style="flex:1;background:#6a1b9a">🖼️ Photos ZIP</button>
+            </div>
+            <div style="display:flex;gap:8px;margin-bottom:8px">
+                <button class="btn-primary" onclick="exportMembersCSV()" style="flex:1;background:#0b7285">👨‍👩‍👧 Export Members CSV</button>
             </div>
             <div id="photoExportStatus" style="font-size:12px;color:var(--text2);margin-bottom:8px"></div>
             <div style="font-size:12px;color:var(--text2);margin-bottom:8px" id="recordCount"></div>
@@ -717,7 +747,7 @@ const firebaseConfig = {
     appId: "1:610573950046:web:2b545f876953a4eb18a8cf"
 };
 const ADMIN_EMAIL = "enga018@gmail.com";
-const APP_VERSION = "v1.14.2";
+const APP_VERSION = "v1.15.0";
 
 
 firebase.initializeApp(firebaseConfig);
@@ -1116,6 +1146,83 @@ function updateFormFields() {
     document.getElementById('organizationName').removeAttribute('required');
 }
 
+/* ---------------- Households / Families ---------------- */
+// In-memory draft for the Collect form. Each entry: { headName, contact, members:[{name,gender,age,relation}] }
+let householdDraft = [];
+const RELATIONS = ['Head','Spouse','Son','Daughter','Father','Mother','Brother','Sister','Other'];
+
+function esc(s){ return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function addFamily(){ householdDraft.push({ headName:'', contact:'', members:[] }); renderHouseholds(); }
+function removeFamily(fi){ householdDraft.splice(fi,1); renderHouseholds(); }
+function addMember(fi){ householdDraft[fi].members.push({ name:'', gender:'', age:'', relation:'' }); renderHouseholds(); }
+function removeMember(fi,mi){ householdDraft[fi].members.splice(mi,1); renderHouseholds(); }
+function updateFamilyField(fi,field,value){ householdDraft[fi][field] = value; refreshHouseholdSummary(); }
+function updateMemberField(fi,mi,field,value){ householdDraft[fi].members[mi][field] = value; refreshHouseholdSummary(); }
+
+function refreshHouseholdSummary(){
+    const el = document.getElementById('householdSummary');
+    if (!el) return;
+    const s = householdStats({ families: householdDraft });
+    if (!householdDraft.length) { el.style.display = 'none'; return; }
+    el.style.display = 'block';
+    el.textContent = `${s.families} ${s.families===1?'family':'families'} · ${s.population} ${s.population===1?'person':'people'} · ${s.children} children · ${s.males} male / ${s.females} female`;
+}
+
+function renderHouseholds(){
+    const c = document.getElementById('familiesContainer');
+    if (!c) return;
+    c.innerHTML = householdDraft.map((f, fi) => `
+        <div style="border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:10px;background:var(--bg)">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                <span style="font-weight:600;color:var(--primary)">👪 Family ${fi+1}</span>
+                <button type="button" onclick="removeFamily(${fi})" style="background:none;border:none;color:var(--danger,#cb2431);font-size:18px;cursor:pointer;padding:0 4px">✕</button>
+            </div>
+            <div class="form-group">
+                <label>Head of Family</label>
+                <input type="text" value="${esc(f.headName)}" placeholder="Name of head of family" oninput="updateFamilyField(${fi},'headName',this.value)">
+            </div>
+            <div class="form-group">
+                <label>Family Contact <span style="font-size:12px;color:var(--text2);font-weight:400">(optional)</span></label>
+                <input type="tel" value="${esc(f.contact)}" placeholder="10-digit mobile number" pattern="[0-9]{10}" oninput="updateFamilyField(${fi},'contact',this.value)">
+            </div>
+            <div style="font-size:13px;font-weight:600;color:var(--text);margin:4px 0 6px">Members</div>
+            ${f.members.map((m, mi) => `
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;border-top:1px dashed var(--border);padding-top:8px;margin-bottom:6px">
+                    <input type="text" value="${esc(m.name)}" placeholder="Member name" oninput="updateMemberField(${fi},${mi},'name',this.value)" style="grid-column:1 / -1">
+                    <select onchange="updateMemberField(${fi},${mi},'gender',this.value)">
+                        <option value="">Gender</option>
+                        <option value="Male" ${m.gender==='Male'?'selected':''}>Male</option>
+                        <option value="Female" ${m.gender==='Female'?'selected':''}>Female</option>
+                        <option value="Other" ${m.gender==='Other'?'selected':''}>Other</option>
+                    </select>
+                    <input type="number" min="0" max="120" value="${esc(m.age)}" placeholder="Age" oninput="updateMemberField(${fi},${mi},'age',this.value)">
+                    <select onchange="updateMemberField(${fi},${mi},'relation',this.value)">
+                        <option value="">Relation to head</option>
+                        ${RELATIONS.map(rel=>`<option value="${rel}" ${m.relation===rel?'selected':''}>${rel}</option>`).join('')}
+                    </select>
+                    <button type="button" onclick="removeMember(${fi},${mi})" style="background:#666;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px">✕ Remove</button>
+                </div>
+            `).join('')}
+            <button type="button" class="btn-secondary" onclick="addMember(${fi})" style="width:100%;margin-top:4px;font-size:13px;padding:8px">➕ Add Member</button>
+        </div>
+    `).join('');
+    refreshHouseholdSummary();
+}
+
+// Strip fully-empty families/members so vacant houses store a clean []
+function cleanHouseholds(draft){
+    return (draft || [])
+        .map(f => ({
+            headName: (f.headName||'').trim(),
+            contact: (f.contact||'').trim(),
+            members: (f.members||[])
+                .map(m => ({ name:(m.name||'').trim(), gender:m.gender||'', age:(m.age===''||m.age==null)?'':Number(m.age), relation:m.relation||'' }))
+                .filter(m => m.name || m.age !== '' || m.gender || m.relation)
+        }))
+        .filter(f => f.headName || f.contact || f.members.length);
+}
+
 let editingRecordId = null;
 
 function hasAssignedRange() {
@@ -1205,6 +1312,7 @@ async function saveRecord(e) {
         isInstitution: isInst,
         isAbsent,
         contact: contact || '',
+        families: cleanHouseholds(householdDraft),
         remarks: document.getElementById('remarks').value.trim(),
         latitude: parseFloat(lat),
         longitude: parseFloat(lng),
@@ -1288,6 +1396,9 @@ function startEditRecord(r) {
         document.getElementById('contact').value = r.contact||'';
     }
     document.getElementById('remarks').value = r.remarks||'';
+    // Load households into the draft (deep copy so edits don't mutate the live record)
+    householdDraft = Array.isArray(r.families) ? JSON.parse(JSON.stringify(r.families)) : [];
+    renderHouseholds();
     // Restore photo
     if (r.photo) {
         const p = document.getElementById('photoPreview');
@@ -1374,6 +1485,8 @@ function resetForm() {
     document.getElementById('institutionFields').classList.add('hidden');
     document.getElementById('residentialFields').classList.remove('hidden');
     document.getElementById('organizationName').removeAttribute('required');
+    householdDraft = [];
+    renderHouseholds();
     clearEditLocks();
 }
 
@@ -1434,6 +1547,24 @@ function isRecordAbsent(r) {
     // Fallback for very old records without the field
     if (r.isInstitution) return false;
     return !r.ownerName;
+}
+function householdStats(r) {
+    // Roll a property's families/members into headline counts.
+    // Children are auto-derived (age < 18); blank/unknown age counts as neither child nor adult.
+    const fams = Array.isArray(r.families) ? r.families : [];
+    let population = 0, males = 0, females = 0, others = 0, children = 0, adults = 0;
+    for (const f of fams) {
+        const members = Array.isArray(f && f.members) ? f.members : [];
+        for (const m of members) {
+            population++;
+            const g = (m && m.gender || '').toLowerCase();
+            if (g === 'male') males++; else if (g === 'female') females++; else others++;
+            const hasAge = m && m.age !== '' && m.age != null;
+            const age = Number(m && m.age);
+            if (hasAge && !Number.isNaN(age)) { if (age < 18) children++; else adults++; }
+        }
+    }
+    return { families: fams.length, population, males, females, others, children, adults };
 }
 /* === END testable logic === */
 
@@ -1597,6 +1728,11 @@ function renderMyRecords(records) {
     records.forEach(r => { const k = r.ownerCategory||'Individual'; oc[k] = (oc[k]||0)+1; });
     const oel = document.getElementById('myOwnerBreakdown');
     if (oel) oel.innerHTML = Object.entries(oc).map(([k,v])=>`<div>${k}: <b>${v}</b></div>`).join('') || '<div style="color:#999">No records yet</div>';
+
+    // Population & households for this worker's records
+    const hh = records.reduce((a,r)=>{ const s=householdStats(r); a.families+=s.families; a.population+=s.population; a.children+=s.children; a.males+=s.males; a.females+=s.females; return a; }, {families:0,population:0,children:0,males:0,females:0});
+    const set=(id,v)=>{ const e=document.getElementById(id); if(e) e.textContent=v; };
+    set('myFamilies',hh.families); set('myPopulation',hh.population); set('myChildren',hh.children); set('myMale',hh.males); set('myFemale',hh.females);
 }
 
 function renderFollowUp(records) {
@@ -1615,6 +1751,26 @@ function renderFollowUp(records) {
     list.innerHTML = items.map(r => recordCard(r, 'followup')).join('');
 }
 
+
+// Household summary line (+ optional full family/member breakdown) for record views.
+function householdHtml(r, full) {
+    const s = householdStats(r);
+    if (!s.families) {
+        return '<div class="record-detail">🏠 Vacant / no household recorded</div>';
+    }
+    const summary = `<div class="record-detail">👨‍👩‍👧 <b>${s.families}</b> ${s.families===1?'family':'families'} · <b>${s.population}</b> ${s.population===1?'person':'people'} · ${s.children} children · ${s.males}M / ${s.females}F${s.others?' / '+s.others+'O':''}</div>`;
+    if (!full) return summary;
+    const fams = (r.families||[]).map((f,i)=>{
+        const head = esc(f.headName) || `Family ${i+1}`;
+        const contact = f.contact ? ` · 📱 ${esc(f.contact)}` : '';
+        const members = (f.members||[]).map(m=>{
+            const bits = [esc(m.name)||'(no name)', m.gender||'', (m.age===''||m.age==null)?'':m.age+'y', m.relation||''].filter(Boolean);
+            return `<li>${bits.join(' · ')}</li>`;
+        }).join('') || '<li style="color:#999">No members listed</li>';
+        return `<div style="margin-top:6px"><b>👪 ${head}</b>${contact}<ul style="margin:2px 0 0 18px;padding:0">${members}</ul></div>`;
+    }).join('');
+    return summary + `<div style="background:var(--bg);border-radius:6px;padding:8px;margin-top:6px;font-size:12px;color:var(--text2)">${fams}</div>`;
+}
 
 function recordCard(r, context) {
     const absent = isRecordAbsent(r);
@@ -1639,6 +1795,7 @@ function recordCard(r, context) {
         ${r.ownerName ? `<div class="record-detail"><b>${r.ownerType||'Owner'}:</b> ${r.ownerName}</div>` : ''}
         ${r.contact ? `<div class="record-detail">📱 ${r.contact}</div>` : ''}
         <div class="record-detail">🏠 ${r.propertyType} &nbsp;|&nbsp; 🏗️ ${r.buildingType}${r.ownerCategory && r.ownerCategory!=='Individual' ? ' &nbsp;|&nbsp; 🏛️ '+r.ownerCategory : ''}</div>
+        ${householdHtml(r, false)}
         <div style="margin-top:5px">
             ${r.photo ? '<span class="badge badge-photo">📷 Photo</span> ' : ''}
             ${r.latitude ? '<span class="badge badge-gps">📍 GPS</span> ' : ''}
@@ -1744,6 +1901,14 @@ function renderAdminOverview() {
     document.getElementById('adminBuildingBreakdown').innerHTML = Object.entries(bc).map(([k,v])=>`<div>${k}: <b>${v}</b></div>`).join('') || '<div style="color:#999">No data</div>';
     document.getElementById('adminPropertyBreakdown').innerHTML = Object.entries(pc).map(([k,v])=>`<div>${k}: <b>${v}</b></div>`).join('') || '<div style="color:#999">No data</div>';
     document.getElementById('adminOwnerBreakdown').innerHTML = Object.entries(oc).map(([k,v])=>`<div>${k}: <b>${v}</b></div>`).join('') || '<div style="color:#999">No data</div>';
+
+    // Population & households (folded across all records)
+    const hh = allRecords.reduce((a,r)=>{ const s=householdStats(r); a.families+=s.families; a.population+=s.population; a.children+=s.children; a.males+=s.males; a.females+=s.females; return a; }, {families:0,population:0,children:0,males:0,females:0});
+    document.getElementById('adminFamilies').textContent = hh.families;
+    document.getElementById('adminPopulation').textContent = hh.population;
+    document.getElementById('adminChildren').textContent = hh.children;
+    document.getElementById('adminMale').textContent = hh.males;
+    document.getElementById('adminFemale').textContent = hh.females;
 
     const tw={};
     allRecords.filter(r=>r.localTimestamp&&new Date(r.localTimestamp).toDateString()===today)
@@ -1940,23 +2105,52 @@ async function resetEverything() {
 function exportCSV(records, filename) {
     if (!records.length) { alert('No records to export'); return; }
     const rows = [
-        ['Property ID','Latitude','Longitude','Property Type','Owner Type','Building Type','Status','Missing Fields','Organization/Institution','Owner/Contact Person','Person Type','Father/Husband','Designation','Contact','GPS Accuracy','Remarks','Worker Name','Date'],
-        ...records.map(r=>[
+        ['Property ID','Latitude','Longitude','Property Type','Owner Type','Building Type','Status','Missing Fields','Organization/Institution','Owner/Contact Person','Person Type','Father/Husband','Designation','Contact','GPS Accuracy','Remarks','Families','Population','Children','Males','Females','Worker Name','Date'],
+        ...records.map(r=>{
+            const h = householdStats(r);
+            return [
             r.propertyId, r.latitude||'', r.longitude||'',
             r.propertyType, r.ownerCategory||'Individual', r.buildingType,
             r.needsCorrection?'Needs Correction':(isRecordAbsent(r)?'Incomplete':'Complete'), missingFields(r).join('; '),
             r.organizationName||'', r.ownerName||'', r.ownerType||'Owner',
             r.fatherHusbandName||'', r.designation||'', r.contact||'',
             r.accuracy||'', r.remarks||'',
+            h.families, h.population, h.children, h.males, h.females,
             allUsers[r.workerUid]?.name||r.workerEmail||'',
             r.localTimestamp ? new Date(r.localTimestamp).toLocaleString() : ''
-        ])
+        ];})
     ];
-    const csv = rows.map(r=>r.map(c=>`"${String(c||'').replace(/"/g,'""')}"`).join(',')).join('\n');
+    downloadCSV(rows, filename);
+}
+
+// Shared CSV writer: quotes/escapes every cell and triggers a dated download.
+function downloadCSV(rows, filename) {
+    const csv = rows.map(r=>r.map(c=>`"${String(c==null?'':c).replace(/"/g,'""')}"`).join(',')).join('\n');
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
     a.download = `property-tax-${filename}-${new Date().toISOString().split('T')[0]}.csv`;
     a.click();
+}
+
+// One row per family member across the currently-filtered records.
+function exportMembersCSV() {
+    const records = getFilteredRecords();
+    const rows = [['Property ID','Family #','Head of Family','Family Contact','Member Name','Gender','Age','Child? (<18)','Relation','Worker Name']];
+    records.forEach(r=>{
+        (r.families||[]).forEach((f,fi)=>{
+            (f.members||[]).forEach(m=>{
+                const age = (m.age===''||m.age==null)?'':Number(m.age);
+                const isChild = age!=='' && !Number.isNaN(age) && age < 18 ? 'Yes' : (age==='' ? '' : 'No');
+                rows.push([
+                    r.propertyId, fi+1, f.headName||'', f.contact||'',
+                    m.name||'', m.gender||'', age, isChild, m.relation||'',
+                    allUsers[r.workerUid]?.name||r.workerEmail||''
+                ]);
+            });
+        });
+    });
+    if (rows.length === 1) { alert('No family members to export'); return; }
+    downloadCSV(rows, 'members');
 }
 
 // ========== MODAL ==========
@@ -1977,6 +2171,7 @@ function showDetail(r) {
         ${r.fatherHusbandName ? `<div style="margin-bottom:6px"><b>Father/Husband:</b> ${r.fatherHusbandName}</div>` : ''}
         ${r.designation ? `<div style="margin-bottom:6px"><b>Designation:</b> ${r.designation}</div>` : ''}
         ${r.contact ? `<div style="margin-bottom:10px"><b>Contact:</b> ${r.contact}</div>` : ''}
+        <div style="margin-bottom:10px">${householdHtml(r, true)}</div>
         ${r.latitude ? `<div style="margin-bottom:10px">
             <b>📍 GPS:</b> ${r.latitude.toFixed(6)}, ${r.longitude.toFixed(6)} (±${r.accuracy?.toFixed(0)||'?'}m)<br>
             <a href="https://maps.google.com/?q=${r.latitude},${r.longitude}" target="_blank" style="color:var(--primary);font-size:13px">📌 Open in Google Maps →</a>

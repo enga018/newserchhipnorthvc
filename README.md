@@ -7,7 +7,8 @@ A mobile-friendly web app for door-to-door property tax data collection.
 - ✅ GPS location tracking
 - ✅ Photo capture
 - ✅ Property details collection
-- ✅ CSV export
+- ✅ Household / family survey — families per property, members (name, gender, age, relation), with auto population & children counts
+- ✅ CSV export (records + a one-row-per-member export)
 - ✅ Works on any smartphone
 
 ## How to Use
