@@ -23,7 +23,7 @@
         }
         body.modal-open{overflow:hidden;position:fixed;width:100%;height:100%}
         body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);line-height:1.5}
-        .container{max-width:620px;margin:0 auto;padding:10px;min-height:100vh}
+        .container{max-width:620px;margin:0 auto;padding:10px 10px 88px;min-height:100vh}
 
         /* AUTH */
         .auth-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:20px}
@@ -36,7 +36,7 @@
         .auth-tab.active{background:var(--primary);color:white}
 
         /* HEADER */
-        .header{background:var(--primary);color:white;padding:16px 18px;border-radius:var(--radius-lg);margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;box-shadow:var(--shadow-md)}
+        .header{position:sticky;top:6px;z-index:60;background:var(--primary);color:white;padding:14px 18px;border-radius:var(--radius-lg);margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;box-shadow:var(--shadow-md)}
         .header-left h1{font-size:17px;font-weight:600}
         .header-left p{font-size:11px;opacity:0.9;margin-top:2px}
         .header-right{display:flex;flex-direction:column;align-items:flex-end;gap:5px}
@@ -47,6 +47,13 @@
         .tabs{display:flex;gap:0;margin-bottom:16px;background:var(--surface);border-radius:var(--radius-lg);padding:4px;border:1px solid var(--border);box-shadow:var(--shadow)}
         .tab-btn{flex:1;padding:9px 2px;min-height:0;background:none;border:none;color:var(--text2);font-size:11px;font-weight:600;cursor:pointer;border-radius:10px;transition:all 0.15s}
         .tab-btn.active{background:var(--primary);color:white;box-shadow:var(--shadow)}
+
+        /* BOTTOM NAV */
+        .bottomnav{position:fixed;left:0;right:0;bottom:0;margin:0 auto;max-width:620px;z-index:90;display:flex;background:var(--surface);border-top:1px solid var(--border);box-shadow:0 -2px 10px rgba(16,32,52,0.07);padding:5px 6px calc(5px + env(safe-area-inset-bottom))}
+        .bottomnav .navbtn{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;background:none;border:none;min-height:0;padding:7px 2px;color:var(--text2);font-size:11px;font-weight:600;border-radius:12px;transition:color 0.15s,background 0.15s}
+        .bottomnav .navbtn .navicon{font-size:20px;line-height:1;filter:grayscale(0.35)}
+        .bottomnav .navbtn.active{color:var(--primary);background:var(--primary-tint)}
+        .bottomnav .navbtn.active .navicon{filter:none}
 
         /* FORMS */
         .form-section{display:none}.form-section.active{display:block}
@@ -115,7 +122,7 @@
         .stat-card.warning .stat-value{color:var(--warning)}
 
         /* ADMIN */
-        .admin-header{background:var(--primary-dark);color:white;padding:16px 18px;border-radius:var(--radius-lg);margin-bottom:16px;box-shadow:var(--shadow-md)}
+        .admin-header{position:sticky;top:6px;z-index:60;background:var(--primary-dark);color:white;padding:14px 18px;border-radius:var(--radius-lg);margin-bottom:16px;box-shadow:var(--shadow-md)}
         .admin-badge{background:rgba(255,215,0,0.3);border:1px solid rgba(255,215,0,0.5);padding:2px 10px;border-radius:10px;font-size:11px;font-weight:600;color:#ffd700;display:inline-block;margin-bottom:6px}
         .worker-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:10px}
         .worker-name{font-weight:600;font-size:15px;color:var(--primary)}
@@ -231,11 +238,11 @@
                 <button class="btn-logout" onclick="logoutUser()">Logout</button>
             </div>
         </div>
-        <div class="tabs">
-            <button class="tab-btn active" onclick="switchTab('collect',this)">📋 Collect</button>
-            <button class="tab-btn" onclick="switchTab('myrecords',this)">📊 My Work</button>
-            <button class="tab-btn" onclick="switchTab('followup',this)">🔴 Follow Up</button>
-        </div>
+        <nav class="bottomnav">
+            <button type="button" class="navbtn tab-btn active" onclick="switchTab('collect',this)"><span class="navicon">📋</span>Collect</button>
+            <button type="button" class="navbtn tab-btn" onclick="switchTab('myrecords',this)"><span class="navicon">📊</span>My Work</button>
+            <button type="button" class="navbtn tab-btn" onclick="switchTab('followup',this)"><span class="navicon">🔴</span>Follow Up</button>
+        </nav>
 
         <!-- COLLECT TAB -->
         <div id="collect" class="form-section active">
@@ -436,12 +443,12 @@
                 </div>
             </div>
         </div>
-        <div class="tabs">
-            <button class="tab-btn active" onclick="switchAdminTab('overview',this)">📊 Overview</button>
-            <button class="tab-btn" onclick="switchAdminTab('allrecords',this)">📁 Records</button>
-            <button class="tab-btn" onclick="switchAdminTab('workers',this)">👥 Workers</button>
-            <button class="tab-btn" onclick="switchAdminTab('adminsettings',this)">⚙️ Settings</button>
-        </div>
+        <nav class="bottomnav">
+            <button type="button" class="navbtn tab-btn active" onclick="switchAdminTab('overview',this)"><span class="navicon">📊</span>Overview</button>
+            <button type="button" class="navbtn tab-btn" onclick="switchAdminTab('allrecords',this)"><span class="navicon">📁</span>Records</button>
+            <button type="button" class="navbtn tab-btn" onclick="switchAdminTab('workers',this)"><span class="navicon">👥</span>Workers</button>
+            <button type="button" class="navbtn tab-btn" onclick="switchAdminTab('adminsettings',this)"><span class="navicon">⚙️</span>Settings</button>
+        </nav>
 
         <!-- OVERVIEW -->
         <div id="overview" class="form-section active">
