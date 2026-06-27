@@ -1,0 +1,9 @@
+{
+  "name": "property-tax-collector",
+  "version": "1.0.0",
+  "description": "Property Tax Collector survey app",
+  "private": true,
+  "scripts": {
+    "test": "node --test"
+  }
+}
