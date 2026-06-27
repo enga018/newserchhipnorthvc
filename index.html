@@ -243,7 +243,7 @@
                 </div>
                 <div class="form-group">
                     <label>Property Type <span class="required-star">*</span> <span style="font-size:11px;color:var(--text2);font-weight:400">(what the building is)</span></label>
-                    <select id="propertyType" required>
+                    <select id="propertyType" onchange="updateHouseholdVisibility()" required>
                         <option value="">Select type</option>
                         <option value="Residential">Residential (house, quarters)</option>
                         <option value="Commercial">Commercial (shop, bank, godown, hotel)</option>
@@ -334,12 +334,14 @@
                     </div>
                 </div>
 
-                <hr class="divider">
-                <div class="section-title">👨‍👩‍👧 Households / Families <span style="font-size:11px;color:var(--text2);font-weight:400">(who lives here)</span></div>
-                <div class="text-muted" style="font-size:12px;margin-bottom:8px">Add each family living in this property and its members. Leave empty for a vacant/empty house.</div>
-                <div id="householdSummary" style="font-size:13px;font-weight:600;color:var(--primary);background:#e7f5ff;border-radius:8px;padding:8px 10px;margin-bottom:10px;display:none"></div>
-                <div id="familiesContainer"></div>
-                <button type="button" class="btn-secondary" onclick="addFamily()" style="width:100%;margin-bottom:4px">➕ Add Family</button>
+                <div id="householdSection" style="display:none">
+                    <hr class="divider">
+                    <div class="section-title">👨‍👩‍👧 Households / Families <span style="font-size:11px;color:var(--text2);font-weight:400">(who lives here)</span></div>
+                    <div class="text-muted" style="font-size:12px;margin-bottom:8px">Add each family living in this property. The first member of a family is its head. Leave empty for a vacant/empty house.</div>
+                    <div id="householdSummary" style="font-size:13px;font-weight:600;color:var(--primary);background:#e7f5ff;border-radius:8px;padding:8px 10px;margin-bottom:10px;display:none"></div>
+                    <div id="familiesContainer"></div>
+                    <button type="button" class="btn-secondary" onclick="addFamily()" style="width:100%;margin-bottom:4px">➕ Add Family</button>
+                </div>
 
                 <hr class="divider">
                 <div class="form-group">
@@ -1147,18 +1149,45 @@ function updateFormFields() {
 }
 
 /* ---------------- Households / Families ---------------- */
-// In-memory draft for the Collect form. Each entry: { headName, contact, members:[{name,gender,age,relation}] }
+// In-memory draft for the Collect form. Each entry: { contact, members:[{name,gender,age,relation}] }
+// The head of family is simply the first member (relation 'Head') — no separate head field.
 let householdDraft = [];
 const RELATIONS = ['Head','Spouse','Son','Daughter','Father','Mother','Brother','Sister','Other'];
 
+// Only places where people actually live get the household survey.
+const HOUSEHOLD_PROPERTY_TYPES = ['Residential','Mixed Use'];
+function propertyHasHouseholds(type){ return HOUSEHOLD_PROPERTY_TYPES.includes(type); }
+
+function updateHouseholdVisibility(){
+    const section = document.getElementById('householdSection');
+    if (!section) return;
+    const type = document.getElementById('propertyType').value;
+    section.style.display = propertyHasHouseholds(type) ? 'block' : 'none';
+}
+
 function esc(s){ return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
-function addFamily(){ householdDraft.push({ headName:'', contact:'', members:[] }); renderHouseholds(); }
+// The head member is the one tagged 'Head', else the first member.
+function familyHead(f){ const ms = (f && f.members) || []; return ms.find(m => m.relation === 'Head') || ms[0] || null; }
+function familyHeadName(f){ const h = familyHead(f); return h && h.name ? h.name : ''; }
+
+function addFamily(){ householdDraft.push({ contact:'', members:[{ name:'', gender:'', age:'', relation:'Head' }] }); renderHouseholds(); }
 function removeFamily(fi){ householdDraft.splice(fi,1); renderHouseholds(); }
 function addMember(fi){ householdDraft[fi].members.push({ name:'', gender:'', age:'', relation:'' }); renderHouseholds(); }
 function removeMember(fi,mi){ householdDraft[fi].members.splice(mi,1); renderHouseholds(); }
 function updateFamilyField(fi,field,value){ householdDraft[fi][field] = value; refreshHouseholdSummary(); }
 function updateMemberField(fi,mi,field,value){ householdDraft[fi].members[mi][field] = value; refreshHouseholdSummary(); }
+
+// Backward-compat: older drafts/records stored a separate headName. Fold it in as a Head member.
+function normalizeFamilies(families){
+    return (families || []).map(f => {
+        const members = Array.isArray(f.members) ? f.members.slice() : [];
+        if (f.headName && !members.some(m => m.relation === 'Head')) {
+            members.unshift({ name: f.headName, gender:'', age:'', relation:'Head' });
+        }
+        return { contact: f.contact || '', members };
+    });
+}
 
 function refreshHouseholdSummary(){
     const el = document.getElementById('householdSummary');
@@ -1179,17 +1208,13 @@ function renderHouseholds(){
                 <button type="button" onclick="removeFamily(${fi})" style="background:none;border:none;color:var(--danger,#cb2431);font-size:18px;cursor:pointer;padding:0 4px">✕</button>
             </div>
             <div class="form-group">
-                <label>Head of Family</label>
-                <input type="text" value="${esc(f.headName)}" placeholder="Name of head of family" oninput="updateFamilyField(${fi},'headName',this.value)">
-            </div>
-            <div class="form-group">
                 <label>Family Contact <span style="font-size:12px;color:var(--text2);font-weight:400">(optional)</span></label>
                 <input type="tel" value="${esc(f.contact)}" placeholder="10-digit mobile number" pattern="[0-9]{10}" oninput="updateFamilyField(${fi},'contact',this.value)">
             </div>
-            <div style="font-size:13px;font-weight:600;color:var(--text);margin:4px 0 6px">Members</div>
+            <div style="font-size:13px;font-weight:600;color:var(--text);margin:4px 0 6px">Members <span style="font-size:11px;color:var(--text2);font-weight:400">(first member = head of family)</span></div>
             ${f.members.map((m, mi) => `
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;border-top:1px dashed var(--border);padding-top:8px;margin-bottom:6px">
-                    <input type="text" value="${esc(m.name)}" placeholder="Member name" oninput="updateMemberField(${fi},${mi},'name',this.value)" style="grid-column:1 / -1">
+                    <input type="text" value="${esc(m.name)}" placeholder="${mi===0?'Head of family name':'Member name'}" oninput="updateMemberField(${fi},${mi},'name',this.value)" style="grid-column:1 / -1">
                     <select onchange="updateMemberField(${fi},${mi},'gender',this.value)">
                         <option value="">Gender</option>
                         <option value="Male" ${m.gender==='Male'?'selected':''}>Male</option>
@@ -1201,7 +1226,7 @@ function renderHouseholds(){
                         <option value="">Relation to head</option>
                         ${RELATIONS.map(rel=>`<option value="${rel}" ${m.relation===rel?'selected':''}>${rel}</option>`).join('')}
                     </select>
-                    <button type="button" onclick="removeMember(${fi},${mi})" style="background:#666;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px">✕ Remove</button>
+                    ${mi===0 ? '<span style="align-self:center;font-size:12px;color:var(--text2)">👑 Head</span>' : `<button type="button" onclick="removeMember(${fi},${mi})" style="background:#666;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px">✕ Remove</button>`}
                 </div>
             `).join('')}
             <button type="button" class="btn-secondary" onclick="addMember(${fi})" style="width:100%;margin-top:4px;font-size:13px;padding:8px">➕ Add Member</button>
@@ -1210,17 +1235,17 @@ function renderHouseholds(){
     refreshHouseholdSummary();
 }
 
-// Strip fully-empty families/members so vacant houses store a clean []
+// Strip fully-empty families/members so vacant houses store a clean [].
+// headName is derived from the head member (no separate head field).
 function cleanHouseholds(draft){
     return (draft || [])
-        .map(f => ({
-            headName: (f.headName||'').trim(),
-            contact: (f.contact||'').trim(),
-            members: (f.members||[])
+        .map(f => {
+            const members = (f.members||[])
                 .map(m => ({ name:(m.name||'').trim(), gender:m.gender||'', age:(m.age===''||m.age==null)?'':Number(m.age), relation:m.relation||'' }))
-                .filter(m => m.name || m.age !== '' || m.gender || m.relation)
-        }))
-        .filter(f => f.headName || f.contact || f.members.length);
+                .filter(m => m.name || m.age !== '' || m.gender || m.relation);
+            return { headName: familyHeadName({ members }), contact:(f.contact||'').trim(), members };
+        })
+        .filter(f => f.contact || f.members.length);
 }
 
 let editingRecordId = null;
@@ -1312,7 +1337,7 @@ async function saveRecord(e) {
         isInstitution: isInst,
         isAbsent,
         contact: contact || '',
-        families: cleanHouseholds(householdDraft),
+        families: propertyHasHouseholds(type) ? cleanHouseholds(householdDraft) : [],
         remarks: document.getElementById('remarks').value.trim(),
         latitude: parseFloat(lat),
         longitude: parseFloat(lng),
@@ -1397,7 +1422,8 @@ function startEditRecord(r) {
     }
     document.getElementById('remarks').value = r.remarks||'';
     // Load households into the draft (deep copy so edits don't mutate the live record)
-    householdDraft = Array.isArray(r.families) ? JSON.parse(JSON.stringify(r.families)) : [];
+    householdDraft = normalizeFamilies(Array.isArray(r.families) ? JSON.parse(JSON.stringify(r.families)) : []);
+    updateHouseholdVisibility();
     renderHouseholds();
     // Restore photo
     if (r.photo) {
@@ -1487,6 +1513,7 @@ function resetForm() {
     document.getElementById('organizationName').removeAttribute('required');
     householdDraft = [];
     renderHouseholds();
+    updateHouseholdVisibility();
     clearEditLocks();
 }
 
