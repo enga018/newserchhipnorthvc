@@ -139,6 +139,11 @@
         .stat-value{font-size:26px;font-weight:700;color:var(--primary);line-height:1}
         .stat-label{font-size:11px;color:var(--text2);margin-top:4px;text-transform:uppercase;letter-spacing:0.5px}
         .stat-card.warning .stat-value{color:var(--warning)}
+        .bd-row{margin:8px 0}
+        .bd-top{display:flex;justify-content:space-between;align-items:baseline;font-size:12px;color:var(--text2);margin-bottom:4px}
+        .bd-top b{color:var(--text);font-weight:700}
+        .bd-track{background:var(--bg);border-radius:6px;height:8px;overflow:hidden}
+        .bd-fill{background:var(--primary);height:100%;border-radius:6px;transition:width 0.4s}
 
         /* ADMIN */
         .admin-header{position:sticky;top:6px;z-index:60;background:var(--primary-dark);color:white;padding:14px 18px;border-radius:var(--radius-lg);margin-bottom:16px;box-shadow:var(--shadow-md)}
@@ -1913,19 +1918,19 @@ function renderMyRecords(records) {
     const bc = {};
     records.forEach(r => { bc[r.buildingType] = (bc[r.buildingType]||0)+1; });
     const el = document.getElementById('myBuildingBreakdown');
-    if (el) el.innerHTML = Object.entries(bc).map(([k,v])=>`<div>${k}: <b>${v}</b></div>`).join('') || '<div style="color:#999">No records yet</div>';
+    if (el) el.innerHTML = breakdownBars(bc, 'No records yet');
 
     // Property type breakdown
     const pc = {};
     records.forEach(r => { pc[r.propertyType] = (pc[r.propertyType]||0)+1; });
     const pel = document.getElementById('myPropertyBreakdown');
-    if (pel) pel.innerHTML = Object.entries(pc).map(([k,v])=>`<div>${k}: <b>${v}</b></div>`).join('') || '<div style="color:#999">No records yet</div>';
+    if (pel) pel.innerHTML = breakdownBars(pc, 'No records yet');
 
     // Owner type breakdown
     const oc = {};
     records.forEach(r => { const k = r.ownerCategory||'Individual'; oc[k] = (oc[k]||0)+1; });
     const oel = document.getElementById('myOwnerBreakdown');
-    if (oel) oel.innerHTML = Object.entries(oc).map(([k,v])=>`<div>${k}: <b>${v}</b></div>`).join('') || '<div style="color:#999">No records yet</div>';
+    if (oel) oel.innerHTML = breakdownBars(oc, 'No records yet');
 
     // Population & households for this worker's records
     const hh = records.reduce((a,r)=>{ const s=householdStats(r); a.families+=s.families; a.population+=s.population; a.children+=s.children; a.males+=s.males; a.females+=s.females; return a; }, {families:0,population:0,children:0,males:0,females:0});
@@ -1949,6 +1954,17 @@ function renderFollowUp(records) {
     list.innerHTML = items.map(r => recordCard(r, 'followup')).join('');
 }
 
+
+// Render a {label: count} map as labelled proportion bars (sorted high to low).
+function breakdownBars(map, emptyMsg){
+    const entries = Object.entries(map || {});
+    if (!entries.length) return `<div style="color:var(--text2)">${emptyMsg || 'No data'}</div>`;
+    const total = entries.reduce((a,[,v]) => a + v, 0) || 1;
+    return entries.sort((a,b) => b[1]-a[1]).map(([k,v]) => {
+        const pct = Math.round(v / total * 100);
+        return `<div class="bd-row"><div class="bd-top"><span>${k}</span><b>${v} · ${pct}%</b></div><div class="bd-track"><div class="bd-fill" style="width:${pct}%"></div></div></div>`;
+    }).join('');
+}
 
 // Household summary line (+ optional full family/member breakdown) for record views.
 function householdHtml(r, full) {
@@ -2096,9 +2112,9 @@ function renderAdminOverview() {
 
     const bc={}, pc={}, oc={};
     allRecords.forEach(r=>{ bc[r.buildingType]=(bc[r.buildingType]||0)+1; pc[r.propertyType]=(pc[r.propertyType]||0)+1; const ok=r.ownerCategory||'Individual'; oc[ok]=(oc[ok]||0)+1; });
-    document.getElementById('adminBuildingBreakdown').innerHTML = Object.entries(bc).map(([k,v])=>`<div>${k}: <b>${v}</b></div>`).join('') || '<div style="color:#999">No data</div>';
-    document.getElementById('adminPropertyBreakdown').innerHTML = Object.entries(pc).map(([k,v])=>`<div>${k}: <b>${v}</b></div>`).join('') || '<div style="color:#999">No data</div>';
-    document.getElementById('adminOwnerBreakdown').innerHTML = Object.entries(oc).map(([k,v])=>`<div>${k}: <b>${v}</b></div>`).join('') || '<div style="color:#999">No data</div>';
+    document.getElementById('adminBuildingBreakdown').innerHTML = breakdownBars(bc, 'No data');
+    document.getElementById('adminPropertyBreakdown').innerHTML = breakdownBars(pc, 'No data');
+    document.getElementById('adminOwnerBreakdown').innerHTML = breakdownBars(oc, 'No data');
 
     // Population & households (folded across all records)
     const hh = allRecords.reduce((a,r)=>{ const s=householdStats(r); a.families+=s.families; a.population+=s.population; a.children+=s.children; a.males+=s.males; a.females+=s.females; return a; }, {families:0,population:0,children:0,males:0,females:0});
