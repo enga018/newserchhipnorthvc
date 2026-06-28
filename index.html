@@ -2279,10 +2279,12 @@ async function exportAllPhotos(recordSet) {
         }
         status.textContent = 'Compressing ZIP file...';
         const blob = await zip.generateAsync({type:'blob'});
+        const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
+        a.href = url;
         a.download = `property-tax-photos-${new Date().toISOString().split('T')[0]}.zip`;
         a.click();
+        setTimeout(() => URL.revokeObjectURL(url), 2000);
         status.textContent = `✓ Downloaded ${added} photos.`;
     } catch(e) {
         status.textContent = '❌ Error: ' + e.message;
@@ -2337,13 +2339,23 @@ function exportCSV(records, filename) {
     downloadCSV(rows, filename);
 }
 
-// Shared CSV writer: quotes/escapes every cell and triggers a dated download.
+// Quote/escape one CSV cell, neutralising spreadsheet formula injection.
+function csvCell(c) {
+    let s = (c == null ? '' : String(c));
+    // A leading =,+,-,@ (or tab/CR) makes Excel/Sheets run the cell as a formula — prefix with ' to defuse.
+    if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;
+    return '"' + s.replace(/"/g, '""') + '"';
+}
+
+// Shared CSV writer: BOM for Excel/Unicode, escaped cells, CRLF rows, dated download.
 function downloadCSV(rows, filename) {
-    const csv = rows.map(r=>r.map(c=>`"${String(c==null?'':c).replace(/"/g,'""')}"`).join(',')).join('\n');
+    const csv = '\uFEFF' + rows.map(r => r.map(csvCell).join(',')).join('\r\n');
+    const url = URL.createObjectURL(new Blob([csv], { type:'text/csv;charset=utf-8' }));
     const a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+    a.href = url;
     a.download = `property-tax-${filename}-${new Date().toISOString().split('T')[0]}.csv`;
     a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
 }
 
 // One row per family member across the currently-filtered records.
