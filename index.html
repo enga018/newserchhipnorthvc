@@ -11,13 +11,19 @@
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
         :root{
-            --primary:#2c5282;--primary-dark:#1e3a5f;--primary-light:#3a6ea5;--success:#22863a;
-            --warning:#cb2431;--bg:#eef2f7;--surface:#fff;--text:#1a2533;
-            --text2:#586069;--border:#dde3ea;--focus:#0366d6;--orange:#e65100
+            --primary:#2c5282;--primary-dark:#1e3a5f;--primary-light:#3a6ea5;--primary-tint:#eaf1f9;
+            --success:#22863a;--success-bg:#e7f6ec;
+            --warning:#b76e00;--warning-bg:#fbf0db;
+            --danger:#c0392b;--danger-bg:#fbeaea;
+            --bg:#f3f6fa;--surface:#fff;--surface-2:#f8fafc;--text:#16202e;
+            --text2:#5b6675;--border:#e2e7ee;--focus:#0366d6;--orange:#e65100;
+            --radius:12px;--radius-lg:16px;
+            --shadow:0 1px 2px rgba(16,32,52,0.06),0 1px 3px rgba(16,32,52,0.05);
+            --shadow-md:0 4px 14px rgba(16,32,52,0.10)
         }
         body.modal-open{overflow:hidden;position:fixed;width:100%;height:100%}
         body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);line-height:1.5}
-        .container{max-width:620px;margin:0 auto;padding:10px;min-height:100vh}
+        .container{max-width:620px;margin:0 auto;padding:10px 10px 88px;min-height:100vh}
 
         /* AUTH */
         .auth-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:20px}
@@ -30,7 +36,7 @@
         .auth-tab.active{background:var(--primary);color:white}
 
         /* HEADER */
-        .header{background:linear-gradient(135deg,#2c5282,#3a6ea5);color:white;padding:18px 18px;border-radius:16px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 4px 14px rgba(44,82,130,0.25)}
+        .header{position:sticky;top:6px;z-index:60;background:var(--primary);color:white;padding:14px 18px;border-radius:var(--radius-lg);margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;box-shadow:var(--shadow-md)}
         .header-left h1{font-size:17px;font-weight:600}
         .header-left p{font-size:11px;opacity:0.9;margin-top:2px}
         .header-right{display:flex;flex-direction:column;align-items:flex-end;gap:5px}
@@ -38,32 +44,64 @@
         .btn-logout{background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:white;padding:3px 10px;border-radius:4px;font-size:11px;cursor:pointer}
 
         /* TABS */
-        .tabs{display:flex;gap:0;margin-bottom:16px;background:var(--surface);border-radius:14px;padding:4px;border:1px solid var(--border);box-shadow:0 2px 8px rgba(26,37,51,0.05)}
-        .tab-btn{flex:1;padding:9px 2px;background:none;border:none;color:var(--text2);font-size:11px;font-weight:600;cursor:pointer;border-radius:10px;transition:all 0.2s}
-        .tab-btn.active{background:linear-gradient(135deg,#2c5282,#3a6ea5);color:white;box-shadow:0 2px 6px rgba(44,82,130,0.3)}
+        .tabs{display:flex;gap:0;margin-bottom:16px;background:var(--surface);border-radius:var(--radius-lg);padding:4px;border:1px solid var(--border);box-shadow:var(--shadow)}
+        .tab-btn{flex:1;padding:9px 2px;min-height:0;background:none;border:none;color:var(--text2);font-size:11px;font-weight:600;cursor:pointer;border-radius:10px;transition:all 0.15s}
+        .tab-btn.active{background:var(--primary);color:white;box-shadow:var(--shadow)}
+
+        /* BOTTOM NAV */
+        .bottomnav{position:fixed;left:0;right:0;bottom:0;margin:0 auto;max-width:620px;z-index:90;display:flex;background:var(--surface);border-top:1px solid var(--border);box-shadow:0 -2px 10px rgba(16,32,52,0.07);padding:5px 6px calc(5px + env(safe-area-inset-bottom))}
+        .bottomnav .navbtn{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;background:none;border:none;min-height:0;padding:7px 2px;color:var(--text2);font-size:11px;font-weight:600;border-radius:12px;transition:color 0.15s,background 0.15s}
+        .bottomnav .navbtn .navicon{font-size:20px;line-height:1;filter:grayscale(0.35)}
+        .bottomnav .navbtn.active{color:var(--primary);background:var(--primary-tint)}
+        .bottomnav .navbtn.active .navicon{filter:none}
+        .bottomnav .navbtn{position:relative}
+        .navbadge{position:absolute;top:2px;right:50%;transform:translateX(18px);min-width:17px;height:17px;padding:0 4px;border-radius:9px;background:var(--danger);color:#fff;font-size:10px;font-weight:700;display:none;align-items:center;justify-content:center;line-height:17px}
+        .navbadge.show{display:inline-flex}
+
+        /* WIZARD */
+        .wizard-progress{display:flex;gap:4px;margin-bottom:18px}
+        .wstep{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px}
+        .wstep.done{cursor:pointer}
+        .wdot{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;background:var(--bg);color:var(--text2);border:1.5px solid var(--border);transition:all 0.15s}
+        .wstep.current .wdot{background:var(--primary);color:#fff;border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-tint)}
+        .wstep.done .wdot{background:var(--success);color:#fff;border-color:var(--success)}
+        .wlabel{font-size:10px;line-height:1.2;color:var(--text2);text-align:center;font-weight:600}
+        .wstep.current .wlabel{color:var(--primary)}
+        .wizard-step{display:none}
+        .wizard-step.active{display:block;animation:wizFade 0.18s ease}
+        @keyframes wizFade{from{opacity:0;transform:translateX(6px)}to{opacity:1;transform:none}}
+        .wizard-step-title{font-size:16px;font-weight:700;color:var(--text);margin-bottom:14px}
+        .wizard-nav{display:flex;gap:8px;margin-top:20px}
+        .review-row{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)}
+        .review-row:last-child{border-bottom:none}
+        .review-row .rk{color:var(--text2);font-size:13px}
+        .review-row .rv{font-weight:600;font-size:13px;text-align:right;color:var(--text)}
 
         /* FORMS */
         .form-section{display:none}.form-section.active{display:block}
         .form-group{margin-bottom:13px}
         label{display:block;font-size:13px;font-weight:600;margin-bottom:5px;color:var(--text)}
-        input[type=text],input[type=email],input[type=tel],input[type=password],select,textarea{
-            width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:11px;
-            font-size:14px;font-family:inherit;background:var(--surface);transition:border-color 0.2s
+        input[type=text],input[type=email],input[type=tel],input[type=password],input[type=number],select,textarea{
+            width:100%;padding:13px 14px;min-height:46px;border:1.5px solid var(--border);border-radius:var(--radius);
+            font-size:15px;font-family:inherit;background:var(--surface);color:var(--text);transition:border-color 0.15s,box-shadow 0.15s
         }
-        input:focus,select:focus,textarea:focus{outline:none;border-color:var(--focus);box-shadow:0 0 0 3px rgba(3,102,214,0.1)}
+        input:focus,select:focus,textarea:focus{outline:none;border-color:var(--focus);box-shadow:0 0 0 3px rgba(3,102,214,0.12)}
+        input::placeholder,textarea::placeholder{color:#9aa4b2}
         textarea{resize:vertical;min-height:70px}
-        .required-star{color:var(--warning)}
+        .required-star{color:var(--danger)}
 
         /* BUTTONS */
-        button{padding:12px 16px;border:none;border-radius:11px;font-size:14px;font-weight:600;cursor:pointer;transition:all 0.2s;font-family:inherit}
-        .btn-primary{background:linear-gradient(135deg,#2c5282,#3a6ea5);color:white;width:100%;box-shadow:0 2px 8px rgba(44,82,130,0.25)}
+        button{padding:12px 16px;min-height:46px;border:none;border-radius:var(--radius);font-size:14px;font-weight:600;cursor:pointer;transition:all 0.15s;font-family:inherit}
+        button:active{transform:translateY(1px)}
+        .btn-primary{background:var(--primary);color:white;width:100%;box-shadow:var(--shadow)}
         .btn-primary:hover{background:var(--primary-dark)}
-        .btn-secondary{background:var(--bg);color:var(--text);width:100%;border:1px solid var(--border)}
-        .btn-danger{background:var(--warning);color:white}
-        .btn-danger:hover{background:#a61d1d}
+        .btn-secondary{background:var(--surface);color:var(--primary);width:100%;border:1.5px solid var(--border)}
+        .btn-secondary:hover{background:var(--primary-tint);border-color:var(--primary-light)}
+        .btn-danger{background:var(--danger);color:white}
+        .btn-danger:hover{background:#a02d22}
         .btn-success{background:var(--success);color:white}
-        .btn-photo{background:linear-gradient(135deg,#2c5282,#3a6ea5);color:white;padding:12px;font-size:13px;border-radius:11px;width:100%}
-        .btn-small{padding:6px 12px;font-size:12px;border-radius:8px}
+        .btn-photo{background:var(--primary);color:white;padding:12px;font-size:13px;border-radius:var(--radius);width:100%}
+        .btn-small{padding:6px 12px;min-height:0;font-size:12px;border-radius:8px}
         .button-group{display:flex;gap:8px;margin-top:18px}
         input[type=file]{display:none}
 
@@ -85,28 +123,33 @@
 
         /* RECORDS */
         .records-list{display:flex;flex-direction:column;gap:10px}
-        .record-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;box-shadow:0 2px 8px rgba(26,37,51,0.05)}
+        .record-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px;box-shadow:var(--shadow)}
         .record-card.absent{border-left:4px solid var(--warning)}
         .record-card.complete{border-left:4px solid var(--success)}
-        .record-id{font-weight:600;color:var(--primary);font-size:14px}
+        .record-id{font-weight:700;color:var(--primary);font-size:14px}
         .record-detail{font-size:13px;color:var(--text2);margin:3px 0}
         .record-actions{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
-        .badge{font-size:11px;padding:2px 8px;border-radius:10px;display:inline-block;font-weight:500}
-        .badge-absent{background:#ffebee;color:var(--warning)}
-        .badge-complete{background:#e6ffed;color:var(--success)}
-        .badge-worker{background:#e7f5ff;color:#0c3c72}
-        .badge-photo{background:#e6ffed;color:var(--success)}
+        .badge{font-size:11px;padding:3px 9px;border-radius:20px;display:inline-block;font-weight:600}
+        .badge-absent{background:var(--warning-bg);color:var(--warning)}
+        .badge-complete{background:var(--success-bg);color:var(--success)}
+        .badge-worker{background:var(--primary-tint);color:var(--primary)}
+        .badge-photo{background:var(--success-bg);color:var(--success)}
         .badge-gps{background:#f3e5f5;color:#6a1b9a}
 
         /* STATS */
         .stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
-        .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px;text-align:center;box-shadow:0 2px 8px rgba(26,37,51,0.05)}
+        .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;text-align:center;box-shadow:var(--shadow)}
         .stat-value{font-size:26px;font-weight:700;color:var(--primary);line-height:1}
         .stat-label{font-size:11px;color:var(--text2);margin-top:4px;text-transform:uppercase;letter-spacing:0.5px}
         .stat-card.warning .stat-value{color:var(--warning)}
+        .bd-row{margin:8px 0}
+        .bd-top{display:flex;justify-content:space-between;align-items:baseline;font-size:12px;color:var(--text2);margin-bottom:4px}
+        .bd-top b{color:var(--text);font-weight:700}
+        .bd-track{background:var(--bg);border-radius:6px;height:8px;overflow:hidden}
+        .bd-fill{background:var(--primary);height:100%;border-radius:6px;transition:width 0.4s}
 
         /* ADMIN */
-        .admin-header{background:linear-gradient(135deg,#1e3a5f,#3a6ea5);color:white;padding:18px 18px;border-radius:16px;margin-bottom:16px;box-shadow:0 4px 14px rgba(44,82,130,0.25)}
+        .admin-header{position:sticky;top:6px;z-index:60;background:var(--primary-dark);color:white;padding:14px 18px;border-radius:var(--radius-lg);margin-bottom:16px;box-shadow:var(--shadow-md)}
         .admin-badge{background:rgba(255,215,0,0.3);border:1px solid rgba(255,215,0,0.5);padding:2px 10px;border-radius:10px;font-size:11px;font-weight:600;color:#ffd700;display:inline-block;margin-bottom:6px}
         .worker-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:10px}
         .worker-name{font-weight:600;font-size:15px;color:var(--primary)}
@@ -148,8 +191,8 @@
         .empty-state{text-align:center;padding:40px 20px;color:var(--text2)}
         .empty-state-icon{font-size:48px;margin-bottom:12px}
         .divider{margin:14px 0;border:none;border-top:1px solid var(--border)}
-        .section-title{font-size:14px;font-weight:600;margin-bottom:10px;color:var(--text)}
-        .info-box{background:#e7f5ff;border:1px solid #74c0fc;border-radius:8px;padding:12px;font-size:13px;color:#0c3c72;margin-bottom:12px}
+        .section-title{font-size:13px;font-weight:700;letter-spacing:0.3px;margin-bottom:10px;color:var(--text)}
+        .info-box{background:var(--primary-tint);border:1px solid var(--primary-light);border-radius:var(--radius);padding:12px;font-size:13px;color:var(--primary-dark);margin-bottom:12px}
         @media(max-width:480px){.stats-grid{grid-template-columns:1fr 1fr}}
         #fullPhotoOverlay.active{display:flex !important}
         .save-success-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.35);z-index:1500;align-items:center;justify-content:center;padding:20px}
@@ -222,11 +265,11 @@
                 <button class="btn-logout" onclick="logoutUser()">Logout</button>
             </div>
         </div>
-        <div class="tabs">
-            <button class="tab-btn active" onclick="switchTab('collect',this)">📋 Collect</button>
-            <button class="tab-btn" onclick="switchTab('myrecords',this)">📊 My Work</button>
-            <button class="tab-btn" onclick="switchTab('followup',this)">🔴 Follow Up</button>
-        </div>
+        <nav class="bottomnav">
+            <button type="button" class="navbtn tab-btn active" onclick="switchTab('collect',this)"><span class="navicon">📋</span>Collect</button>
+            <button type="button" class="navbtn tab-btn" onclick="switchTab('myrecords',this)"><span class="navicon">📊</span>My Work</button>
+            <button type="button" class="navbtn tab-btn" onclick="switchTab('followup',this)"><span class="navicon">🔴</span>Follow Up<span id="followupBadge" class="navbadge"></span></button>
+        </nav>
 
         <!-- COLLECT TAB -->
         <div id="collect" class="form-section active">
@@ -235,114 +278,140 @@
                 <span style="font-size:13px;color:#856404">✏️ Editing existing record</span>
                 <button type="button" onclick="cancelEdit();resetForm()" style="background:#856404;color:white;padding:4px 12px;font-size:12px;border-radius:4px">Cancel Edit</button>
             </div>
-            <form id="propertyForm" onsubmit="saveRecord(event)" style="background:var(--surface);border-radius:16px;padding:18px;box-shadow:0 2px 10px rgba(26,37,51,0.06);border:1px solid var(--border)">
-                <div class="form-group">
-                    <label>Property ID <span class="required-star">*</span></label>
-                    <div style="display:flex;align-items:center;gap:0"><span style="background:#e7f5ff;border:1.5px solid var(--border);border-right:none;padding:10px 12px;border-radius:6px 0 0 6px;font-size:14px;font-weight:600;color:var(--primary);white-space:nowrap">NSN-</span><input type="text" id="propertyId" placeholder="0001" pattern="(NSN-)?[0-9]{1,4}" maxlength="8" required style="border-radius:0 6px 6px 0;border-left:none"></div><div class="text-muted" style="font-size:12px;margin-top:5px">Enter 4-digit number from sticker (e.g. 0001). NSN- is added automatically.</div>
-                    <div id="rangeHint" style="font-size:12px;margin-top:4px"></div>
-                </div>
-                <div class="form-group">
-                    <label>Property Type <span class="required-star">*</span> <span style="font-size:11px;color:var(--text2);font-weight:400">(what the building is)</span></label>
-                    <select id="propertyType" required>
-                        <option value="">Select type</option>
-                        <option value="Residential">Residential (house, quarters)</option>
-                        <option value="Commercial">Commercial (shop, bank, godown, hotel)</option>
-                        <option value="Mixed Use">Mixed Use (shop + house)</option>
-                        <option value="Institutional/Public">Institutional/Public (church, school, office, hall)</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Owner Type <span class="required-star">*</span> <span style="font-size:11px;color:var(--text2);font-weight:400">(who pays the tax)</span></label>
-                    <select id="ownerCategory" onchange="updateFormFields()" required>
-                        <option value="">Select owner type</option>
-                        <option value="Individual">Individual (private person)</option>
-                        <option value="Religious">Religious (Church/Temple/Mosque)</option>
-                        <option value="NGO">NGO (society, association)</option>
-                        <option value="Government">Government (council, dept, school)</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Building Type <span class="required-star">*</span></label>
-                    <select id="buildingType" required>
-                        <option value="">Select building type</option>
-                        <option value="RCC">RCC (Reinforced Concrete)</option>
-                        <option value="Semi RCC">Semi RCC</option>
-                        <option value="Assam Type">Assam Type</option>
-                    </select>
-                </div>
+            <form id="propertyForm" onsubmit="wizardSubmit(event)" style="background:var(--surface);border-radius:16px;padding:18px;box-shadow:0 2px 10px rgba(26,37,51,0.06);border:1px solid var(--border)">
+                <div class="wizard-progress" id="wizardProgress"></div>
 
-                <hr class="divider">
-                <div class="section-title">📍 GPS Location <span class="required-star">*</span></div>
-                <div class="form-group">
-                    <button type="button" id="captureGpsBtn" class="btn-photo" onclick="captureLocation()" style="background:var(--success)">📍 Capture GPS Location</button>
-                    <div id="gpsRecaptureWarn" style="display:none;background:#fff3cd;color:#856404;font-size:12px;padding:6px 8px;border-radius:4px;margin-top:6px">⚠️ Re-capture GPS only while standing at the property.</div>
-                    <div id="locationStatus" class="location-status hidden"></div>
-                    <input type="hidden" id="latitude">
-                    <input type="hidden" id="longitude">
-                    <input type="hidden" id="accuracy">
-                </div>
-
-                <div class="section-title">📷 Property Photo <span class="required-star">*</span> <span style="font-size:11px;color:var(--text2);font-weight:400">(GPS auto-stamped · hold phone upright · tap the building on screen to focus)</span></div>
-                <div class="form-group">
-                    <img id="photoPreview" class="photo-preview">
-                    <div id="photoStatus" class="photo-status needed">📷 Photo required — tap to take</div>
-                    <div id="photoRecaptureWarn" style="display:none;background:#fff3cd;color:#856404;font-size:12px;padding:6px 8px;border-radius:4px;margin-bottom:6px">⚠️ Re-take photo only while standing at the property.</div>
-                    <div class="photo-buttons">
-                        <button type="button" id="takePhotoBtn" class="btn-photo" onclick="document.getElementById('photoInput').click()" style="flex:1">📷 Take Photo</button>
-                        <button type="button" class="btn-photo" onclick="clearPhoto()" style="background:#666;flex:0 0 auto;width:auto;padding:10px 14px">✕</button>
-                    </div>
-                    <input type="file" id="photoInput" accept="image/*" capture="environment" onchange="handlePhotoCapture(event)">
-                </div>
-
-                <hr class="divider">
-
-                <!-- RESIDENTIAL FIELDS -->
-                <div id="residentialFields">
-                    <div class="section-title">Owner Information <span style="font-size:12px;color:var(--text2);font-weight:400">(optional if owner absent)</span></div>
+                <!-- STEP 1: PROPERTY -->
+                <div class="wizard-step active" data-step="property">
+                    <div class="wizard-step-title">🏠 Property details</div>
                     <div class="form-group">
-                        <label>Owner Name</label>
-                        <input type="text" id="ownerName" placeholder="Full name of property owner">
+                        <label>Property ID <span class="required-star">*</span></label>
+                        <div style="display:flex;align-items:center;gap:0"><span style="background:var(--primary-tint);border:1.5px solid var(--border);border-right:none;padding:13px 12px;border-radius:var(--radius) 0 0 var(--radius);font-size:14px;font-weight:600;color:var(--primary);white-space:nowrap">NSN-</span><input type="text" id="propertyId" placeholder="0001" pattern="(NSN-)?[0-9]{1,4}" maxlength="8" required style="border-radius:0 var(--radius) var(--radius) 0;border-left:none"></div><div class="text-muted" style="font-size:12px;margin-top:5px">Enter 4-digit number from sticker (e.g. 0001). NSN- is added automatically.</div>
+                        <div id="rangeHint" style="font-size:12px;margin-top:4px"></div>
                     </div>
                     <div class="form-group">
-                        <label>Father/Husband Name</label>
-                        <input type="text" id="fatherHusbandName" placeholder="Father's or Husband's name">
+                        <label>Property Type <span class="required-star">*</span> <span style="font-size:11px;color:var(--text2);font-weight:400">(what the building is)</span></label>
+                        <select id="propertyType" onchange="updateHouseholdVisibility()" required>
+                            <option value="">Select type</option>
+                            <option value="Residential">Residential (house, quarters)</option>
+                            <option value="Commercial">Commercial (shop, bank, godown, hotel)</option>
+                            <option value="Mixed Use">Mixed Use (shop + house)</option>
+                            <option value="Institutional/Public">Institutional/Public (church, school, office, hall)</option>
+                        </select>
                     </div>
                     <div class="form-group">
-                        <label>Contact Number</label>
-                        <input type="tel" id="contact" placeholder="10-digit mobile number" pattern="[0-9]{10}">
+                        <label>Owner Type <span class="required-star">*</span> <span style="font-size:11px;color:var(--text2);font-weight:400">(who pays the tax)</span></label>
+                        <select id="ownerCategory" onchange="updateFormFields()" required>
+                            <option value="">Select owner type</option>
+                            <option value="Individual">Individual (private person)</option>
+                            <option value="Religious">Religious (Church/Temple/Mosque)</option>
+                            <option value="NGO">NGO (society, association)</option>
+                            <option value="Government">Government (council, dept, school)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Building Type <span class="required-star">*</span></label>
+                        <select id="buildingType" required>
+                            <option value="">Select building type</option>
+                            <option value="RCC">RCC (Reinforced Concrete)</option>
+                            <option value="Semi RCC">Semi RCC</option>
+                            <option value="Assam Type">Assam Type</option>
+                        </select>
                     </div>
                 </div>
 
-                <!-- INSTITUTION FIELDS -->
-                <div id="institutionFields" class="hidden">
-                    <div class="section-title">Institution Information</div>
+                <!-- STEP 2: LOCATION & PHOTO -->
+                <div class="wizard-step" data-step="location">
+                    <div class="wizard-step-title">📍 Location &amp; photo</div>
+                    <div class="section-title">📍 GPS Location <span class="required-star">*</span></div>
                     <div class="form-group">
-                        <label>Organization/Institution Name <span style="font-size:12px;color:var(--text2);font-weight:400">(optional)</span></label>
-                        <input type="text" id="organizationName" placeholder="e.g., ABC School, St. John's Church">
+                        <button type="button" id="captureGpsBtn" class="btn-photo" onclick="captureLocation()" style="background:var(--success)">📍 Capture GPS Location</button>
+                        <div id="gpsRecaptureWarn" style="display:none;background:var(--warning-bg);color:var(--warning);font-size:12px;padding:6px 8px;border-radius:4px;margin-top:6px">⚠️ Re-capture GPS only while standing at the property.</div>
+                        <div id="locationStatus" class="location-status hidden"></div>
+                        <input type="hidden" id="latitude">
+                        <input type="hidden" id="longitude">
+                        <input type="hidden" id="accuracy">
                     </div>
+                    <div class="section-title">📷 Property Photo <span class="required-star">*</span> <span style="font-size:11px;color:var(--text2);font-weight:400">(GPS auto-stamped · hold phone upright · tap the building on screen to focus)</span></div>
                     <div class="form-group">
-                        <label>Contact Person <span style="font-size:12px;color:var(--text2);font-weight:400">(optional)</span></label>
-                        <input type="text" id="contactPerson" placeholder="Name of contact person">
-                    </div>
-                    <div class="form-group">
-                        <label>Designation <span style="font-size:12px;color:var(--text2);font-weight:400">(optional)</span></label>
-                        <input type="text" id="designation" placeholder="e.g., Principal, Pastor, Manager">
-                    </div>
-                    <div class="form-group">
-                        <label>Contact Number <span style="font-size:12px;color:var(--text2);font-weight:400">(optional)</span></label>
-                        <input type="tel" id="instContact" placeholder="10-digit mobile number" pattern="[0-9]{10}">
+                        <img id="photoPreview" class="photo-preview">
+                        <div id="photoStatus" class="photo-status needed">📷 Photo required — tap to take</div>
+                        <div id="photoRecaptureWarn" style="display:none;background:var(--warning-bg);color:var(--warning);font-size:12px;padding:6px 8px;border-radius:4px;margin-bottom:6px">⚠️ Re-take photo only while standing at the property.</div>
+                        <div class="photo-buttons">
+                            <button type="button" id="takePhotoBtn" class="btn-photo" onclick="document.getElementById('photoInput').click()" style="flex:1">📷 Take Photo</button>
+                            <button type="button" class="btn-photo" onclick="clearPhoto()" style="background:#666;flex:0 0 auto;width:auto;padding:10px 14px">✕</button>
+                        </div>
+                        <input type="file" id="photoInput" accept="image/*" capture="environment" onchange="handlePhotoCapture(event)">
                     </div>
                 </div>
 
-                <hr class="divider">
-                <div class="form-group">
-                    <label>Remarks / Notes</label>
-                    <textarea id="remarks" placeholder="e.g., Owner absent, locked, under construction..."></textarea>
+                <!-- STEP 3: OCCUPANT -->
+                <div class="wizard-step" data-step="occupant">
+                    <div class="wizard-step-title">👤 Owner / occupant</div>
+                    <!-- RESIDENTIAL FIELDS -->
+                    <div id="residentialFields">
+                        <div class="section-title">Owner Information <span style="font-size:12px;color:var(--text2);font-weight:400">(optional if owner absent)</span></div>
+                        <div class="form-group">
+                            <label>Owner Name</label>
+                            <input type="text" id="ownerName" placeholder="Full name of property owner">
+                        </div>
+                        <div class="form-group">
+                            <label>Father/Husband Name</label>
+                            <input type="text" id="fatherHusbandName" placeholder="Father's or Husband's name">
+                        </div>
+                        <div class="form-group">
+                            <label>Contact Number</label>
+                            <input type="tel" id="contact" placeholder="10-digit mobile number" pattern="[0-9]{10}">
+                        </div>
+                    </div>
+                    <!-- INSTITUTION FIELDS -->
+                    <div id="institutionFields" class="hidden">
+                        <div class="section-title">Institution Information</div>
+                        <div class="form-group">
+                            <label>Organization/Institution Name <span style="font-size:12px;color:var(--text2);font-weight:400">(optional)</span></label>
+                            <input type="text" id="organizationName" placeholder="e.g., ABC School, St. John's Church">
+                        </div>
+                        <div class="form-group">
+                            <label>Contact Person <span style="font-size:12px;color:var(--text2);font-weight:400">(optional)</span></label>
+                            <input type="text" id="contactPerson" placeholder="Name of contact person">
+                        </div>
+                        <div class="form-group">
+                            <label>Designation <span style="font-size:12px;color:var(--text2);font-weight:400">(optional)</span></label>
+                            <input type="text" id="designation" placeholder="e.g., Principal, Pastor, Manager">
+                        </div>
+                        <div class="form-group">
+                            <label>Contact Number <span style="font-size:12px;color:var(--text2);font-weight:400">(optional)</span></label>
+                            <input type="tel" id="instContact" placeholder="10-digit mobile number" pattern="[0-9]{10}">
+                        </div>
+                    </div>
                 </div>
-                <div class="button-group">
-                    <button type="button" class="btn-secondary" onclick="cancelEdit();resetForm()" style="flex:1">Clear</button>
-                    <button type="submit" id="submitBtn" class="btn-primary" style="flex:2">💾 Save & Sync</button>
+
+                <!-- STEP 4: HOUSEHOLDS (residential / mixed use only) -->
+                <div class="wizard-step" data-step="households">
+                    <div class="wizard-step-title">👨‍👩‍👧 Households / families</div>
+                    <div class="text-muted" style="font-size:12px;margin-bottom:8px">Add each family living in this property. The first member of a family is its head. Leave empty for a vacant/empty house.</div>
+                    <div id="householdSummary" style="font-size:13px;font-weight:600;color:var(--primary);background:var(--primary-tint);border-radius:8px;padding:8px 10px;margin-bottom:10px;display:none"></div>
+                    <div id="familiesContainer"></div>
+                    <button type="button" class="btn-secondary" onclick="addFamily()" style="width:100%;margin-bottom:4px">➕ Add Family</button>
                 </div>
+
+                <!-- STEP 5: REVIEW & SAVE -->
+                <div class="wizard-step" data-step="review">
+                    <div class="wizard-step-title">✅ Review &amp; save</div>
+                    <div id="wizardReview"></div>
+                    <div class="form-group" style="margin-top:14px">
+                        <label>Remarks / Notes</label>
+                        <textarea id="remarks" placeholder="e.g., Owner absent, locked, under construction..."></textarea>
+                    </div>
+                </div>
+
+                <!-- WIZARD NAV -->
+                <div class="wizard-nav">
+                    <button type="button" id="wizBackBtn" class="btn-secondary" onclick="wizardBack()" style="flex:1">← Back</button>
+                    <button type="button" id="wizNextBtn" class="btn-primary" onclick="wizardNext()" style="flex:2">Next →</button>
+                    <button type="submit" id="submitBtn" class="btn-primary" style="flex:2;display:none">💾 Save &amp; Sync</button>
+                </div>
+                <button type="button" class="btn-secondary" onclick="cancelEdit();resetForm()" style="margin-top:8px;font-size:13px">Clear form</button>
             </form>
         </div>
 
@@ -378,6 +447,16 @@
                 <div class="section-title">🏛️ Owner Types</div>
                 <div id="myOwnerBreakdown" style="font-size:13px;color:var(--text2);line-height:2"></div>
             </div>
+            <div class="stat-card" style="margin-bottom:10px">
+                <div class="section-title">👨‍👩‍👧 Population & Households</div>
+                <div class="stats-grid" style="margin-top:8px">
+                    <div class="stat-card"><div class="stat-value" id="myFamilies">0</div><div class="stat-label">Families</div></div>
+                    <div class="stat-card"><div class="stat-value" id="myPopulation">0</div><div class="stat-label">Population</div></div>
+                    <div class="stat-card"><div class="stat-value" id="myChildren">0</div><div class="stat-label">Children</div></div>
+                    <div class="stat-card"><div class="stat-value" id="myMale">0</div><div class="stat-label">Male</div></div>
+                    <div class="stat-card"><div class="stat-value" id="myFemale">0</div><div class="stat-label">Female</div></div>
+                </div>
+            </div>
             <div class="info-box" style="margin-top:4px">
                 💡 Records still needing details are in the <b>Follow Up</b> tab. Your <b>Complete</b> count is your finished work.
             </div>
@@ -408,12 +487,12 @@
                 </div>
             </div>
         </div>
-        <div class="tabs">
-            <button class="tab-btn active" onclick="switchAdminTab('overview',this)">📊 Overview</button>
-            <button class="tab-btn" onclick="switchAdminTab('allrecords',this)">📁 Records</button>
-            <button class="tab-btn" onclick="switchAdminTab('workers',this)">👥 Workers</button>
-            <button class="tab-btn" onclick="switchAdminTab('adminsettings',this)">⚙️ Settings</button>
-        </div>
+        <nav class="bottomnav">
+            <button type="button" class="navbtn tab-btn active" onclick="switchAdminTab('overview',this)"><span class="navicon">📊</span>Overview</button>
+            <button type="button" class="navbtn tab-btn" onclick="switchAdminTab('allrecords',this)"><span class="navicon">📁</span>Records</button>
+            <button type="button" class="navbtn tab-btn" onclick="switchAdminTab('workers',this)"><span class="navicon">👥</span>Workers</button>
+            <button type="button" class="navbtn tab-btn" onclick="switchAdminTab('adminsettings',this)"><span class="navicon">⚙️</span>Settings</button>
+        </nav>
 
         <!-- OVERVIEW -->
         <div id="overview" class="form-section active">
@@ -446,6 +525,16 @@
             <div class="stat-card" style="margin-bottom:12px">
                 <div class="section-title">🏛️ Owner Types</div>
                 <div id="adminOwnerBreakdown" style="font-size:13px;color:var(--text2);line-height:2"></div>
+            </div>
+            <div class="stat-card" style="margin-bottom:12px">
+                <div class="section-title">👨‍👩‍👧 Population & Households</div>
+                <div class="stats-grid" style="margin-top:8px">
+                    <div class="stat-card"><div class="stat-value" id="adminFamilies">0</div><div class="stat-label">Families</div></div>
+                    <div class="stat-card"><div class="stat-value" id="adminPopulation">0</div><div class="stat-label">Population</div></div>
+                    <div class="stat-card"><div class="stat-value" id="adminChildren">0</div><div class="stat-label">Children</div></div>
+                    <div class="stat-card"><div class="stat-value" id="adminMale">0</div><div class="stat-label">Male</div></div>
+                    <div class="stat-card"><div class="stat-value" id="adminFemale">0</div><div class="stat-label">Female</div></div>
+                </div>
             </div>
             <div class="stat-card" style="margin-bottom:12px">
                 <div class="section-title">👥 Worker Activity Today</div>
@@ -481,6 +570,9 @@
             <div style="display:flex;gap:8px;margin-bottom:8px">
                 <button class="btn-primary" onclick="exportFilteredData()" style="flex:1">⬇️ Export CSV</button>
                 <button class="btn-primary" onclick="exportFilteredPhotos()" style="flex:1;background:#6a1b9a">🖼️ Photos ZIP</button>
+            </div>
+            <div style="display:flex;gap:8px;margin-bottom:8px">
+                <button class="btn-primary" onclick="exportMembersCSV()" style="flex:1;background:#0b7285">👨‍👩‍👧 Export Members CSV</button>
             </div>
             <div id="photoExportStatus" style="font-size:12px;color:var(--text2);margin-bottom:8px"></div>
             <div style="font-size:12px;color:var(--text2);margin-bottom:8px" id="recordCount"></div>
@@ -717,7 +809,7 @@ const firebaseConfig = {
     appId: "1:610573950046:web:2b545f876953a4eb18a8cf"
 };
 const ADMIN_EMAIL = "enga018@gmail.com";
-const APP_VERSION = "v1.14.2";
+const APP_VERSION = "v1.17.0";
 
 
 firebase.initializeApp(firebaseConfig);
@@ -1116,6 +1208,232 @@ function updateFormFields() {
     document.getElementById('organizationName').removeAttribute('required');
 }
 
+/* ---------------- Households / Families ---------------- */
+// In-memory draft for the Collect form. Each entry: { contact, members:[{name,gender,age,relation}] }
+// The head of family is simply the first member (relation 'Head') — no separate head field.
+let householdDraft = [];
+const RELATIONS = ['Head','Spouse','Son','Daughter','Father','Mother','Brother','Sister','Other'];
+
+// Only places where people actually live get the household survey.
+const HOUSEHOLD_PROPERTY_TYPES = ['Residential','Mixed Use'];
+function propertyHasHouseholds(type){ return HOUSEHOLD_PROPERTY_TYPES.includes(type); }
+
+// Property type drives whether the Households step exists; refresh the wizard chrome.
+function updateHouseholdVisibility(){
+    if (typeof refreshWizardChrome === 'function') refreshWizardChrome();
+}
+
+/* ---------------- Collect form wizard ---------------- */
+const WIZARD_STEPS = [
+    { id:'property',   label:'Property' },
+    { id:'location',   label:'Location' },
+    { id:'occupant',   label:'Occupant' },
+    { id:'households', label:'Family', conditional:() => propertyHasHouseholds(document.getElementById('propertyType').value) },
+    { id:'review',     label:'Review' }
+];
+let wizardIndex = 0;
+
+function wizardActiveSteps(){ return WIZARD_STEPS.filter(s => !s.conditional || s.conditional()); }
+
+function showWizardStep(i){
+    const steps = wizardActiveSteps();
+    wizardIndex = Math.max(0, Math.min(i, steps.length - 1));
+    const cur = steps[wizardIndex];
+    document.querySelectorAll('#propertyForm .wizard-step').forEach(el => el.classList.toggle('active', el.dataset.step === cur.id));
+    if (cur.id === 'households') renderHouseholds(); // refresh family ids against current property id
+    if (cur.id === 'review') renderReview();
+    refreshWizardChrome();
+    const form = document.getElementById('propertyForm');
+    if (form && form.scrollIntoView) form.scrollIntoView({ block:'start', behavior:'smooth' });
+}
+
+// Re-render the progress dots and the Back/Next/Save buttons for the current position.
+function refreshWizardChrome(){
+    const steps = wizardActiveSteps();
+    if (wizardIndex > steps.length - 1) wizardIndex = steps.length - 1;
+    const cur = steps[wizardIndex];
+    // If the active panel is no longer a valid step (e.g. households removed), fall back.
+    if (cur && !document.querySelector('#propertyForm .wizard-step.active[data-step="'+cur.id+'"]')) {
+        document.querySelectorAll('#propertyForm .wizard-step').forEach(el => el.classList.toggle('active', el.dataset.step === cur.id));
+    }
+    const prog = document.getElementById('wizardProgress');
+    if (prog) prog.innerHTML = steps.map((s,i) => `
+        <div class="wstep ${i<wizardIndex?'done':''} ${i===wizardIndex?'current':''}" ${i<wizardIndex?`onclick="goWizard('${s.id}')"`:''}>
+            <div class="wdot">${i<wizardIndex?'✓':(i+1)}</div>
+            <div class="wlabel">${s.label}</div>
+        </div>`).join('');
+    const back = document.getElementById('wizBackBtn');
+    const next = document.getElementById('wizNextBtn');
+    const save = document.getElementById('submitBtn');
+    const isReview = cur && cur.id === 'review';
+    if (back) back.style.visibility = wizardIndex === 0 ? 'hidden' : 'visible';
+    if (next) next.style.display = isReview ? 'none' : 'block';
+    if (save) save.style.display = isReview ? 'block' : 'none';
+}
+
+function goWizard(stepId){
+    const steps = wizardActiveSteps();
+    const idx = steps.findIndex(s => s.id === stepId);
+    if (idx >= 0) showWizardStep(idx);
+}
+function wizardBack(){ showWizardStep(wizardIndex - 1); }
+function wizardNext(){
+    const steps = wizardActiveSteps();
+    if (!validateWizardStep(steps[wizardIndex].id)) return;
+    showWizardStep(wizardIndex + 1);
+}
+
+// Per-step gates reuse the same rules as saveRecord(); save itself re-validates everything.
+function validateWizardStep(id){
+    if (id === 'property'){
+        if (!document.getElementById('propertyId').value.trim()) return alertFalse('🏷️ Enter the Property ID.');
+        if (!document.getElementById('propertyType').value) return alertFalse('🏠 Choose a Property Type.');
+        if (!document.getElementById('ownerCategory').value) return alertFalse('🏛️ Choose an Owner Type.');
+        if (!document.getElementById('buildingType').value) return alertFalse('🏗️ Choose a Building Type.');
+    }
+    if (id === 'location'){
+        const lat = document.getElementById('latitude').value;
+        const lng = document.getElementById('longitude').value;
+        if (!lat || !lng) return alertFalse('📍 GPS location is required. Please capture location first.');
+        const photoEl = document.getElementById('photoPreview');
+        const hasPhoto = photoEl.style.display !== 'none' && photoEl.src && photoEl.src !== window.location.href;
+        if (!hasPhoto) return alertFalse('📷 Photo is required. Please take a photo first.');
+    }
+    return true;
+}
+function alertFalse(msg){ showAlert(msg, 'error'); return false; }
+
+// Submit handler: only the Review step actually saves; Enter elsewhere just advances.
+function wizardSubmit(e){
+    const steps = wizardActiveSteps();
+    if (steps[wizardIndex] && steps[wizardIndex].id === 'review') return saveRecord(e);
+    e.preventDefault();
+    wizardNext();
+}
+
+function renderReview(){
+    const g = id => (document.getElementById(id).value || '').trim();
+    const isInst = INSTITUTION_CATEGORIES.includes(g('ownerCategory'));
+    const lat = g('latitude'), lng = g('longitude');
+    const photoEl = document.getElementById('photoPreview');
+    const hasPhoto = photoEl.style.display !== 'none' && photoEl.src && photoEl.src !== window.location.href;
+    const hh = householdStats({ families: cleanHouseholds(householdDraft) });
+    const ok = v => `<span style="color:var(--success)">✓ ${v}</span>`;
+    const no = v => `<span style="color:var(--danger)">✗ ${v}</span>`;
+    const row = (k,v,step) => `<div class="review-row"><span class="rk">${k}${step?` <a href="#" onclick="goWizard('${step}');return false" style="font-size:11px;color:var(--primary)">edit</a>`:''}</span><span class="rv">${v||'—'}</span></div>`;
+    const pid = g('propertyId') ? 'NSN-' + g('propertyId').replace(/^NSN-/i,'').replace(/^[0]*/,'').padStart(4,'0') : '';
+    let h = `<div style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px">`;
+    h += row('Property ID', pid, 'property');
+    h += row('Property Type', g('propertyType'), 'property');
+    h += row('Owner Type', g('ownerCategory'), 'property');
+    h += row('Building', g('buildingType'), 'property');
+    h += row('GPS', (lat&&lng)?ok('Captured'):no('Missing'), 'location');
+    h += row('Photo', hasPhoto?ok('Taken'):no('Missing'), 'location');
+    if (isInst){
+        h += row('Organization', g('organizationName'), 'occupant');
+        h += row('Contact person', g('contactPerson'), 'occupant');
+        h += row('Contact', g('instContact'), 'occupant');
+    } else {
+        h += row('Owner', g('ownerName'), 'occupant');
+        h += row('Father/Husband', g('fatherHusbandName'), 'occupant');
+        h += row('Contact', g('contact'), 'occupant');
+    }
+    if (propertyHasHouseholds(g('propertyType'))){
+        h += row('Households', hh.families ? `${hh.families} ${hh.families===1?'family':'families'} · ${hh.population} people` : 'None (vacant)', 'households');
+    }
+    h += `</div>`;
+    document.getElementById('wizardReview').innerHTML = h;
+}
+
+function esc(s){ return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// Normalize a raw sticker number into the canonical NSN-0000 id (same rule as saveRecord).
+function formatPropertyId(raw){ const n = (raw||'').trim().replace(/^NSN-/i,'').replace(/^[0]*/,''); return n ? 'NSN-' + n.padStart(4,'0') : ''; }
+// A family's property-scoped id: NSN-0001/1, /2, ... (derived by position; falls back when id unknown).
+function familyDisplayId(propertyId, i){ return propertyId ? propertyId + '/' + (i+1) : 'Family ' + (i+1); }
+
+// The head member is the one tagged 'Head', else the first member.
+function familyHead(f){ const ms = (f && f.members) || []; return ms.find(m => m.relation === 'Head') || ms[0] || null; }
+function familyHeadName(f){ const h = familyHead(f); return h && h.name ? h.name : ''; }
+
+function addFamily(){ householdDraft.push({ contact:'', members:[{ name:'', gender:'', age:'', relation:'Head' }] }); renderHouseholds(); }
+function removeFamily(fi){ householdDraft.splice(fi,1); renderHouseholds(); }
+function addMember(fi){ householdDraft[fi].members.push({ name:'', gender:'', age:'', relation:'' }); renderHouseholds(); }
+function removeMember(fi,mi){ householdDraft[fi].members.splice(mi,1); renderHouseholds(); }
+function updateFamilyField(fi,field,value){ householdDraft[fi][field] = value; refreshHouseholdSummary(); }
+function updateMemberField(fi,mi,field,value){ householdDraft[fi].members[mi][field] = value; refreshHouseholdSummary(); }
+
+// Backward-compat: older drafts/records stored a separate headName. Fold it in as a Head member.
+function normalizeFamilies(families){
+    return (families || []).map(f => {
+        const members = Array.isArray(f.members) ? f.members.slice() : [];
+        if (f.headName && !members.some(m => m.relation === 'Head')) {
+            members.unshift({ name: f.headName, gender:'', age:'', relation:'Head' });
+        }
+        return { contact: f.contact || '', members };
+    });
+}
+
+function refreshHouseholdSummary(){
+    const el = document.getElementById('householdSummary');
+    if (!el) return;
+    const s = householdStats({ families: householdDraft });
+    if (!householdDraft.length) { el.style.display = 'none'; return; }
+    el.style.display = 'block';
+    el.textContent = `${s.families} ${s.families===1?'family':'families'} · ${s.population} ${s.population===1?'person':'people'} · ${s.children} children · ${s.males} male / ${s.females} female`;
+}
+
+function renderHouseholds(){
+    const c = document.getElementById('familiesContainer');
+    if (!c) return;
+    const pid = formatPropertyId((document.getElementById('propertyId')||{}).value);
+    c.innerHTML = householdDraft.map((f, fi) => `
+        <div style="border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:10px;background:var(--bg)">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                <span style="font-weight:600;color:var(--primary)">👪 ${esc(familyDisplayId(pid, fi))}</span>
+                <button type="button" onclick="removeFamily(${fi})" style="background:none;border:none;color:var(--danger,#cb2431);font-size:18px;cursor:pointer;padding:0 4px">✕</button>
+            </div>
+            <div class="form-group">
+                <label>Family Contact <span style="font-size:12px;color:var(--text2);font-weight:400">(optional)</span></label>
+                <input type="tel" value="${esc(f.contact)}" placeholder="10-digit mobile number" pattern="[0-9]{10}" oninput="updateFamilyField(${fi},'contact',this.value)">
+            </div>
+            <div style="font-size:13px;font-weight:600;color:var(--text);margin:4px 0 6px">Members <span style="font-size:11px;color:var(--text2);font-weight:400">(first member = head of family)</span></div>
+            ${f.members.map((m, mi) => `
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;border-top:1px dashed var(--border);padding-top:8px;margin-bottom:6px">
+                    <input type="text" value="${esc(m.name)}" placeholder="${mi===0?'Head of family name':'Member name'}" oninput="updateMemberField(${fi},${mi},'name',this.value)" style="grid-column:1 / -1">
+                    <select onchange="updateMemberField(${fi},${mi},'gender',this.value)">
+                        <option value="">Gender</option>
+                        <option value="Male" ${m.gender==='Male'?'selected':''}>Male</option>
+                        <option value="Female" ${m.gender==='Female'?'selected':''}>Female</option>
+                        <option value="Other" ${m.gender==='Other'?'selected':''}>Other</option>
+                    </select>
+                    <input type="number" min="0" max="120" value="${esc(m.age)}" placeholder="Age" oninput="updateMemberField(${fi},${mi},'age',this.value)">
+                    <select onchange="updateMemberField(${fi},${mi},'relation',this.value)">
+                        <option value="">Relation to head</option>
+                        ${RELATIONS.map(rel=>`<option value="${rel}" ${m.relation===rel?'selected':''}>${rel}</option>`).join('')}
+                    </select>
+                    ${mi===0 ? '<span style="align-self:center;font-size:12px;color:var(--text2)">👑 Head</span>' : `<button type="button" onclick="removeMember(${fi},${mi})" style="background:#666;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px">✕ Remove</button>`}
+                </div>
+            `).join('')}
+            <button type="button" class="btn-secondary" onclick="addMember(${fi})" style="width:100%;margin-top:4px;font-size:13px;padding:8px">➕ Add Member</button>
+        </div>
+    `).join('');
+    refreshHouseholdSummary();
+}
+
+// Strip fully-empty families/members so vacant houses store a clean [].
+// headName is derived from the head member (no separate head field).
+function cleanHouseholds(draft){
+    return (draft || [])
+        .map(f => {
+            const members = (f.members||[])
+                .map(m => ({ name:(m.name||'').trim(), gender:m.gender||'', age:(m.age===''||m.age==null)?'':Number(m.age), relation:m.relation||'' }))
+                .filter(m => m.name || m.age !== '' || m.gender || m.relation);
+            return { headName: familyHeadName({ members }), contact:(f.contact||'').trim(), members };
+        })
+        .filter(f => f.contact || f.members.length);
+}
+
 let editingRecordId = null;
 
 function hasAssignedRange() {
@@ -1205,6 +1523,7 @@ async function saveRecord(e) {
         isInstitution: isInst,
         isAbsent,
         contact: contact || '',
+        families: propertyHasHouseholds(type) ? cleanHouseholds(householdDraft) : [],
         remarks: document.getElementById('remarks').value.trim(),
         latitude: parseFloat(lat),
         longitude: parseFloat(lng),
@@ -1235,12 +1554,23 @@ async function saveRecord(e) {
     try {
         btn.textContent = '⏳ Saving...';
         if (editingRecordId) {
-            data.adminFlagNote = firebase.firestore.FieldValue.delete();
-            data.adminFlaggedAt = firebase.firestore.FieldValue.delete();
-            data.needsCorrection = firebase.firestore.FieldValue.delete();
-            data.correctionAllowGps = firebase.firestore.FieldValue.delete();
-            data.correctionAllowPhoto = firebase.firestore.FieldValue.delete();
-            data.correctionAllowDetails = firebase.firestore.FieldValue.delete();
+            const rec = (myRecordsCache||[]).find(x => x.id === editingRecordId) || (allRecords||[]).find(x => x.id === editingRecordId) || {};
+            if (correctionState(rec) === 'pending') {
+                // Worker has acted on a redo request: log it as fixed (awaiting admin verify),
+                // keep the correction history, and clear the active redo-gating flags.
+                const history = Array.isArray(rec.corrections) ? rec.corrections.slice() : [];
+                const now = new Date().toISOString();
+                if (history.length) history[history.length-1] = { ...history[history.length-1], status: 'fixed', fixedAt: now };
+                else history.push({ note: rec.adminFlagNote || '', flaggedAt: rec.adminFlaggedAt || null, status: 'fixed', fixedAt: now });
+                data.corrections = history;
+                data.correctionStatus = 'fixed';
+                data.correctionFixedAt = now;
+                data.needsCorrection = false;
+                data.adminFlagNote = firebase.firestore.FieldValue.delete();
+                data.correctionAllowGps = firebase.firestore.FieldValue.delete();
+                data.correctionAllowPhoto = firebase.firestore.FieldValue.delete();
+                data.correctionAllowDetails = firebase.firestore.FieldValue.delete();
+            }
             await db.collection('records').doc(editingRecordId).update(data);
             cancelEdit();
             resetForm();
@@ -1288,6 +1618,10 @@ function startEditRecord(r) {
         document.getElementById('contact').value = r.contact||'';
     }
     document.getElementById('remarks').value = r.remarks||'';
+    // Load households into the draft (deep copy so edits don't mutate the live record)
+    householdDraft = normalizeFamilies(Array.isArray(r.families) ? JSON.parse(JSON.stringify(r.families)) : []);
+    renderHouseholds();
+    showWizardStep(0);
     // Restore photo
     if (r.photo) {
         const p = document.getElementById('photoPreview');
@@ -1374,6 +1708,9 @@ function resetForm() {
     document.getElementById('institutionFields').classList.add('hidden');
     document.getElementById('residentialFields').classList.remove('hidden');
     document.getElementById('organizationName').removeAttribute('required');
+    householdDraft = [];
+    renderHouseholds();
+    showWizardStep(0);
     clearEditLocks();
 }
 
@@ -1434,6 +1771,30 @@ function isRecordAbsent(r) {
     // Fallback for very old records without the field
     if (r.isInstitution) return false;
     return !r.ownerName;
+}
+function householdStats(r) {
+    // Roll a property's families/members into headline counts.
+    // Children are auto-derived (age < 18); blank/unknown age counts as neither child nor adult.
+    const fams = Array.isArray(r.families) ? r.families : [];
+    let population = 0, males = 0, females = 0, others = 0, children = 0, adults = 0;
+    for (const f of fams) {
+        const members = Array.isArray(f && f.members) ? f.members : [];
+        for (const m of members) {
+            population++;
+            const g = (m && m.gender || '').toLowerCase();
+            if (g === 'male') males++; else if (g === 'female') females++; else others++;
+            const hasAge = m && m.age !== '' && m.age != null;
+            const age = Number(m && m.age);
+            if (hasAge && !Number.isNaN(age)) { if (age < 18) children++; else adults++; }
+        }
+    }
+    return { families: fams.length, population, males, females, others, children, adults };
+}
+function correctionState(r) {
+    // none -> pending (worker must fix) -> fixed (awaiting admin) -> verified
+    if (r.correctionStatus === 'pending' || r.correctionStatus === 'fixed' || r.correctionStatus === 'verified') return r.correctionStatus;
+    if (r.needsCorrection === true) return 'pending'; // legacy records flagged before the status field existed
+    return 'none';
 }
 /* === END testable logic === */
 
@@ -1572,6 +1933,9 @@ function renderMyRecords(records) {
     const complete = records.length - incomplete;
     const todayCount = records.filter(r=>r.localTimestamp && new Date(r.localTimestamp).toDateString()===today).length;
 
+    const fb = document.getElementById('followupBadge');
+    if (fb) { fb.textContent = incomplete > 99 ? '99+' : incomplete; fb.classList.toggle('show', incomplete > 0); }
+
     document.getElementById('myTotal').textContent = records.length;
     document.getElementById('myComplete').textContent = complete;
     document.getElementById('myAbsent').textContent = incomplete;
@@ -1584,19 +1948,24 @@ function renderMyRecords(records) {
     const bc = {};
     records.forEach(r => { bc[r.buildingType] = (bc[r.buildingType]||0)+1; });
     const el = document.getElementById('myBuildingBreakdown');
-    if (el) el.innerHTML = Object.entries(bc).map(([k,v])=>`<div>${k}: <b>${v}</b></div>`).join('') || '<div style="color:#999">No records yet</div>';
+    if (el) el.innerHTML = breakdownBars(bc, 'No records yet');
 
     // Property type breakdown
     const pc = {};
     records.forEach(r => { pc[r.propertyType] = (pc[r.propertyType]||0)+1; });
     const pel = document.getElementById('myPropertyBreakdown');
-    if (pel) pel.innerHTML = Object.entries(pc).map(([k,v])=>`<div>${k}: <b>${v}</b></div>`).join('') || '<div style="color:#999">No records yet</div>';
+    if (pel) pel.innerHTML = breakdownBars(pc, 'No records yet');
 
     // Owner type breakdown
     const oc = {};
     records.forEach(r => { const k = r.ownerCategory||'Individual'; oc[k] = (oc[k]||0)+1; });
     const oel = document.getElementById('myOwnerBreakdown');
-    if (oel) oel.innerHTML = Object.entries(oc).map(([k,v])=>`<div>${k}: <b>${v}</b></div>`).join('') || '<div style="color:#999">No records yet</div>';
+    if (oel) oel.innerHTML = breakdownBars(oc, 'No records yet');
+
+    // Population & households for this worker's records
+    const hh = records.reduce((a,r)=>{ const s=householdStats(r); a.families+=s.families; a.population+=s.population; a.children+=s.children; a.males+=s.males; a.females+=s.females; return a; }, {families:0,population:0,children:0,males:0,females:0});
+    const set=(id,v)=>{ const e=document.getElementById(id); if(e) e.textContent=v; };
+    set('myFamilies',hh.families); set('myPopulation',hh.population); set('myChildren',hh.children); set('myMale',hh.males); set('myFemale',hh.females);
 }
 
 function renderFollowUp(records) {
@@ -1616,16 +1985,51 @@ function renderFollowUp(records) {
 }
 
 
+// Render a {label: count} map as labelled proportion bars (sorted high to low).
+function breakdownBars(map, emptyMsg){
+    const entries = Object.entries(map || {});
+    if (!entries.length) return `<div style="color:var(--text2)">${emptyMsg || 'No data'}</div>`;
+    const total = entries.reduce((a,[,v]) => a + v, 0) || 1;
+    return entries.sort((a,b) => b[1]-a[1]).map(([k,v]) => {
+        const pct = Math.round(v / total * 100);
+        return `<div class="bd-row"><div class="bd-top"><span>${k}</span><b>${v} · ${pct}%</b></div><div class="bd-track"><div class="bd-fill" style="width:${pct}%"></div></div></div>`;
+    }).join('');
+}
+
+// Household summary line (+ optional full family/member breakdown) for record views.
+function householdHtml(r, full) {
+    const s = householdStats(r);
+    if (!s.families) {
+        return '<div class="record-detail">🏠 Vacant / no household recorded</div>';
+    }
+    const summary = `<div class="record-detail">👨‍👩‍👧 <b>${s.families}</b> ${s.families===1?'family':'families'} · <b>${s.population}</b> ${s.population===1?'person':'people'} · ${s.children} children · ${s.males}M / ${s.females}F${s.others?' / '+s.others+'O':''}</div>`;
+    if (!full) return summary;
+    const fams = (r.families||[]).map((f,i)=>{
+        const label = esc(familyDisplayId(r.propertyId, i));
+        const head = esc(f.headName);
+        const contact = f.contact ? ` · 📱 ${esc(f.contact)}` : '';
+        const members = (f.members||[]).map(m=>{
+            const bits = [esc(m.name)||'(no name)', m.gender||'', (m.age===''||m.age==null)?'':m.age+'y', m.relation||''].filter(Boolean);
+            return `<li>${bits.join(' · ')}</li>`;
+        }).join('') || '<li style="color:#999">No members listed</li>';
+        return `<div style="margin-top:6px"><b>👪 ${label}</b>${head?' · '+head:''}${contact}<ul style="margin:2px 0 0 18px;padding:0">${members}</ul></div>`;
+    }).join('');
+    return summary + `<div style="background:var(--bg);border-radius:6px;padding:8px;margin-top:6px;font-size:12px;color:var(--text2)">${fams}</div>`;
+}
+
 function recordCard(r, context) {
     const absent = isRecordAbsent(r);
-    const correction = r.needsCorrection === true;
+    const cstate = correctionState(r);
+    const correction = cstate === 'pending';
     const isAdminView = context === 'admin';
     const showWorker = isAdminView;
     const missing = missingFields(r);
     let statusBadge;
-    if (correction) statusBadge = '<span class="badge" style="margin-left:8px;background:#fff3cd;color:#856404">🟡 Needs Correction</span>';
+    if (cstate === 'pending') statusBadge = '<span class="badge" style="margin-left:8px;background:var(--warning-bg);color:var(--warning)">🟡 Needs Correction</span>';
+    else if (cstate === 'fixed') statusBadge = '<span class="badge" style="margin-left:8px;background:var(--primary-tint);color:var(--primary)">🔵 Fixed — verify</span>';
     else if (absent) statusBadge = '<span class="badge badge-absent" style="margin-left:8px">🔴 Incomplete</span>';
     else statusBadge = '<span class="badge badge-complete" style="margin-left:8px">✅ Complete</span>';
+    if (cstate === 'verified') statusBadge += ' <span class="badge badge-complete" style="margin-left:6px">✓ Verified</span>';
     return `<div class="record-card ${absent||correction?'absent':'complete'}">
         <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:6px">
             <div>
@@ -1639,6 +2043,7 @@ function recordCard(r, context) {
         ${r.ownerName ? `<div class="record-detail"><b>${r.ownerType||'Owner'}:</b> ${r.ownerName}</div>` : ''}
         ${r.contact ? `<div class="record-detail">📱 ${r.contact}</div>` : ''}
         <div class="record-detail">🏠 ${r.propertyType} &nbsp;|&nbsp; 🏗️ ${r.buildingType}${r.ownerCategory && r.ownerCategory!=='Individual' ? ' &nbsp;|&nbsp; 🏛️ '+r.ownerCategory : ''}</div>
+        ${householdHtml(r, false)}
         <div style="margin-top:5px">
             ${r.photo ? '<span class="badge badge-photo">📷 Photo</span> ' : ''}
             ${r.latitude ? '<span class="badge badge-gps">📍 GPS</span> ' : ''}
@@ -1648,7 +2053,8 @@ function recordCard(r, context) {
         <div class="record-actions">
             <button class="btn-small btn-primary" onclick='showDetail(${JSON.stringify(r).replace(/'/g,"&#39;")})'>👁 View</button>
             ${context === 'followup' ? `<button class="btn-small" style="background:#e65100;color:white" onclick='startEditRecord(${JSON.stringify(r).replace(/'/g,"&#39;")})'>✏️ Edit</button>` : ''}
-            ${isAdminView && !absent && !correction ? `<button class="btn-small" style="background:#856404;color:white" onclick="adminMarkIncomplete('${r.id}','${r.propertyId}')">↩️ Send for Correction</button>` : ''}
+            ${isAdminView && cstate === 'fixed' ? `<button class="btn-small btn-success" onclick="adminVerifyCorrection('${r.id}','${r.propertyId}')">✓ Verify</button>` : ''}
+            ${isAdminView && !absent && cstate !== 'pending' && cstate !== 'fixed' ? `<button class="btn-small" style="background:#856404;color:white" onclick="adminMarkIncomplete('${r.id}','${r.propertyId}')">↩️ Send for Correction</button>` : ''}
             ${isAdminView ? `<button class="btn-small btn-danger" onclick="adminDeleteRecord('${r.id}','${r.propertyId}')">🗑 Delete</button>` : ''}
         </div>
     </div>`;
@@ -1676,17 +2082,34 @@ async function submitCorrection() {
     if (!note) { box.innerHTML = '<div class="alert alert-error">Please describe what needs fixing</div>'; return; }
     if (!allowGps && !allowPhoto && !allowDetails) { box.innerHTML = '<div class="alert alert-error">Tick at least one thing to allow</div>'; return; }
     try {
+        const rec = (allRecords||[]).find(x => x.id === id) || {};
+        const history = Array.isArray(rec.corrections) ? rec.corrections.slice() : [];
+        const now = new Date().toISOString();
+        history.push({ note, allowGps, allowPhoto, allowDetails, flaggedAt: now, flaggedBy: (currentUser && currentUser.email) || '', status: 'pending' });
         await db.collection('records').doc(id).update({
             needsCorrection: true,
             adminFlagNote: note,
             correctionAllowGps: allowGps,
             correctionAllowPhoto: allowPhoto,
             correctionAllowDetails: allowDetails,
-            adminFlaggedAt: new Date().toISOString()
+            adminFlaggedAt: now,
+            correctionStatus: 'pending',
+            corrections: history
         });
         document.getElementById('correctionModal').classList.remove('active');
         showAlert(propId + ' sent back to worker for correction', 'success');
     } catch(e) { box.innerHTML = `<div class="alert alert-error">${e.message}</div>`; }
+}
+
+// Admin accepts a worker's redo: mark the latest correction verified and close the loop.
+async function adminVerifyCorrection(id, propId) {
+    try {
+        const rec = (allRecords||[]).find(x => x.id === id) || {};
+        const history = Array.isArray(rec.corrections) ? rec.corrections.slice() : [];
+        if (history.length) history[history.length-1] = { ...history[history.length-1], status: 'verified', verifiedAt: new Date().toISOString(), verifiedBy: (currentUser && currentUser.email) || '' };
+        await db.collection('records').doc(id).update({ correctionStatus: 'verified', corrections: history });
+        showAlert((propId || 'Record') + ' marked verified', 'success');
+    } catch(e) { showAlert('Could not verify: ' + e.message, 'error'); }
 }
 
 function adminDeleteRecord(id, propId) {
@@ -1741,9 +2164,17 @@ function renderAdminOverview() {
 
     const bc={}, pc={}, oc={};
     allRecords.forEach(r=>{ bc[r.buildingType]=(bc[r.buildingType]||0)+1; pc[r.propertyType]=(pc[r.propertyType]||0)+1; const ok=r.ownerCategory||'Individual'; oc[ok]=(oc[ok]||0)+1; });
-    document.getElementById('adminBuildingBreakdown').innerHTML = Object.entries(bc).map(([k,v])=>`<div>${k}: <b>${v}</b></div>`).join('') || '<div style="color:#999">No data</div>';
-    document.getElementById('adminPropertyBreakdown').innerHTML = Object.entries(pc).map(([k,v])=>`<div>${k}: <b>${v}</b></div>`).join('') || '<div style="color:#999">No data</div>';
-    document.getElementById('adminOwnerBreakdown').innerHTML = Object.entries(oc).map(([k,v])=>`<div>${k}: <b>${v}</b></div>`).join('') || '<div style="color:#999">No data</div>';
+    document.getElementById('adminBuildingBreakdown').innerHTML = breakdownBars(bc, 'No data');
+    document.getElementById('adminPropertyBreakdown').innerHTML = breakdownBars(pc, 'No data');
+    document.getElementById('adminOwnerBreakdown').innerHTML = breakdownBars(oc, 'No data');
+
+    // Population & households (folded across all records)
+    const hh = allRecords.reduce((a,r)=>{ const s=householdStats(r); a.families+=s.families; a.population+=s.population; a.children+=s.children; a.males+=s.males; a.females+=s.females; return a; }, {families:0,population:0,children:0,males:0,females:0});
+    document.getElementById('adminFamilies').textContent = hh.families;
+    document.getElementById('adminPopulation').textContent = hh.population;
+    document.getElementById('adminChildren').textContent = hh.children;
+    document.getElementById('adminMale').textContent = hh.males;
+    document.getElementById('adminFemale').textContent = hh.females;
 
     const tw={};
     allRecords.filter(r=>r.localTimestamp&&new Date(r.localTimestamp).toDateString()===today)
@@ -1900,10 +2331,12 @@ async function exportAllPhotos(recordSet) {
         }
         status.textContent = 'Compressing ZIP file...';
         const blob = await zip.generateAsync({type:'blob'});
+        const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
+        a.href = url;
         a.download = `property-tax-photos-${new Date().toISOString().split('T')[0]}.zip`;
         a.click();
+        setTimeout(() => URL.revokeObjectURL(url), 2000);
         status.textContent = `✓ Downloaded ${added} photos.`;
     } catch(e) {
         status.textContent = '❌ Error: ' + e.message;
@@ -1940,23 +2373,62 @@ async function resetEverything() {
 function exportCSV(records, filename) {
     if (!records.length) { alert('No records to export'); return; }
     const rows = [
-        ['Property ID','Latitude','Longitude','Property Type','Owner Type','Building Type','Status','Missing Fields','Organization/Institution','Owner/Contact Person','Person Type','Father/Husband','Designation','Contact','GPS Accuracy','Remarks','Worker Name','Date'],
-        ...records.map(r=>[
+        ['Property ID','Latitude','Longitude','Property Type','Owner Type','Building Type','Status','Missing Fields','Organization/Institution','Owner/Contact Person','Person Type','Father/Husband','Designation','Contact','GPS Accuracy','Remarks','Families','Population','Children','Males','Females','Worker Name','Date'],
+        ...records.map(r=>{
+            const h = householdStats(r);
+            return [
             r.propertyId, r.latitude||'', r.longitude||'',
             r.propertyType, r.ownerCategory||'Individual', r.buildingType,
             r.needsCorrection?'Needs Correction':(isRecordAbsent(r)?'Incomplete':'Complete'), missingFields(r).join('; '),
             r.organizationName||'', r.ownerName||'', r.ownerType||'Owner',
             r.fatherHusbandName||'', r.designation||'', r.contact||'',
             r.accuracy||'', r.remarks||'',
+            h.families, h.population, h.children, h.males, h.females,
             allUsers[r.workerUid]?.name||r.workerEmail||'',
             r.localTimestamp ? new Date(r.localTimestamp).toLocaleString() : ''
-        ])
+        ];})
     ];
-    const csv = rows.map(r=>r.map(c=>`"${String(c||'').replace(/"/g,'""')}"`).join(',')).join('\n');
+    downloadCSV(rows, filename);
+}
+
+// Quote/escape one CSV cell, neutralising spreadsheet formula injection.
+function csvCell(c) {
+    let s = (c == null ? '' : String(c));
+    // A leading =,+,-,@ (or tab/CR) makes Excel/Sheets run the cell as a formula — prefix with ' to defuse.
+    if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;
+    return '"' + s.replace(/"/g, '""') + '"';
+}
+
+// Shared CSV writer: BOM for Excel/Unicode, escaped cells, CRLF rows, dated download.
+function downloadCSV(rows, filename) {
+    const csv = '\uFEFF' + rows.map(r => r.map(csvCell).join(',')).join('\r\n');
+    const url = URL.createObjectURL(new Blob([csv], { type:'text/csv;charset=utf-8' }));
     const a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+    a.href = url;
     a.download = `property-tax-${filename}-${new Date().toISOString().split('T')[0]}.csv`;
     a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
+
+// One row per family member across the currently-filtered records.
+function exportMembersCSV() {
+    const records = getFilteredRecords();
+    const rows = [['Property ID','Family ID','Head of Family','Family Contact','Member Name','Gender','Age','Child? (<18)','Relation','Worker Name']];
+    records.forEach(r=>{
+        (r.families||[]).forEach((f,fi)=>{
+            (f.members||[]).forEach(m=>{
+                const age = (m.age===''||m.age==null)?'':Number(m.age);
+                const isChild = age!=='' && !Number.isNaN(age) && age < 18 ? 'Yes' : (age==='' ? '' : 'No');
+                rows.push([
+                    r.propertyId, familyDisplayId(r.propertyId, fi), f.headName||'', f.contact||'',
+                    m.name||'', m.gender||'', age, isChild, m.relation||'',
+                    allUsers[r.workerUid]?.name||r.workerEmail||''
+                ]);
+            });
+        });
+    });
+    if (rows.length === 1) { alert('No family members to export'); return; }
+    downloadCSV(rows, 'members');
 }
 
 // ========== MODAL ==========
@@ -1977,6 +2449,7 @@ function showDetail(r) {
         ${r.fatherHusbandName ? `<div style="margin-bottom:6px"><b>Father/Husband:</b> ${r.fatherHusbandName}</div>` : ''}
         ${r.designation ? `<div style="margin-bottom:6px"><b>Designation:</b> ${r.designation}</div>` : ''}
         ${r.contact ? `<div style="margin-bottom:10px"><b>Contact:</b> ${r.contact}</div>` : ''}
+        <div style="margin-bottom:10px">${householdHtml(r, true)}</div>
         ${r.latitude ? `<div style="margin-bottom:10px">
             <b>📍 GPS:</b> ${r.latitude.toFixed(6)}, ${r.longitude.toFixed(6)} (±${r.accuracy?.toFixed(0)||'?'}m)<br>
             <a href="https://maps.google.com/?q=${r.latitude},${r.longitude}" target="_blank" style="color:var(--primary);font-size:13px">📌 Open in Google Maps →</a>
@@ -2030,6 +2503,10 @@ function showAlert(msg, type) {
     window.scrollTo({top:0, behavior:'smooth'});
     if (type==='success') setTimeout(()=>{ box.innerHTML=''; }, 4000);
 }
+
+// Initialize the Collect wizard chrome (progress dots + nav) once the DOM is ready.
+function initWizard(){ if (document.getElementById('wizardProgress')) refreshWizardChrome(); }
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initWizard); else initWizard();
 
 </script>
 </body>

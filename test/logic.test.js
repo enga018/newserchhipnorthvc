@@ -14,11 +14,11 @@ function loadLogic() {
   const m = html.match(/=== BEGIN testable logic ===[\s\S]*?\*\/([\s\S]*?)\/\* === END testable logic ===/);
   if (!m) throw new Error("testable logic block not found in index.html");
   return new Function(
-    m[1] + "\nreturn { getExifOrientation, needsFollowUp, missingFields, isRecordAbsent };"
+    m[1] + "\nreturn { getExifOrientation, needsFollowUp, missingFields, isRecordAbsent, householdStats, correctionState };"
   )();
 }
 
-const { missingFields, isRecordAbsent, needsFollowUp, getExifOrientation } = loadLogic();
+const { missingFields, isRecordAbsent, needsFollowUp, getExifOrientation, householdStats, correctionState } = loadLogic();
 
 /* ---------------- missingFields ---------------- */
 
@@ -84,6 +84,77 @@ test("needsFollowUp: absent records need follow-up", () => {
 
 test("needsFollowUp: admin-flagged corrections need follow-up even if present", () => {
   assert.equal(needsFollowUp({ isAbsent: false, needsCorrection: true }), true);
+});
+
+/* ---------------- householdStats ---------------- */
+
+test("householdStats: missing/empty families is all zeros", () => {
+  assert.deepEqual(householdStats({}), {
+    families: 0, population: 0, males: 0, females: 0, others: 0, children: 0, adults: 0
+  });
+  assert.deepEqual(householdStats({ families: [] }), {
+    families: 0, population: 0, males: 0, females: 0, others: 0, children: 0, adults: 0
+  });
+});
+
+test("householdStats: counts families, population and gender split", () => {
+  const r = { families: [
+    { headName: "A", members: [
+      { name: "A", gender: "Male", age: 40, relation: "Head" },
+      { name: "B", gender: "Female", age: 38, relation: "Spouse" },
+    ]},
+    { headName: "C", members: [
+      { name: "C", gender: "Other", age: 25, relation: "Head" },
+    ]},
+  ]};
+  const s = householdStats(r);
+  assert.equal(s.families, 2);
+  assert.equal(s.population, 3);
+  assert.equal(s.males, 1);
+  assert.equal(s.females, 1);
+  assert.equal(s.others, 1);
+});
+
+test("householdStats: child boundary is age < 18 (17 child, 18 adult)", () => {
+  const r = { families: [{ members: [
+    { name: "kid", gender: "Male", age: 17 },
+    { name: "adult", gender: "Female", age: 18 },
+    { name: "baby", gender: "Female", age: 0 },
+  ]}]};
+  const s = householdStats(r);
+  assert.equal(s.children, 2); // 17 and 0
+  assert.equal(s.adults, 1);   // 18
+});
+
+test("householdStats: blank/unknown age counts as neither child nor adult", () => {
+  const r = { families: [{ members: [
+    { name: "x", gender: "Male", age: "" },
+    { name: "y", gender: "Female" },
+  ]}]};
+  const s = householdStats(r);
+  assert.equal(s.population, 2);
+  assert.equal(s.children, 0);
+  assert.equal(s.adults, 0);
+});
+
+/* ---------------- correctionState ---------------- */
+
+test("correctionState: clean record is none", () => {
+  assert.equal(correctionState({}), "none");
+});
+
+test("correctionState: legacy needsCorrection reads as pending", () => {
+  assert.equal(correctionState({ needsCorrection: true }), "pending");
+});
+
+test("correctionState: explicit statuses pass through", () => {
+  assert.equal(correctionState({ correctionStatus: "pending" }), "pending");
+  assert.equal(correctionState({ correctionStatus: "fixed" }), "fixed");
+  assert.equal(correctionState({ correctionStatus: "verified" }), "verified");
+});
+
+test("correctionState: a verified record is no longer pending even if legacy flag lingers", () => {
+  assert.equal(correctionState({ correctionStatus: "verified", needsCorrection: false }), "verified");
 });
 
 /* ---------------- getExifOrientation ---------------- */
