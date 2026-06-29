@@ -54,6 +54,9 @@
         .bottomnav .navbtn .navicon{font-size:20px;line-height:1;filter:grayscale(0.35)}
         .bottomnav .navbtn.active{color:var(--primary);background:var(--primary-tint)}
         .bottomnav .navbtn.active .navicon{filter:none}
+        .bottomnav .navbtn{position:relative}
+        .navbadge{position:absolute;top:2px;right:50%;transform:translateX(18px);min-width:17px;height:17px;padding:0 4px;border-radius:9px;background:var(--danger);color:#fff;font-size:10px;font-weight:700;display:none;align-items:center;justify-content:center;line-height:17px}
+        .navbadge.show{display:inline-flex}
 
         /* WIZARD */
         .wizard-progress{display:flex;gap:4px;margin-bottom:18px}
@@ -265,7 +268,7 @@
         <nav class="bottomnav">
             <button type="button" class="navbtn tab-btn active" onclick="switchTab('collect',this)"><span class="navicon">📋</span>Collect</button>
             <button type="button" class="navbtn tab-btn" onclick="switchTab('myrecords',this)"><span class="navicon">📊</span>My Work</button>
-            <button type="button" class="navbtn tab-btn" onclick="switchTab('followup',this)"><span class="navicon">🔴</span>Follow Up</button>
+            <button type="button" class="navbtn tab-btn" onclick="switchTab('followup',this)"><span class="navicon">🔴</span>Follow Up<span id="followupBadge" class="navbadge"></span></button>
         </nav>
 
         <!-- COLLECT TAB -->
@@ -1551,12 +1554,23 @@ async function saveRecord(e) {
     try {
         btn.textContent = '⏳ Saving...';
         if (editingRecordId) {
-            data.adminFlagNote = firebase.firestore.FieldValue.delete();
-            data.adminFlaggedAt = firebase.firestore.FieldValue.delete();
-            data.needsCorrection = firebase.firestore.FieldValue.delete();
-            data.correctionAllowGps = firebase.firestore.FieldValue.delete();
-            data.correctionAllowPhoto = firebase.firestore.FieldValue.delete();
-            data.correctionAllowDetails = firebase.firestore.FieldValue.delete();
+            const rec = (myRecordsCache||[]).find(x => x.id === editingRecordId) || (allRecords||[]).find(x => x.id === editingRecordId) || {};
+            if (correctionState(rec) === 'pending') {
+                // Worker has acted on a redo request: log it as fixed (awaiting admin verify),
+                // keep the correction history, and clear the active redo-gating flags.
+                const history = Array.isArray(rec.corrections) ? rec.corrections.slice() : [];
+                const now = new Date().toISOString();
+                if (history.length) history[history.length-1] = { ...history[history.length-1], status: 'fixed', fixedAt: now };
+                else history.push({ note: rec.adminFlagNote || '', flaggedAt: rec.adminFlaggedAt || null, status: 'fixed', fixedAt: now });
+                data.corrections = history;
+                data.correctionStatus = 'fixed';
+                data.correctionFixedAt = now;
+                data.needsCorrection = false;
+                data.adminFlagNote = firebase.firestore.FieldValue.delete();
+                data.correctionAllowGps = firebase.firestore.FieldValue.delete();
+                data.correctionAllowPhoto = firebase.firestore.FieldValue.delete();
+                data.correctionAllowDetails = firebase.firestore.FieldValue.delete();
+            }
             await db.collection('records').doc(editingRecordId).update(data);
             cancelEdit();
             resetForm();
@@ -1776,6 +1790,12 @@ function householdStats(r) {
     }
     return { families: fams.length, population, males, females, others, children, adults };
 }
+function correctionState(r) {
+    // none -> pending (worker must fix) -> fixed (awaiting admin) -> verified
+    if (r.correctionStatus === 'pending' || r.correctionStatus === 'fixed' || r.correctionStatus === 'verified') return r.correctionStatus;
+    if (r.needsCorrection === true) return 'pending'; // legacy records flagged before the status field existed
+    return 'none';
+}
 /* === END testable logic === */
 
 function handlePhotoCapture(e) {
@@ -1913,6 +1933,9 @@ function renderMyRecords(records) {
     const complete = records.length - incomplete;
     const todayCount = records.filter(r=>r.localTimestamp && new Date(r.localTimestamp).toDateString()===today).length;
 
+    const fb = document.getElementById('followupBadge');
+    if (fb) { fb.textContent = incomplete > 99 ? '99+' : incomplete; fb.classList.toggle('show', incomplete > 0); }
+
     document.getElementById('myTotal').textContent = records.length;
     document.getElementById('myComplete').textContent = complete;
     document.getElementById('myAbsent').textContent = incomplete;
@@ -1996,14 +2019,17 @@ function householdHtml(r, full) {
 
 function recordCard(r, context) {
     const absent = isRecordAbsent(r);
-    const correction = r.needsCorrection === true;
+    const cstate = correctionState(r);
+    const correction = cstate === 'pending';
     const isAdminView = context === 'admin';
     const showWorker = isAdminView;
     const missing = missingFields(r);
     let statusBadge;
-    if (correction) statusBadge = '<span class="badge" style="margin-left:8px;background:#fff3cd;color:#856404">🟡 Needs Correction</span>';
+    if (cstate === 'pending') statusBadge = '<span class="badge" style="margin-left:8px;background:var(--warning-bg);color:var(--warning)">🟡 Needs Correction</span>';
+    else if (cstate === 'fixed') statusBadge = '<span class="badge" style="margin-left:8px;background:var(--primary-tint);color:var(--primary)">🔵 Fixed — verify</span>';
     else if (absent) statusBadge = '<span class="badge badge-absent" style="margin-left:8px">🔴 Incomplete</span>';
     else statusBadge = '<span class="badge badge-complete" style="margin-left:8px">✅ Complete</span>';
+    if (cstate === 'verified') statusBadge += ' <span class="badge badge-complete" style="margin-left:6px">✓ Verified</span>';
     return `<div class="record-card ${absent||correction?'absent':'complete'}">
         <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:6px">
             <div>
@@ -2027,7 +2053,8 @@ function recordCard(r, context) {
         <div class="record-actions">
             <button class="btn-small btn-primary" onclick='showDetail(${JSON.stringify(r).replace(/'/g,"&#39;")})'>👁 View</button>
             ${context === 'followup' ? `<button class="btn-small" style="background:#e65100;color:white" onclick='startEditRecord(${JSON.stringify(r).replace(/'/g,"&#39;")})'>✏️ Edit</button>` : ''}
-            ${isAdminView && !absent && !correction ? `<button class="btn-small" style="background:#856404;color:white" onclick="adminMarkIncomplete('${r.id}','${r.propertyId}')">↩️ Send for Correction</button>` : ''}
+            ${isAdminView && cstate === 'fixed' ? `<button class="btn-small btn-success" onclick="adminVerifyCorrection('${r.id}','${r.propertyId}')">✓ Verify</button>` : ''}
+            ${isAdminView && !absent && cstate !== 'pending' && cstate !== 'fixed' ? `<button class="btn-small" style="background:#856404;color:white" onclick="adminMarkIncomplete('${r.id}','${r.propertyId}')">↩️ Send for Correction</button>` : ''}
             ${isAdminView ? `<button class="btn-small btn-danger" onclick="adminDeleteRecord('${r.id}','${r.propertyId}')">🗑 Delete</button>` : ''}
         </div>
     </div>`;
@@ -2055,17 +2082,34 @@ async function submitCorrection() {
     if (!note) { box.innerHTML = '<div class="alert alert-error">Please describe what needs fixing</div>'; return; }
     if (!allowGps && !allowPhoto && !allowDetails) { box.innerHTML = '<div class="alert alert-error">Tick at least one thing to allow</div>'; return; }
     try {
+        const rec = (allRecords||[]).find(x => x.id === id) || {};
+        const history = Array.isArray(rec.corrections) ? rec.corrections.slice() : [];
+        const now = new Date().toISOString();
+        history.push({ note, allowGps, allowPhoto, allowDetails, flaggedAt: now, flaggedBy: (currentUser && currentUser.email) || '', status: 'pending' });
         await db.collection('records').doc(id).update({
             needsCorrection: true,
             adminFlagNote: note,
             correctionAllowGps: allowGps,
             correctionAllowPhoto: allowPhoto,
             correctionAllowDetails: allowDetails,
-            adminFlaggedAt: new Date().toISOString()
+            adminFlaggedAt: now,
+            correctionStatus: 'pending',
+            corrections: history
         });
         document.getElementById('correctionModal').classList.remove('active');
         showAlert(propId + ' sent back to worker for correction', 'success');
     } catch(e) { box.innerHTML = `<div class="alert alert-error">${e.message}</div>`; }
+}
+
+// Admin accepts a worker's redo: mark the latest correction verified and close the loop.
+async function adminVerifyCorrection(id, propId) {
+    try {
+        const rec = (allRecords||[]).find(x => x.id === id) || {};
+        const history = Array.isArray(rec.corrections) ? rec.corrections.slice() : [];
+        if (history.length) history[history.length-1] = { ...history[history.length-1], status: 'verified', verifiedAt: new Date().toISOString(), verifiedBy: (currentUser && currentUser.email) || '' };
+        await db.collection('records').doc(id).update({ correctionStatus: 'verified', corrections: history });
+        showAlert((propId || 'Record') + ' marked verified', 'success');
+    } catch(e) { showAlert('Could not verify: ' + e.message, 'error'); }
 }
 
 function adminDeleteRecord(id, propId) {

@@ -14,11 +14,11 @@ function loadLogic() {
   const m = html.match(/=== BEGIN testable logic ===[\s\S]*?\*\/([\s\S]*?)\/\* === END testable logic ===/);
   if (!m) throw new Error("testable logic block not found in index.html");
   return new Function(
-    m[1] + "\nreturn { getExifOrientation, needsFollowUp, missingFields, isRecordAbsent, householdStats };"
+    m[1] + "\nreturn { getExifOrientation, needsFollowUp, missingFields, isRecordAbsent, householdStats, correctionState };"
   )();
 }
 
-const { missingFields, isRecordAbsent, needsFollowUp, getExifOrientation, householdStats } = loadLogic();
+const { missingFields, isRecordAbsent, needsFollowUp, getExifOrientation, householdStats, correctionState } = loadLogic();
 
 /* ---------------- missingFields ---------------- */
 
@@ -135,6 +135,26 @@ test("householdStats: blank/unknown age counts as neither child nor adult", () =
   assert.equal(s.population, 2);
   assert.equal(s.children, 0);
   assert.equal(s.adults, 0);
+});
+
+/* ---------------- correctionState ---------------- */
+
+test("correctionState: clean record is none", () => {
+  assert.equal(correctionState({}), "none");
+});
+
+test("correctionState: legacy needsCorrection reads as pending", () => {
+  assert.equal(correctionState({ needsCorrection: true }), "pending");
+});
+
+test("correctionState: explicit statuses pass through", () => {
+  assert.equal(correctionState({ correctionStatus: "pending" }), "pending");
+  assert.equal(correctionState({ correctionStatus: "fixed" }), "fixed");
+  assert.equal(correctionState({ correctionStatus: "verified" }), "verified");
+});
+
+test("correctionState: a verified record is no longer pending even if legacy flag lingers", () => {
+  assert.equal(correctionState({ correctionStatus: "verified", needsCorrection: false }), "verified");
 });
 
 /* ---------------- getExifOrientation ---------------- */
