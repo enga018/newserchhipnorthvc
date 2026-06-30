@@ -7,7 +7,7 @@
     <meta name="description" content="Village Council Field Data App for property tax collection">
     <meta name="theme-color" content="#2c5282">
     <link rel="manifest" href="./manifest.json">
-    <link rel="icon" type="image/png" href="https://img.icons8.com/color/96/home.png">
+    <link rel="icon" type="image/png" href="./icons/icon-96.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Tax Collector">
@@ -731,7 +731,7 @@
         <div class="modal-header">🗑 Remove Worker</div>
         <input type="hidden" id="rwUid">
         <p style="font-size:14px;color:var(--text);margin-bottom:6px">Remove <b id="rwName"></b> from the worker list?</p>
-        <p style="font-size:12px;color:var(--text2);margin-bottom:16px">Their collected records will remain in the system. Their login may still exist in Firebase Authentication.</p>
+        <p style="font-size:12px;color:var(--text2);margin-bottom:16px">Their collected records will remain in the system. They will be blocked from logging in again.</p>
         <div style="display:flex;gap:8px">
             <button class="btn-secondary" onclick="document.getElementById('removeWorkerModal').classList.remove('active')" style="flex:1">Cancel</button>
             <button class="btn-danger" onclick="confirmRemoveWorker()" style="flex:1">🗑 Remove</button>
@@ -868,7 +868,7 @@ const auth = firebase.auth();
 // Register Service Worker for PWA
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js')
+        navigator.serviceWorker.register('./sw.js?v=' + APP_VERSION)
             .then(registration => {
                 console.log('ServiceWorker registration successful');
             })
@@ -898,19 +898,27 @@ auth.onAuthStateChanged(async user => {
     if (user) {
         currentUser = user;
         isAdmin = user.email === ADMIN_EMAIL;
+        const profile = await getUserProfile(user.uid);
+        // Block disabled/removed workers — their Auth account still exists (client SDK
+        // cannot delete other users), so we enforce access here at the app level.
+        if (!isAdmin && profile?.disabled === true) {
+            await auth.signOut();
+            document.getElementById('splashScreen').classList.add('hidden');
+            document.getElementById('authScreen').classList.remove('hidden');
+            showAuthAlert('Your account has been removed by the administrator.', 'error');
+            return;
+        }
         document.getElementById('splashScreen').classList.add('hidden');
         document.getElementById('authScreen').classList.add('hidden');
         document.getElementById('mainApp').classList.remove('hidden');
         if (isAdmin) {
             document.getElementById('adminView').classList.remove('hidden');
-            const adminProfile = await getUserProfile(user.uid);
-            const adminName = adminProfile?.name || 'Admin';
+            const adminName = profile?.name || 'Admin';
             document.getElementById('adminNameBadge').textContent = '⚙️ ' + adminName;
             loadAdminData();
             loadAdminSettings();
         } else {
             document.getElementById('workerView').classList.remove('hidden');
-            let profile = await getUserProfile(user.uid);
             // Auto-heal: if a logged-in worker has no profile (e.g. after a reset that
             // deleted the profile but not the Firebase Auth login), recreate a basic one
             // so the admin sees them and they function normally.
@@ -931,7 +939,12 @@ auth.onAuthStateChanged(async user => {
             document.getElementById('userNameBadge').textContent = '👤 ' + (profile?.name || user.email);
             // Live-listen for range/profile changes from admin
             db.collection('users').doc(user.uid).onSnapshot(d => {
-                if (d.exists) { myProfile = d.data(); updateRangeHint(); }
+                if (!d.exists) return;
+                const data = d.data();
+                // If admin disables the account while the worker is logged in, kick them out immediately.
+                if (data.disabled === true) { auth.signOut(); return; }
+                myProfile = data;
+                updateRangeHint();
             });
             loadVCName();
             loadMyRecords();
@@ -1067,8 +1080,10 @@ async function confirmRemoveWorker() {
     const uid = document.getElementById('rwUid').value;
     document.getElementById('removeWorkerModal').classList.remove('active');
     try {
-        await db.collection('users').doc(uid).delete();
-        showAlert('Worker removed from system', 'success');
+        // Mark as disabled instead of deleting — the Firebase Auth account still exists
+        // (client SDK cannot delete other users' accounts), so we block access at the app level.
+        await db.collection('users').doc(uid).update({ disabled: true, disabledAt: firebase.firestore.FieldValue.serverTimestamp() });
+        showAlert('Worker removed — they can no longer log in', 'success');
     } catch(e) { alert('Error: ' + e.message); }
 }
 
@@ -2128,10 +2143,10 @@ function recordCard(r, context) {
     // Simplified view for My Work tab - no actions, minimal details
     if (context === 'myrecords') {
         const isInst = INSTITUTION_CATEGORIES.includes(r.ownerCategory);
-        const ownerDisplay = isInst ? (r.contactPerson || r.organizationName || '—') : (r.ownerName || '—');
+        const ownerDisplay = esc(isInst ? (r.contactPerson || r.organizationName || '—') : (r.ownerName || '—'));
         return `<div class="record-card ${absent||correction?'absent':'complete'}">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-                <span class="record-id">${r.propertyId}</span>
+                <span class="record-id">${esc(r.propertyId)}</span>
                 ${statusBadge}
             </div>
             <div class="record-detail"><b>${isInst ? 'Contact Person' : 'Owner'}:</b> ${ownerDisplay}</div>
@@ -2142,16 +2157,16 @@ function recordCard(r, context) {
     return `<div class="record-card ${absent||correction?'absent':'complete'}">
         <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:6px">
             <div>
-                <span class="record-id">ID: ${r.propertyId}</span>
+                <span class="record-id">ID: ${esc(r.propertyId)}</span>
                 ${statusBadge}
             </div>
             <div style="font-size:11px;color:#999;text-align:right">${r.localTimestamp ? new Date(r.localTimestamp).toLocaleDateString() : ''}</div>
         </div>
         ${(absent && missing.length) ? `<div style="background:#ffebee;border-radius:4px;padding:5px 8px;margin-bottom:5px;font-size:12px;color:#cb2431">📋 Missing: ${missing.join(', ')}</div>` : ''}
-        ${r.organizationName ? `<div class="record-detail"><b>Org:</b> ${r.organizationName}</div>` : ''}
-        ${r.ownerName ? `<div class="record-detail"><b>${r.ownerType||'Owner'}:</b> ${r.ownerName}</div>` : ''}
-        ${r.contact ? `<div class="record-detail">📱 ${r.contact}</div>` : ''}
-        <div class="record-detail">🏠 ${r.propertyType} &nbsp;|&nbsp; 🏗️ ${r.buildingType}${r.ownerCategory && r.ownerCategory!=='Individual' ? ' &nbsp;|&nbsp; 🏛️ '+r.ownerCategory : ''}</div>
+        ${r.organizationName ? `<div class="record-detail"><b>Org:</b> ${esc(r.organizationName)}</div>` : ''}
+        ${r.ownerName ? `<div class="record-detail"><b>${esc(r.ownerType||'Owner')}:</b> ${esc(r.ownerName)}</div>` : ''}
+        ${r.contact ? `<div class="record-detail">📱 ${esc(r.contact)}</div>` : ''}
+        <div class="record-detail">🏠 ${esc(r.propertyType)} &nbsp;|&nbsp; 🏗️ ${esc(r.buildingType)}${r.ownerCategory && r.ownerCategory!=='Individual' ? ' &nbsp;|&nbsp; 🏛️ '+esc(r.ownerCategory) : ''}</div>
         ${householdHtml(r, false)}
         <div style="margin-top:5px">
             ${r.photo ? '<span class="badge badge-photo">📷 Photo</span> ' : ''}
@@ -2271,7 +2286,7 @@ function renderAdminOverview() {
     document.getElementById('adminTotal').textContent = allRecords.length;
     document.getElementById('adminToday').textContent = allRecords.filter(r=>r.localTimestamp&&new Date(r.localTimestamp).toDateString()===today).length;
     document.getElementById('adminAbsent').textContent = allRecords.filter(r=>needsFollowUp(r)).length;
-    document.getElementById('adminWorkerCount').textContent = Object.values(allUsers).filter(u=>u.email!==ADMIN_EMAIL).length;
+    document.getElementById('adminWorkerCount').textContent = Object.values(allUsers).filter(u=>u.email!==ADMIN_EMAIL && !u.disabled).length;
 
     const incompleteCount = allRecords.filter(r=>needsFollowUp(r)).length;
     const completeCount = allRecords.length - incompleteCount;
@@ -2314,7 +2329,7 @@ function renderAllRecords(filtered) {
 }
 
 function renderWorkers() {
-    const workers = Object.values(allUsers).filter(u => u.email !== ADMIN_EMAIL);
+    const workers = Object.values(allUsers).filter(u => u.email !== ADMIN_EMAIL && !u.disabled);
     const el = document.getElementById('workersList');
     if (!workers.length) { el.innerHTML='<div class="empty-state"><div class="empty-state-icon">👥</div><p>No workers yet. Add one above.</p></div>'; return; }
     el.innerHTML = workers.map(u => {
@@ -2358,7 +2373,7 @@ function populateWorkerFilter() {
     const sel = document.getElementById('filterWorker');
     const cur = sel.value;
     sel.innerHTML = '<option value="">All Workers</option>' +
-        Object.values(allUsers).filter(u=>u.email!==ADMIN_EMAIL).map(u=>`<option value="${u.uid}">${u.name}</option>`).join('');
+        Object.values(allUsers).filter(u=>u.email!==ADMIN_EMAIL && !u.disabled).map(u=>`<option value="${u.uid}">${esc(u.name)}</option>`).join('');
     sel.value = cur;
 }
 
@@ -2490,15 +2505,20 @@ async function resetEverything() {
             if (count % 400 === 0) { await batch.commit(); batch = db.batch(); }
         }
         await batch.commit();
-        // Delete all worker profiles (keep admin)
+        // Disable all worker profiles (keep admin) — mark rather than delete so the
+        // disabled flag blocks re-login via onAuthStateChanged. Firebase Auth credentials
+        // still exist (client SDK cannot delete other users), but app-level access is revoked.
         const userSnap = await db.collection('users').get();
         let batch2 = db.batch(); let c2 = 0;
         for (const doc of userSnap.docs) {
-            if (doc.data().email !== ADMIN_EMAIL) { batch2.delete(doc.ref); c2++; }
+            if (doc.data().email !== ADMIN_EMAIL) {
+                batch2.update(doc.ref, { disabled: true, disabledAt: firebase.firestore.FieldValue.serverTimestamp() });
+                c2++;
+            }
             if (c2 % 400 === 0 && c2 > 0) { await batch2.commit(); batch2 = db.batch(); }
         }
         await batch2.commit();
-        alert('✓ Reset complete. All records and worker profiles deleted.\n\nNote: Worker login credentials may still exist in Firebase Authentication — remove them from the Firebase Console > Authentication if needed.');
+        alert('✓ Reset complete. All records deleted and all workers disabled.\n\nNote: Worker login credentials still exist in Firebase Authentication — remove them from the Firebase Console > Authentication if you want to permanently revoke access.');
     } catch(e) {
         alert('Error during reset: ' + e.message);
     }
@@ -2572,24 +2592,24 @@ function showDetail(r) {
     document.getElementById('modalBody').innerHTML = `
         <div style="background:var(--bg);padding:12px;border-radius:8px;margin-bottom:12px">
             ${r.needsCorrection ? '<div style="color:#856404;font-weight:600;margin-bottom:6px">🟡 Needs Correction — sent back to worker</div>' : (isRecordAbsent(r) ? `<div style="color:var(--warning);font-weight:600;margin-bottom:6px">🔴 Incomplete — Needs Follow-up</div>${missingFields(r).length ? `<div style="background:#ffebee;border-radius:4px;padding:6px 8px;margin-bottom:6px;font-size:13px;color:#cb2431">📋 Missing: ${missingFields(r).join(', ')}</div>` : ''}` : '<div style="color:var(--success);font-weight:600;margin-bottom:6px">✅ Complete Record</div>')}
-            ${r.adminFlagNote ? `<div style="background:#fff3cd;border-radius:4px;padding:6px 8px;margin-bottom:6px;font-size:13px;color:#856404">⚠️ <b>Fix needed:</b> ${r.adminFlagNote}</div>` : ''}
-            <b>Property ID:</b> ${r.propertyId}<br>
-            <b>Type:</b> ${r.propertyType} &nbsp;|&nbsp; <b>Building:</b> ${r.buildingType}<br>
-            ${r.ownerCategory ? `<b>Owner Type:</b> ${r.ownerCategory}<br>` : ''}
+            ${r.adminFlagNote ? `<div style="background:#fff3cd;border-radius:4px;padding:6px 8px;margin-bottom:6px;font-size:13px;color:#856404">⚠️ <b>Fix needed:</b> ${esc(r.adminFlagNote)}</div>` : ''}
+            <b>Property ID:</b> ${esc(r.propertyId)}<br>
+            <b>Type:</b> ${esc(r.propertyType)} &nbsp;|&nbsp; <b>Building:</b> ${esc(r.buildingType)}<br>
+            ${r.ownerCategory ? `<b>Owner Type:</b> ${esc(r.ownerCategory)}<br>` : ''}
             <b>Date:</b> ${r.localTimestamp ? new Date(r.localTimestamp).toLocaleString() : 'N/A'}
         </div>
-        ${r.organizationName ? `<div style="margin-bottom:10px"><b>Organization:</b> ${r.organizationName}</div>` : ''}
-        ${r.ownerName ? `<div style="margin-bottom:6px"><b>${r.ownerType||'Owner'}:</b> ${r.ownerName}</div>` : ''}
-        ${r.fatherHusbandName ? `<div style="margin-bottom:6px"><b>Father/Husband:</b> ${r.fatherHusbandName}</div>` : ''}
-        ${r.designation ? `<div style="margin-bottom:6px"><b>Designation:</b> ${r.designation}</div>` : ''}
-        ${r.contact ? `<div style="margin-bottom:10px"><b>Contact:</b> ${r.contact}</div>` : ''}
+        ${r.organizationName ? `<div style="margin-bottom:10px"><b>Organization:</b> ${esc(r.organizationName)}</div>` : ''}
+        ${r.ownerName ? `<div style="margin-bottom:6px"><b>${esc(r.ownerType||'Owner')}:</b> ${esc(r.ownerName)}</div>` : ''}
+        ${r.fatherHusbandName ? `<div style="margin-bottom:6px"><b>Father/Husband:</b> ${esc(r.fatherHusbandName)}</div>` : ''}
+        ${r.designation ? `<div style="margin-bottom:6px"><b>Designation:</b> ${esc(r.designation)}</div>` : ''}
+        ${r.contact ? `<div style="margin-bottom:10px"><b>Contact:</b> ${esc(r.contact)}</div>` : ''}
         <div style="margin-bottom:10px">${householdHtml(r, true)}</div>
         ${r.latitude ? `<div style="margin-bottom:10px">
             <b>📍 GPS:</b> ${r.latitude.toFixed(6)}, ${r.longitude.toFixed(6)} (±${r.accuracy?.toFixed(0)||'?'}m)<br>
             <a href="https://maps.google.com/?q=${r.latitude},${r.longitude}" target="_blank" style="color:var(--primary);font-size:13px">📌 Open in Google Maps →</a>
         </div>` : ''}
         ${r.remarks ? `<div style="margin-bottom:10px;background:var(--bg);padding:8px;border-radius:6px"><b>Remarks:</b> ${esc(r.remarks)}</div>` : ''}
-        ${isAdmin ? `<div style="margin-bottom:10px"><b>Worker:</b> ${allUsers[r.workerUid]?.name||r.workerEmail||'Unknown'}</div>` : ''}
+        ${isAdmin ? `<div style="margin-bottom:10px"><b>Worker:</b> ${esc(allUsers[r.workerUid]?.name||r.workerEmail||'Unknown')}</div>` : ''}
         ${r.photo ? `<div><b>📷 Photo:</b> <span style="font-size:11px;color:var(--text2)">(tap to enlarge)</span><br><img src="${r.photo}" onclick="openFullPhoto('${r.id}')" style="width:100%;border-radius:8px;margin-top:6px;max-height:280px;object-fit:cover;cursor:pointer"></div>` : '<div style="color:#999;font-size:13px">No photo</div>'}
     `;
     document.getElementById('detailModal').classList.add('active');
@@ -2603,7 +2623,8 @@ function switchTab(tabId, btn) {
     document.querySelectorAll('#workerView .tab-btn').forEach(b=>b.classList.remove('active'));
     document.getElementById(tabId).classList.add('active');
     if (btn) btn.classList.add('active');
-    if (tabId==='myrecords'||tabId==='followup') loadMyRecords();
+    // No need to call loadMyRecords() here — the onSnapshot listener set up on login
+    // is a live subscription that auto-updates the UI on every Firestore change.
 }
 
 function switchAdminTab(tabId, btn) {

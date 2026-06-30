@@ -1,11 +1,18 @@
-const CACHE_NAME = 'property-tax-collector-v2';
+// Cache name auto-derived from app version passed via SW registration URL (sw.js?v=x.y.z)
+const params = new URLSearchParams(self.location.search);
+const appVersion = params.get('v') || 'unknown';
+const CACHE_NAME = 'property-tax-' + appVersion;
 const urlsToCache = [
   './',
   './index.html',
   './manifest.json',
+  './icons/icon-96.png',
+  './icons/icon-192.png',
+  './icons/icon-512.png',
   'https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js',
   'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js',
   'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js',
+  'https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js',
   'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js'
 ];
 
