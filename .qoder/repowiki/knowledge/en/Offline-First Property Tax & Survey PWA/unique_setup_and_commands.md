@@ -1,0 +1,2 @@
+- Tests run using Node's native test runner without external dependencies: `npm test` (executes `node --test`).
+- CI pipeline defined in `.github/workflows/test.yml` uses Node 20 on Ubuntu to run tests on push/PR.

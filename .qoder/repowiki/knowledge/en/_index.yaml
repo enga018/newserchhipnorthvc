@@ -3,11 +3,11 @@ schema_version: 1
 locale: en-US
 branch: main
 nodes_managed: true
-exported_at: "2026-06-30T18:16:16Z"
+exported_at: "2026-06-30T18:55:39Z"
 modules:
     "":
-        dir_name: Offline-First Property Tax Collection PWA
-        title: Offline-First Property Tax Collection PWA
+        dir_name: Offline-First Property Tax & Survey PWA
+        title: Offline-First Property Tax & Survey PWA
         scope:
             - .gitignore
             - FUTURE_PLANS.md

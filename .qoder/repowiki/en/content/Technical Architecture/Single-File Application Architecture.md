@@ -11,6 +11,14 @@
 - [FUTURE_PLANS.md](file://FUTURE_PLANS.md)
 </cite>
 
+## Update Summary
+**Changes Made**
+- Enhanced photo handling section with detailed canvas-based image processing
+- Updated blob management documentation with optimized memory usage patterns
+- Added comprehensive canvas processing workflow documentation
+- Improved photo export system documentation with blob optimization
+- Updated performance considerations for memory management
+
 ## Table of Contents
 1. [Introduction](#introduction)
 2. [Project Structure](#project-structure)
@@ -27,6 +35,8 @@
 Property Tax Collector is a sophisticated single-file web application designed for offline-first property tax data collection in village council environments. This application demonstrates advanced architectural patterns within a monolithic HTML file approach, combining embedded CSS and JavaScript into a self-contained, production-ready solution.
 
 The application serves as a comprehensive field data collection tool that works seamlessly offline, captures GPS locations and photos, manages complex property surveys with household demographics, and provides robust administrative oversight. Its single-file architecture ensures portability, simplicity of deployment, and optimal performance for resource-constrained field environments.
+
+**Updated** Enhanced with improved photo handling logic, canvas-based image processing, and optimized blob management for better performance and memory usage.
 
 ## Project Structure
 
@@ -47,11 +57,13 @@ subgraph "External Dependencies"
 Firebase[firebase-app-compat.js<br/>Firebase SDK]
 Auth[firebase-auth-compat.js<br/>Authentication]
 Firestore[firebase-firestore-compat.js<br/>Database]
+Storage[firebase-storage-compat.js<br/>Storage]
 Zip[jszip.min.js<br/>Photo Compression]
 end
 Index --> Firebase
 Index --> Auth
 Index --> Firestore
+Index --> Storage
 Index --> Zip
 Index -.-> Manifest
 Index -.-> Package
@@ -62,13 +74,13 @@ Index -.-> Readme
 ```
 
 **Diagram sources**
-- [index.html:1-50](file://index.html#L1-L50)
+- [index.html:14-18](file://index.html#L14-L18)
 - [manifest.json:1-28](file://manifest.json#L1-L28)
 - [package.json:1-10](file://package.json#L1-L10)
 - [sw.js:1-45](file://sw.js#L1-L45)
 
 **Section sources**
-- [index.html:1-50](file://index.html#L1-L50)
+- [index.html:14-18](file://index.html#L14-L18)
 - [manifest.json:1-28](file://manifest.json#L1-L28)
 - [package.json:1-10](file://package.json#L1-L10)
 - [sw.js:1-45](file://sw.js#L1-L45)
@@ -199,10 +211,11 @@ subgraph "Data Layer"
 LocalStorage[Local Storage]
 Firestore[Firestore Database]
 FirebaseAuth[Firebase Authentication]
+FirebaseStorage[Firebase Storage]
 end
 subgraph "Utility Layer"
 GeoLocator[Geolocation Service]
-PhotoProcessor[Photo Processor]
+PhotoProcessor[Enhanced Photo Processor]
 CSVExporter[CSV Exporter]
 PWAService[PWA Service Worker]
 end
@@ -361,42 +374,56 @@ AdminDashboard --> DataExport : provides
 
 The application includes several specialized utility modules:
 
-#### Photo Processing Engine
-Advanced image manipulation with EXIF orientation handling and GPS stamping:
+#### Enhanced Photo Processing Engine
+Advanced image manipulation with EXIF orientation handling, canvas-based processing, and optimized blob management:
 
 ```mermaid
 flowchart LR
 PhotoInput[Photo Input] --> ReadEXIF[Read EXIF Data]
 ReadEXIF --> DetectOrientation{Detect Orientation}
 DetectOrientation --> TransformImage[Apply Transform]
-TransformImage --> StampInfo[Stamp GPS Info]
+TransformImage --> CanvasProcessing[Canvas Processing]
+CanvasProcessing --> StampInfo[Stamp GPS Info]
 StampInfo --> CompressImage[Compress Image]
-CompressImage --> Preview[Show Preview]
+CompressImage --> CreateBlob[Create Optimized Blob]
+CreateBlob --> StoreBlob[Store in pendingPhotoBlob]
+StoreBlob --> Preview[Show Preview]
 PhotoInput --> ValidateSize{Validate Size}
 ValidateSize --> |Too Large| Resize[Resize Image]
-ValidateSize --> |Acceptable| Preview
-Resize --> Preview
+ValidateSize --> |Acceptable| CanvasProcessing
+Resize --> CanvasProcessing
 ```
 
 **Diagram sources**
 - [index.html:1838-1916](file://index.html#L1838-L1916)
 - [index.html:1755-1784](file://index.html#L1755-L1784)
 
+**Updated** Enhanced with canvas-based image processing and optimized blob management for better performance and memory usage.
+
+Key photo processing features include:
+- **EXIF orientation detection**: Automatic detection and correction of image orientation
+- **Canvas-based transformation**: Efficient image manipulation using HTML5 Canvas API
+- **Optimized blob storage**: Memory-efficient blob management with automatic cleanup
+- **GPS stamp integration**: Automatic addition of property ID, GPS coordinates, and timestamp
+- **Compression optimization**: JPEG compression with configurable quality settings
+
 #### Data Export System
-Multi-format export capabilities with comprehensive filtering:
+Multi-format export capabilities with comprehensive filtering and optimized blob handling:
 
 ```mermaid
 flowchart TD
 FilterData[Filter Records] --> SelectFormat{Select Format}
 SelectFormat --> |CSV| GenerateCSV[Generate CSV]
-SelectFormat --> |Photos| CompressPhotos[Compress Photos]
+SelectFormat --> |Photos| ProcessPhotos[Process Photos with Blobs]
 SelectFormat --> |Members| GenerateMembers[Generate Members CSV]
 GenerateCSV --> AddHeaders[Add Headers]
 AddHeaders --> ProcessRecords[Process Records]
 ProcessRecords --> EscapeCells[Escape Cells]
 EscapeCells --> DownloadCSV[Download CSV]
-CompressPhotos --> CreateZIP[Create ZIP Archive]
-CreateZIP --> DownloadZIP[Download ZIP]
+ProcessPhotos --> CreateZIP[Create ZIP Archive]
+CreateZIP --> HandleBlobs[Handle Blob Downloads]
+HandleBlobs --> OptimizeMemory[Optimize Memory Usage]
+OptimizeMemory --> DownloadZIP[Download ZIP]
 GenerateMembers --> ProcessMembers[Process Members]
 ProcessMembers --> DownloadMembers[Download Members CSV]
 ```
@@ -404,6 +431,8 @@ ProcessMembers --> DownloadMembers[Download Members CSV]
 **Diagram sources**
 - [index.html:2461-2520](file://index.html#L2461-L2520)
 - [index.html:2400-2432](file://index.html#L2400-L2432)
+
+**Updated** Enhanced with optimized blob handling and memory management for better performance during photo exports.
 
 **Section sources**
 - [index.html:1755-1916](file://index.html#L1755-L1916)
@@ -419,6 +448,7 @@ subgraph "Core Dependencies"
 Firebase[firebase-app-compat.js]
 Auth[firebase-auth-compat.js]
 Firestore[firebase-firestore-compat.js]
+Storage[firebase-storage-compat.js]
 JSZip[jszip.min.js]
 end
 subgraph "Internal Dependencies"
@@ -434,6 +464,7 @@ ServiceWorker[Service Worker API]
 end
 Firebase --> Firestore
 Firebase --> Auth
+Firebase --> Storage
 Utils --> Firebase
 Components --> Utils
 Services --> Utils
@@ -444,7 +475,7 @@ Components --> ServiceWorker
 ```
 
 **Diagram sources**
-- [index.html:14-17](file://index.html#L14-L17)
+- [index.html:14-18](file://index.html#L14-L18)
 - [index.html:867-878](file://index.html#L867-L878)
 
 The dependency management strategy emphasizes:
@@ -454,30 +485,36 @@ The dependency management strategy emphasizes:
 - **Offline caching**: Service worker ensures offline availability
 
 **Section sources**
-- [index.html:14-17](file://index.html#L14-L17)
+- [index.html:14-18](file://index.html#L14-L18)
 - [index.html:867-878](file://index.html#L867-L878)
 
 ## Performance Considerations
 
-The single-file architecture provides several performance advantages:
+The single-file architecture provides several performance advantages with enhanced optimizations:
 
 ### Memory Management
 - **Modular scope**: Functions are scoped locally to minimize memory footprint
 - **Event delegation**: Centralized event handling reduces memory overhead
 - **Lazy loading**: Heavy features loaded only when needed
+- **Optimized blob handling**: Enhanced memory management for photo blobs
+- **Canvas reuse**: Efficient canvas-based image processing with automatic cleanup
 
 ### Network Optimization
 - **Single request**: All resources served from one HTML file
 - **Service worker caching**: Comprehensive offline functionality
 - **Efficient data structures**: Optimized for mobile device constraints
+- **Blob-based uploads**: Reduced memory usage during photo uploads
 
 ### Rendering Performance
 - **Virtual DOM-like updates**: Minimal DOM manipulation
 - **Batch updates**: Multiple state changes applied atomically
 - **CSS-in-JS**: Dynamic styling with minimal overhead
+- **Canvas rendering**: Efficient image processing without DOM overhead
 
 ### Browser Compatibility
 The application targets modern browsers while maintaining compatibility with older versions through polyfills and graceful degradation strategies.
+
+**Updated** Enhanced with optimized canvas-based image processing and improved blob memory management for better performance and reduced memory usage.
 
 ## Troubleshooting Guide
 
@@ -498,6 +535,11 @@ The application targets modern browsers while maintaining compatibility with old
 - **Solution**: Verify camera permissions and browser compatibility
 - **Prevention**: Implement fallback mechanisms
 
+#### Enhanced Photo Processing Issues
+- **Symptom**: Images not properly oriented or processed
+- **Solution**: Check EXIF orientation detection and canvas processing
+- **Prevention**: Implement proper error handling for orientation detection
+
 #### Data Synchronization Issues
 - **Symptom**: Data appears inconsistent across devices
 - **Solution**: Check Firestore security rules and connection status
@@ -509,15 +551,19 @@ The application targets modern browsers while maintaining compatibility with old
 
 ## Conclusion
 
-The Property Tax Collector demonstrates exceptional implementation of single-file application architecture. By combining embedded CSS and JavaScript within a monolithic HTML structure, the application achieves optimal performance, portability, and maintainability while providing comprehensive functionality for field data collection.
+The Property Tax Collector demonstrates exceptional implementation of single-file application architecture with enhanced photo handling capabilities. By combining embedded CSS and JavaScript within a monolithic HTML structure, the application achieves optimal performance, portability, and maintainability while providing comprehensive functionality for field data collection.
+
+**Updated** The recent enhancements to photo handling logic, canvas-based image processing, and optimized blob management significantly improve performance and memory usage, making the application more efficient for resource-constrained field environments.
 
 The modular JavaScript structure, event-driven programming patterns, and centralized state management create a scalable foundation that can accommodate future enhancements. The component-based approach ensures clean separation of concerns while maintaining the simplicity benefits of single-file architecture.
 
 Key architectural strengths include:
-- **Performance optimization**: Minimal overhead through monolithic design
+- **Performance optimization**: Minimal overhead through monolithic design with enhanced canvas processing
+- **Enhanced photo handling**: Advanced image processing with EXIF orientation and optimized blob management
 - **Offline capability**: Comprehensive PWA implementation
 - **Scalability**: Modular structure supports future expansion
 - **Maintainability**: Clear separation of concerns within single file
+- **Memory efficiency**: Optimized blob handling reduces memory footprint
 - **User experience**: Responsive design with smooth interactions
 
-This architecture serves as an excellent model for similar field data collection applications, balancing simplicity with functionality while maintaining professional-grade reliability and performance.
+This architecture serves as an excellent model for similar field data collection applications, balancing simplicity with functionality while maintaining professional-grade reliability and performance. The enhanced photo processing capabilities make it particularly suitable for applications requiring high-quality image capture and processing in field conditions.

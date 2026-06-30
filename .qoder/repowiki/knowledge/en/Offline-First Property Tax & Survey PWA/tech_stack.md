@@ -1,0 +1,3 @@
+- Firebase Auth & Firestore (via CDN compat scripts) for backend services.
+- JSZip for client-side CSV/Photo ZIP generation.
+- Node.js built-in test runner for unit testing logic extracted from HTML source.
