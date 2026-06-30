@@ -2047,6 +2047,21 @@ function recordCard(r, context) {
     else if (absent) statusBadge = '<span class="badge badge-absent" style="margin-left:8px">🔴 Incomplete</span>';
     else statusBadge = '<span class="badge badge-complete" style="margin-left:8px">✅ Complete</span>';
     if (cstate === 'verified') statusBadge += ' <span class="badge badge-complete" style="margin-left:6px">✓ Verified</span>';
+
+    // Simplified view for My Work tab - no actions, minimal details
+    if (context === 'myrecords') {
+        const isInst = INSTITUTION_CATEGORIES.includes(r.ownerCategory);
+        const ownerDisplay = isInst ? (r.contactPerson || r.organizationName || '—') : (r.ownerName || '—');
+        return `<div class="record-card ${absent||correction?'absent':'complete'}">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                <span class="record-id">${r.propertyId}</span>
+                ${statusBadge}
+            </div>
+            <div class="record-detail"><b>${isInst ? 'Contact Person' : 'Owner'}:</b> ${ownerDisplay}</div>
+        </div>`;
+    }
+
+    // Full view for admin and follow-up
     return `<div class="record-card ${absent||correction?'absent':'complete'}">
         <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:6px">
             <div>
@@ -2069,7 +2084,7 @@ function recordCard(r, context) {
         ${r.adminFlagNote ? `<div style="background:#fff3cd;border-radius:4px;padding:5px 8px;margin-top:5px;font-size:12px;color:#856404">⚠️ <b>Fix needed:</b> ${r.adminFlagNote}${r.needsCorrection ? `<br><span style="font-size:11px">Redo: ${[r.correctionAllowGps?'📍 GPS':'', r.correctionAllowPhoto?'📷 Photo':'', r.correctionAllowDetails?'✏️ Details':''].filter(Boolean).join(', ')||'Details'}</span>` : ''}</div>` : ''}
         <div class="record-actions">
             <button class="btn-small btn-primary" onclick='showDetail(${JSON.stringify(r).replace(/'/g,"&#39;")})'>👁 View</button>
-            ${(context === 'followup' || context === 'myrecords') ? `<button class="btn-small" style="background:#e65100;color:white" onclick='startEditRecord(${JSON.stringify(r).replace(/'/g,"&#39;")})'>✏️ Edit</button>` : ''}
+            ${context === 'followup' ? `<button class="btn-small" style="background:#e65100;color:white" onclick='startEditRecord(${JSON.stringify(r).replace(/'/g,"&#39;")})'>✏️ Edit</button>` : ''}
             ${isAdminView && cstate === 'fixed' ? `<button class="btn-small btn-success" onclick="adminVerifyCorrection('${r.id}','${r.propertyId}')">✓ Verify</button>` : ''}
             ${isAdminView && !absent && cstate !== 'pending' && cstate !== 'fixed' ? `<button class="btn-small" style="background:#856404;color:white" onclick="adminMarkIncomplete('${r.id}','${r.propertyId}')">↩️ Send for Correction</button>` : ''}
             ${isAdminView ? `<button class="btn-small btn-danger" onclick="adminDeleteRecord('${r.id}','${r.propertyId}')">🗑 Delete</button>` : ''}
