@@ -126,6 +126,17 @@ test("householdStats: child boundary is age < 18 (17 child, 18 adult)", () => {
   assert.equal(s.adults, 1);   // 18
 });
 
+test("householdStats: blank/unknown gender is not counted as others", () => {
+  const r = { families: [{ members: [
+    { name: "A", gender: "", age: 30 },
+    { name: "B", age: 25 },
+    { name: "C", gender: "Other", age: 20 },
+  ]}]};
+  const s = householdStats(r);
+  assert.equal(s.population, 3);
+  assert.equal(s.others, 1); // only explicit "Other" counts
+});
+
 test("householdStats: blank/unknown age counts as neither child nor adult", () => {
   const r = { families: [{ members: [
     { name: "x", gender: "Male", age: "" },

@@ -887,6 +887,7 @@ let myRecordsCache = [];
 let currentVcName = 'Village Council';
 let myProfile = null;
 let myRecordsShown = 10;
+let myRecordsUnsubscribe = null;
 
 // ========== AUTH ==========
 auth.onAuthStateChanged(async user => {
@@ -959,11 +960,11 @@ function switchAuthTab(tab, btn) {
 }
 
 async function loginUser() {
-    const btn = document.querySelector("#loginForm .btn-primary");
-    if(btn){btn.textContent="⏳ Logging in...";btn.disabled=true;}
     const email = document.getElementById('loginEmail').value.trim();
     const pass = document.getElementById('loginPassword').value;
     if (!email || !pass) return showAuthAlert('Please fill all fields', 'error');
+    const btn = document.querySelector("#loginForm .btn-primary");
+    if(btn){btn.textContent="⏳ Logging in...";btn.disabled=true;}
     try {
         showAuthAlert('Logging in...', 'info');
         await auth.signInWithEmailAndPassword(email, pass);
@@ -1731,6 +1732,7 @@ function cancelEdit() {
     editingRecordId = null;
     document.getElementById('editBanner').classList.add('hidden');
     document.getElementById('submitBtn').textContent = '💾 Save & Sync';
+    clearEditLocks();
 }
 
 function resetForm() {
@@ -1814,7 +1816,10 @@ function householdStats(r) {
         for (const m of members) {
             population++;
             const g = (m && m.gender || '').toLowerCase();
-            if (g === 'male') males++; else if (g === 'female') females++; else others++;
+            if (g === 'male') males++;
+            else if (g === 'female') females++;
+            else if (g === 'other') others++;
+            // blank/unknown gender is counted in population but not in gender buckets
             const hasAge = m && m.age !== '' && m.age != null;
             const age = Number(m && m.age);
             if (hasAge && !Number.isNaN(age)) { if (age < 18) children++; else adults++; }
@@ -1945,8 +1950,10 @@ function clearLocation() {
 // ========== WORKER DATA ==========
 async function loadMyRecords() {
     if (!currentUser) return;
+    // Unsubscribe from any existing listener to prevent duplicates
+    if (myRecordsUnsubscribe) { myRecordsUnsubscribe(); myRecordsUnsubscribe = null; }
     try {
-        db.collection('records').where('workerUid','==',currentUser.uid)
+        myRecordsUnsubscribe = db.collection('records').where('workerUid','==',currentUser.uid)
             .onSnapshot(snap => {
             myRecordsCache = snap.docs.map(d => ({id:d.id,...d.data()}));
             myRecordsCache.sort((a,b) => (b.localTimestamp||'').localeCompare(a.localTimestamp||''));
@@ -2200,19 +2207,29 @@ async function confirmDeleteRecord() {
 }
 
 // ========== ADMIN DATA ==========
+let adminRecordsLoaded = false;
+let adminUsersLoaded = false;
+
+function maybeRenderAdminOverview() {
+    // Only render when both records and users have loaded at least once
+    if (adminRecordsLoaded && adminUsersLoaded) renderAdminOverview();
+}
+
 async function loadAdminData() {
     try {
         db.collection('records').orderBy('localTimestamp','desc').onSnapshot(snap => {
             allRecords = snap.docs.map(d => ({id:d.id,...d.data()}));
-            renderAdminOverview();
+            adminRecordsLoaded = true;
+            maybeRenderAdminOverview();
             filterRecords();
         });
         db.collection('users').onSnapshot(snap => {
             allUsers = {};
             snap.docs.forEach(d => { allUsers[d.id] = {...d.data(), uid:d.id}; });
+            adminUsersLoaded = true;
             renderWorkers();
             populateWorkerFilter();
-            renderAdminOverview();
+            maybeRenderAdminOverview();
         });
     } catch(e) { console.error(e); }
 }
@@ -2525,7 +2542,7 @@ function showDetail(r) {
             <b>📍 GPS:</b> ${r.latitude.toFixed(6)}, ${r.longitude.toFixed(6)} (±${r.accuracy?.toFixed(0)||'?'}m)<br>
             <a href="https://maps.google.com/?q=${r.latitude},${r.longitude}" target="_blank" style="color:var(--primary);font-size:13px">📌 Open in Google Maps →</a>
         </div>` : ''}
-        ${r.remarks ? `<div style="margin-bottom:10px;background:var(--bg);padding:8px;border-radius:6px"><b>Remarks:</b> ${r.remarks}</div>` : ''}
+        ${r.remarks ? `<div style="margin-bottom:10px;background:var(--bg);padding:8px;border-radius:6px"><b>Remarks:</b> ${esc(r.remarks)}</div>` : ''}
         ${isAdmin ? `<div style="margin-bottom:10px"><b>Worker:</b> ${allUsers[r.workerUid]?.name||r.workerEmail||'Unknown'}</div>` : ''}
         ${r.photo ? `<div><b>📷 Photo:</b> <span style="font-size:11px;color:var(--text2)">(tap to enlarge)</span><br><img src="${r.photo}" onclick="openFullPhoto('${r.id}')" style="width:100%;border-radius:8px;margin-top:6px;max-height:280px;object-fit:cover;cursor:pointer"></div>` : '<div style="color:#999;font-size:13px">No photo</div>'}
     `;
@@ -2573,7 +2590,9 @@ function showAlert(msg, type) {
     // Scroll to top so the notification is always seen (especially errors)
     try { box.scrollIntoView({behavior:'smooth', block:'start'}); } catch(e) {}
     window.scrollTo({top:0, behavior:'smooth'});
-    if (type==='success') setTimeout(()=>{ box.innerHTML=''; }, 4000);
+    // Auto-clear: success after 4s, errors/info/warning after 6s
+    const delay = type === 'success' ? 4000 : 6000;
+    setTimeout(()=>{ box.innerHTML=''; }, delay);
 }
 
 // Initialize the Collect wizard chrome (progress dots + nav) once the DOM is ready.
