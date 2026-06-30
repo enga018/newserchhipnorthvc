@@ -1,0 +1,83 @@
+# 知识卡导出索引文件
+schema_version: 1
+locale: en-US
+branch: main
+nodes_managed: true
+exported_at: "2026-06-30T18:16:16Z"
+modules:
+    "":
+        dir_name: Offline-First Property Tax Collection PWA
+        title: Offline-First Property Tax Collection PWA
+        scope:
+            - .gitignore
+            - FUTURE_PLANS.md
+            - README.md
+            - package.json
+            - manifest.json
+            - index.html
+            - sw.js
+            - test/
+            - .github/
+            - .github\workflows\test.yml
+            - test\logic.test.js
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    build_system:
+        dir_name: Minimalist Node.js Build & CI Pipeline
+        title: Minimalist Node.js Build & CI Pipeline
+        scope: []
+        source_files:
+            - package.json
+            - .github/workflows/test.yml
+            - test/logic.test.js
+            - sw.js
+            - manifest.json
+        children: []
+        depends_on: []
+        related_to: []
+    configuration_system:
+        dir_name: Hardcoded Firebase and PWA Configuration
+        title: Hardcoded Firebase and PWA Configuration
+        scope: []
+        source_files:
+            - index.html
+            - manifest.json
+            - sw.js
+        children: []
+        depends_on: []
+        related_to: []
+    dependency_management:
+        dir_name: Zero-Dependency Architecture with Node.js Built-in Modules
+        title: Zero-Dependency Architecture with Node.js Built-in Modules
+        scope: []
+        source_files:
+            - package.json
+            - test/logic.test.js
+            - index.html
+            - sw.js
+        children: []
+        depends_on: []
+        related_to: []
+    error_handling:
+        dir_name: Error Handling — Inline Try_Catch with User-Friendly Alerts
+        title: Error Handling — Inline Try/Catch with User-Friendly Alerts
+        scope: []
+        source_files:
+            - index.html
+            - sw.js
+            - test/logic.test.js
+        children: []
+        depends_on: []
+        related_to: []
+    frontend_style:
+        dir_name: Inline CSS with Design Token System for Mobile-First PWA
+        title: Inline CSS with Design Token System for Mobile-First PWA
+        scope: []
+        source_files:
+            - index.html
+            - manifest.json
+        children: []
+        depends_on: []
+        related_to: []

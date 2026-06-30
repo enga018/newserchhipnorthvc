@@ -1,0 +1,1 @@
+A mobile-first Progressive Web App for door-to-door property tax and household survey data collection with offline support, GPS/photo capture, and admin correction workflows.

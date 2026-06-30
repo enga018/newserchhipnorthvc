@@ -14,6 +14,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
@@ -822,7 +823,7 @@ const firebaseConfig = {
     appId: "1:610573950046:web:2b545f876953a4eb18a8cf"
 };
 const ADMIN_EMAIL = "enga018@gmail.com";
-const APP_VERSION = "v1.17.0";
+const APP_VERSION = "v1.18.0";
 
 
 firebase.initializeApp(firebaseConfig);
@@ -878,6 +879,8 @@ if ('serviceWorker' in navigator) {
 }
 
 const db = firebase.firestore();
+const storage = firebase.storage();
+let pendingPhotoBlob = null; // blob waiting for Storage upload
 
 let currentUser = null;
 let isAdmin = false;
@@ -1545,6 +1548,30 @@ async function saveRecord(e) {
     }
 
     const profile = await getUserProfile(currentUser.uid);
+
+    // Upload photo to Firebase Storage (fall back to base64 if offline/unsupported)
+    let photoValue = null;
+    if (hasPhoto) {
+        if (pendingPhotoBlob) {
+            try {
+                btn.textContent = '⏳ Uploading photo...';
+                const photoPath = 'photos/' + currentUser.uid + '/' + fullId + '_' + Date.now() + '.jpg';
+                const photoRef = storage.ref(photoPath);
+                await photoRef.put(pendingPhotoBlob, { contentType: 'image/jpeg' });
+                photoValue = await photoRef.getDownloadURL();
+            } catch(uploadErr) {
+                console.warn('Storage upload failed, using base64 fallback:', uploadErr);
+                photoValue = photoEl.src; // offline or rules block — keep base64
+            }
+        } else if (editingRecordId) {
+            // Editing without retaking photo — keep existing value
+            const existing = (myRecordsCache||[]).find(x => x.id === editingRecordId) || (allRecords||[]).find(x => x.id === editingRecordId) || {};
+            photoValue = existing.photo || photoEl.src;
+        } else {
+            photoValue = photoEl.src; // new record, no blob (shouldn't happen normally)
+        }
+    }
+
     const data = {
         propertyId: fullId,
         propertyType: type,
@@ -1558,7 +1585,7 @@ async function saveRecord(e) {
         latitude: parseFloat(lat),
         longitude: parseFloat(lng),
         accuracy: parseFloat(document.getElementById('accuracy').value) || null,
-        photo: hasPhoto ? photoEl.src : null,
+        photo: photoValue,
         workerUid: currentUser.uid,
         workerEmail: currentUser.email,
         workerName: profile?.name || currentUser.email,
@@ -1653,6 +1680,7 @@ function startEditRecord(r) {
     renderHouseholds();
     // Restore photo BEFORE jumping to review (validation needs it)
     if (r.photo) {
+        pendingPhotoBlob = null; // not a new capture — keep existing Storage URL
         const p = document.getElementById('photoPreview');
         p.src = r.photo; p.style.display = 'block';
         document.getElementById('photoStatus').className = 'photo-status ok';
@@ -1743,6 +1771,7 @@ function resetForm() {
     document.getElementById('residentialFields').classList.remove('hidden');
     document.getElementById('organizationName').removeAttribute('required');
     householdDraft = [];
+    pendingPhotoBlob = null;
     renderHouseholds();
     showWizardStep(0);
     clearEditLocks();
@@ -1902,6 +1931,7 @@ function handlePhotoCapture(e) {
                 // ===== END STAMP =====
 
                 const compressed = canvas.toDataURL('image/jpeg', 0.7);
+                canvas.toBlob(blob => { pendingPhotoBlob = blob; }, 'image/jpeg', 0.7);
                 const preview = document.getElementById('photoPreview');
                 preview.src = compressed;
                 preview.style.display = 'block';
@@ -1916,6 +1946,7 @@ function handlePhotoCapture(e) {
 }
 
 function clearPhoto() {
+    pendingPhotoBlob = null;
     document.getElementById('photoInput').value = '';
     const p = document.getElementById('photoPreview');
     p.src = ''; p.style.display = 'none';
@@ -2407,14 +2438,29 @@ async function exportAllPhotos(recordSet) {
         const zip = new JSZip();
         let added = 0;
         for (const r of withPhotos) {
-            // photo is a data URL: data:image/jpeg;base64,xxxx
-            const base64 = r.photo.split(',')[1];
-            if (!base64) continue;
-            // Name file by property ID; add suffix if duplicate
-            let name = (r.propertyId || 'unknown') + '.jpg';
-            if (zip.file(name)) name = (r.propertyId||'unknown') + '_' + r.id.slice(-4) + '.jpg';
-            zip.file(name, base64, {base64:true});
-            added++;
+            try {
+                let blob;
+                if (r.photo.startsWith('http')) {
+                    // Firebase Storage download URL — fetch as blob
+                    const resp = await fetch(r.photo);
+                    blob = await resp.blob();
+                } else {
+                    // Legacy base64 data URL
+                    const base64 = r.photo.split(',')[1];
+                    if (!base64) continue;
+                    blob = null; // use base64 path below
+                    let name = (r.propertyId || 'unknown') + '.jpg';
+                    if (zip.file(name)) name = (r.propertyId||'unknown') + '_' + r.id.slice(-4) + '.jpg';
+                    zip.file(name, base64, {base64:true});
+                    added++;
+                    status.textContent = `Adding photos... ${added}/${withPhotos.length}`;
+                    continue;
+                }
+                let name = (r.propertyId || 'unknown') + '.jpg';
+                if (zip.file(name)) name = (r.propertyId||'unknown') + '_' + r.id.slice(-4) + '.jpg';
+                zip.file(name, blob);
+                added++;
+            } catch(e) { console.warn('Skipping photo for', r.propertyId, e); }
             status.textContent = `Adding photos... ${added}/${withPhotos.length}`;
         }
         status.textContent = 'Compressing ZIP file...';

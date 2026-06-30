@@ -1,0 +1,5 @@
+- Single-page application architecture contained entirely within `index.html`, embedding all CSS, HTML structure, and JavaScript logic.
+- Client-side state management relies on Firebase Authentication for user sessions and Cloud Firestore for persistent data storage (records, user profiles).
+- Offline capability is implemented via a Service Worker (`sw.js`) using a cache-first strategy for the app shell (`index.html`, `manifest.json`).
+- Role-based view separation: distinct DOM sections for 'Worker' (data entry, personal stats) and 'Admin' (dashboard, worker management, global exports) are toggled based on authenticated user identity.
+- Logic extraction pattern: pure business logic functions are isolated within marked blocks in `index.html` to enable headless unit testing via `test/logic.test.js` without DOM dependencies.

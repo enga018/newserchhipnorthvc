@@ -1,0 +1,3 @@
+- Pure business logic functions (e.g., `missingFields`, `householdStats`) are isolated between specific comment markers in `index.html` to allow extraction and unit testing independent of the DOM.
+- CSS variables are used extensively for theming (colors, spacing, shadows) to maintain a consistent 'government-clean' UI design system across the single file.
+- Asynchronous Firebase operations are handled with async/await syntax, often wrapped in try/catch blocks for error handling within UI event handlers.

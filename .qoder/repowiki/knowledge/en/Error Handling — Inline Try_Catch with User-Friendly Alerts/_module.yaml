@@ -1,0 +1,10 @@
+schema_version: 1
+module_path: error_handling
+title: Error Handling — Inline Try/Catch with User-Friendly Alerts
+scope: []
+source_files:
+    - index.html
+    - sw.js
+    - test/logic.test.js
+depends_on: []
+related_to: []

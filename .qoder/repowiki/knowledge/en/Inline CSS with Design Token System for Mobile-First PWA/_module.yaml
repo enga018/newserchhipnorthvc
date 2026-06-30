@@ -1,0 +1,9 @@
+schema_version: 1
+module_path: frontend_style
+title: Inline CSS with Design Token System for Mobile-First PWA
+scope: []
+source_files:
+    - index.html
+    - manifest.json
+depends_on: []
+related_to: []

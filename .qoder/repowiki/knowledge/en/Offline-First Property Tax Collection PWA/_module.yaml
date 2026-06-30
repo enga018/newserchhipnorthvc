@@ -1,0 +1,18 @@
+schema_version: 1
+module_path: ""
+title: Offline-First Property Tax Collection PWA
+scope:
+    - .gitignore
+    - FUTURE_PLANS.md
+    - README.md
+    - package.json
+    - manifest.json
+    - index.html
+    - sw.js
+    - test/
+    - .github/
+    - .github\workflows\test.yml
+    - test\logic.test.js
+source_files: []
+depends_on: []
+related_to: []

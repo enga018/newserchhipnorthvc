@@ -1,4 +1,4 @@
-const CACHE_NAME = 'property-tax-collector-v1';
+const CACHE_NAME = 'property-tax-collector-v2';
 const urlsToCache = [
   './',
   './index.html',
