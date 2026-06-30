@@ -462,6 +462,7 @@
             </div>
             <div class="section-title" style="margin-top:16px">📋 My Records</div>
             <div id="myRecordsList" class="records-list"></div>
+            <button id="myRecordsSeeMore" class="btn-secondary hidden" onclick="loadMoreMyRecords()" style="margin-top:10px">See More</button>
             <div id="myRecordsEmpty" class="empty-state hidden">
                 <div class="empty-state-icon">📋</div><p>No records yet.</p>
             </div>
@@ -864,6 +865,7 @@ let allUsers = {};
 let myRecordsCache = [];
 let currentVcName = 'Village Council';
 let myProfile = null;
+let myRecordsShown = 10;
 
 // ========== AUTH ==========
 auth.onAuthStateChanged(async user => {
@@ -1975,14 +1977,29 @@ function renderMyRecords(records) {
     const set=(id,v)=>{ const e=document.getElementById(id); if(e) e.textContent=v; };
     set('myFamilies',hh.families); set('myPopulation',hh.population); set('myChildren',hh.children); set('myMale',hh.males); set('myFemale',hh.females);
 
-    // Render record list with edit buttons
+    // Render record list with pagination (show first 10, then See More)
     const list = document.getElementById('myRecordsList');
+    const seeMoreBtn = document.getElementById('myRecordsSeeMore');
     const empty = document.getElementById('myRecordsEmpty');
-    if (!records.length) { list.innerHTML=''; empty.classList.remove('hidden'); return; }
+    if (!records.length) { list.innerHTML=''; empty.classList.remove('hidden'); seeMoreBtn.classList.add('hidden'); return; }
     empty.classList.add('hidden');
     // Sort by newest first
     const sorted = [...records].sort((a,b) => (b.localTimestamp||'').localeCompare(a.localTimestamp||''));
-    list.innerHTML = sorted.map(r => recordCard(r, 'myrecords')).join('');
+    // Show only first myRecordsShown records
+    const toShow = sorted.slice(0, myRecordsShown);
+    list.innerHTML = toShow.map(r => recordCard(r, 'myrecords')).join('');
+    // Show See More button if there are more records
+    if (sorted.length > myRecordsShown) {
+        seeMoreBtn.classList.remove('hidden');
+        seeMoreBtn.textContent = `See More (${sorted.length - myRecordsShown} remaining)`;
+    } else {
+        seeMoreBtn.classList.add('hidden');
+    }
+}
+
+function loadMoreMyRecords() {
+    myRecordsShown += 10;
+    renderMyRecords(myRecordsCache);
 }
 
 function renderFollowUp(records) {
