@@ -1564,20 +1564,11 @@ async function saveRecord(e) {
 
     const profile = await getUserProfile(currentUser.uid);
 
-    // Upload photo to Firebase Storage (fall back to base64 if offline/unsupported)
+    // Store photo as base64 directly in Firestore (instant, no upload delay)
     let photoValue = null;
     if (hasPhoto) {
         if (pendingPhotoBlob) {
-            try {
-                btn.textContent = '⏳ Uploading photo...';
-                const photoPath = 'photos/' + currentUser.uid + '/' + fullId + '_' + Date.now() + '.jpg';
-                const photoRef = storage.ref(photoPath);
-                await photoRef.put(pendingPhotoBlob, { contentType: 'image/jpeg' });
-                photoValue = await photoRef.getDownloadURL();
-            } catch(uploadErr) {
-                console.warn('Storage upload failed, using base64 fallback:', uploadErr);
-                photoValue = photoEl.src;
-            }
+            photoValue = photoEl.src;
         } else if (editingRecordId) {
             // Editing without retaking photo — keep existing value
             const existing = (myRecordsCache||[]).find(x => x.id === editingRecordId) || (allRecords||[]).find(x => x.id === editingRecordId) || {};
@@ -1790,27 +1781,6 @@ function resetForm() {
     renderHouseholds();
     showWizardStep(0);
     clearEditLocks();
-}
-
-async function uploadPhotoBlob(blob, path, btn) {
-    return new Promise((resolve, reject) => {
-        const photoRef = storage.ref(path);
-        const task = photoRef.put(blob, { contentType: 'image/jpeg' });
-        task.on('state_changed', snapshot => {
-            if (!btn || !snapshot.totalBytes) return;
-            const percent = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
-            btn.textContent = `⏳ Uploading photo ${percent}%`;
-        }, err => {
-            reject(err);
-        }, async () => {
-            try {
-                const url = await task.snapshot.ref.getDownloadURL();
-                resolve(url);
-            } catch (err) {
-                reject(err);
-            }
-        });
-    });
 }
 
 // ========== PHOTO & GPS ==========
