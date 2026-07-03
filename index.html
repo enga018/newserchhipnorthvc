@@ -1569,14 +1569,14 @@ async function saveRecord(e) {
     if (hasPhoto) {
         if (pendingPhotoBlob) {
             try {
+                btn.textContent = '⏳ Uploading photo...';
                 const photoPath = 'photos/' + currentUser.uid + '/' + fullId + '_' + Date.now() + '.jpg';
-                photoValue = await uploadPhotoBlob(pendingPhotoBlob, photoPath, btn);
+                const photoRef = storage.ref(photoPath);
+                await photoRef.put(pendingPhotoBlob, { contentType: 'image/jpeg' });
+                photoValue = await photoRef.getDownloadURL();
             } catch(uploadErr) {
-                console.warn('Storage upload failed:', uploadErr);
-                showAlert('Photo upload failed. Please retry when network is stable.', 'error');
-                btn.textContent = '💾 Save & Sync';
-                btn.disabled = false;
-                return;
+                console.warn('Storage upload failed, using base64 fallback:', uploadErr);
+                photoValue = photoEl.src;
             }
         } else if (editingRecordId) {
             // Editing without retaking photo — keep existing value
