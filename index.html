@@ -823,7 +823,7 @@ const firebaseConfig = {
     appId: "1:610573950046:web:2b545f876953a4eb18a8cf"
 };
 const ADMIN_EMAIL = "enga018@gmail.com";
-const APP_VERSION = "v1.18.0";
+const APP_VERSION = "v1.18.1";
 
 
 firebase.initializeApp(firebaseConfig);
@@ -1569,14 +1569,14 @@ async function saveRecord(e) {
     if (hasPhoto) {
         if (pendingPhotoBlob) {
             try {
-                btn.textContent = '⏳ Uploading photo...';
                 const photoPath = 'photos/' + currentUser.uid + '/' + fullId + '_' + Date.now() + '.jpg';
-                const photoRef = storage.ref(photoPath);
-                await photoRef.put(pendingPhotoBlob, { contentType: 'image/jpeg' });
-                photoValue = await photoRef.getDownloadURL();
+                photoValue = await uploadPhotoBlob(pendingPhotoBlob, photoPath, btn);
             } catch(uploadErr) {
-                console.warn('Storage upload failed, using base64 fallback:', uploadErr);
-                photoValue = photoEl.src; // offline or rules block — keep base64
+                console.warn('Storage upload failed:', uploadErr);
+                showAlert('Photo upload failed. Please retry when network is stable.', 'error');
+                btn.textContent = '💾 Save & Sync';
+                btn.disabled = false;
+                return;
             }
         } else if (editingRecordId) {
             // Editing without retaking photo — keep existing value
@@ -1792,6 +1792,27 @@ function resetForm() {
     clearEditLocks();
 }
 
+async function uploadPhotoBlob(blob, path, btn) {
+    return new Promise((resolve, reject) => {
+        const photoRef = storage.ref(path);
+        const task = photoRef.put(blob, { contentType: 'image/jpeg' });
+        task.on('state_changed', snapshot => {
+            if (!btn || !snapshot.totalBytes) return;
+            const percent = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
+            btn.textContent = `⏳ Uploading photo ${percent}%`;
+        }, err => {
+            reject(err);
+        }, async () => {
+            try {
+                const url = await task.snapshot.ref.getDownloadURL();
+                resolve(url);
+            } catch (err) {
+                reject(err);
+            }
+        });
+    });
+}
+
 // ========== PHOTO & GPS ==========
 // Read EXIF orientation (1-8) from a JPEG ArrayBuffer. Returns 1 if none found.
 /* === BEGIN testable logic === (extracted verbatim by test/logic.test.js;
@@ -1890,7 +1911,7 @@ function handlePhotoCapture(e) {
         reader.onload = ev => {
             const img = new Image();
             img.onload = () => {
-                const MAX = 800;
+                const MAX = 1024;
                 let iw = img.width, ih = img.height;
                 // Scale down keeping aspect
                 let sw = iw, sh = ih;
@@ -1945,13 +1966,15 @@ function handlePhotoCapture(e) {
                 lines.forEach((ln, i) => { ctx.fillText(ln, pad, h - bannerH + pad + i*lineH); });
                 // ===== END STAMP =====
 
-                const compressed = canvas.toDataURL('image/jpeg', 0.7);
-                canvas.toBlob(blob => { pendingPhotoBlob = blob; }, 'image/jpeg', 0.7);
-                const preview = document.getElementById('photoPreview');
-                preview.src = compressed;
-                preview.style.display = 'block';
-                document.getElementById('photoStatus').className = 'photo-status ok';
-                document.getElementById('photoStatus').textContent = '✅ Photo captured & stamped';
+                const compressed = canvas.toDataURL('image/jpeg', 0.6);
+                canvas.toBlob(blob => {
+                    pendingPhotoBlob = blob;
+                    const preview = document.getElementById('photoPreview');
+                    preview.src = compressed;
+                    preview.style.display = 'block';
+                    document.getElementById('photoStatus').className = 'photo-status ok';
+                    document.getElementById('photoStatus').textContent = '✅ Photo captured & stamped';
+                }, 'image/jpeg', 0.6);
             };
             img.src = ev.target.result;
         };
