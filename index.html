@@ -823,7 +823,7 @@ const firebaseConfig = {
     appId: "1:610573950046:web:2b545f876953a4eb18a8cf"
 };
 const ADMIN_EMAIL = "enga018@gmail.com";
-const APP_VERSION = "v1.19.0";
+const APP_VERSION = "v1.20.0";
 
 
 firebase.initializeApp(firebaseConfig);
@@ -880,6 +880,11 @@ if ('serviceWorker' in navigator) {
 
 const db = firebase.firestore();
 const storage = firebase.storage();
+// Queue writes/reads locally (IndexedDB) so workers can keep collecting data with
+// no signal — pending writes sync automatically once the connection returns.
+db.enablePersistence({ synchronizeTabs: true }).catch(err => {
+    console.warn('Offline persistence unavailable:', err.code);
+});
 let pendingPhotoBlob = null; // blob waiting for Storage upload
 
 let currentUser = null;
@@ -1223,6 +1228,14 @@ function doLogout() {
     auth.signOut();
 }
 
+// Races a promise against a timeout so a stalled network call (e.g. no signal in
+// the field) can't leave the UI stuck forever waiting for a server response.
+function withTimeout(promise, ms) {
+    let timer;
+    const timeout = new Promise((_, reject) => { timer = setTimeout(() => reject(new Error('timeout')), ms); });
+    return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+}
+
 function friendlyError(code) {
     const e = {
         'auth/user-not-found':'No account found with this email',
@@ -1545,9 +1558,13 @@ async function saveRecord(e) {
     const btn = document.getElementById('submitBtn');
     btn.textContent = '⏳ Checking...'; btn.disabled = true;
 
-    // DUPLICATE CHECK (skip if editing this same record)
+    // DUPLICATE CHECK (skip if editing this same record). Bounded by a timeout so
+    // no/weak signal in the field can't leave the worker stuck on "Checking...".
+    // If we can't reach the server in time, proceed anyway — the range-assignment
+    // check already prevents most collisions, and any rare duplicate will surface
+    // to the admin once this record syncs.
     try {
-        const dupSnap = await db.collection('records').where('propertyId','==',fullId).get();
+        const dupSnap = await withTimeout(db.collection('records').where('propertyId','==',fullId).get(), 8000);
         const duplicate = dupSnap.docs.find(d => d.id !== editingRecordId);
         if (duplicate) {
             const dupData = duplicate.data();
@@ -1557,12 +1574,10 @@ async function saveRecord(e) {
             return;
         }
     } catch(err) {
-        showAlert('❌ Could not verify duplicate: ' + err.message, 'error');
-        btn.textContent = editingRecordId ? '💾 Update Record' : '💾 Save & Sync'; btn.disabled = false;
-        return;
+        // Offline or too slow to verify — don't block the save, just skip the check.
     }
 
-    const profile = await getUserProfile(currentUser.uid);
+    const profile = myProfile;
 
     // Store photo as base64 directly in Firestore (instant, no upload delay)
     let photoValue = null;
@@ -1614,6 +1629,10 @@ async function saveRecord(e) {
         data.designation = '';
     }
 
+    // Write is fired without awaiting the server round-trip: Firestore queues it in
+    // the local (IndexedDB) cache and syncs automatically once the connection is
+    // back, so we don't leave the worker staring at a spinner with no signal. Any
+    // real failure (not just "offline") is caught in the background and reported.
     try {
         btn.textContent = '⏳ Saving...';
         if (editingRecordId) {
@@ -1634,19 +1653,26 @@ async function saveRecord(e) {
                 data.correctionAllowPhoto = firebase.firestore.FieldValue.delete();
                 data.correctionAllowDetails = firebase.firestore.FieldValue.delete();
             }
-            await db.collection('records').doc(editingRecordId).update(data);
+            const recordId = editingRecordId;
+            db.collection('records').doc(recordId).update(data).catch(err => {
+                console.error('Background sync failed for', recordId, err);
+                showAlert('⚠️ ' + fullId + ' saved locally but failed to sync: ' + err.message, 'error');
+            });
             cancelEdit();
             resetForm();
-            showAlert('✓ Record updated! Pick the next one to follow up.', 'success');
+            showAlert(navigator.onLine ? '✓ Record updated! Pick the next one to follow up.' : '✓ Saved offline — will sync automatically. Pick the next one to follow up.', 'success');
             // Return to Follow Up tab so they can continue with the next follow-up
             setTimeout(() => switchTab('followup', document.querySelectorAll('#workerView .tab-btn')[2]), 1000);
         } else {
             data.timestamp = firebase.firestore.FieldValue.serverTimestamp();
-            await db.collection('records').add(data);
             const savedId = data.propertyId;
+            db.collection('records').add(data).catch(err => {
+                console.error('Background sync failed for', savedId, err);
+                showAlert('⚠️ ' + savedId + ' saved locally but failed to sync: ' + err.message, 'error');
+            });
             resetForm();
             // Stay on Collect tab so worker can enter the next property immediately
-            showSaveSuccess(savedId, isAbsent);
+            showSaveSuccess(savedId, isAbsent, !navigator.onLine);
         }
     } catch(err) {
         showAlert('❌ Error: ' + err.message, 'error');
@@ -2627,11 +2653,11 @@ function switchAdminTab(tabId, btn) {
     if (btn) btn.classList.add('active');
 }
 
-function showSaveSuccess(propId, isAbsent) {
+function showSaveSuccess(propId, isAbsent, offline) {
     const overlay = document.getElementById('saveSuccessOverlay');
     const msg = document.getElementById('saveSuccessMsg');
     msg.innerHTML = `<div style="font-size:42px;margin-bottom:8px">✅</div>
-        <div style="font-size:18px;font-weight:700;color:#22863a;margin-bottom:4px">Saved & Synced</div>
+        <div style="font-size:18px;font-weight:700;color:#22863a;margin-bottom:4px">${offline ? 'Saved — will sync later' : 'Saved & Synced'}</div>
         <div style="font-size:15px;color:var(--text);margin-bottom:4px">${propId}</div>
         <div style="font-size:13px;color:${isAbsent?'#856404':'#22863a'}">${isAbsent?'⚠️ Some details missing — flagged for follow-up':'Complete record'}</div>
         <div style="font-size:12px;color:var(--text2);margin-top:10px">Ready for next property</div>`;
