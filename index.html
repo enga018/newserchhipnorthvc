@@ -652,6 +652,14 @@
             <button class="btn-primary" onclick="saveAdminSettings()">💾 Save Settings</button>
             <div id="settingsAlert" style="margin-top:8px"></div>
             <hr class="divider">
+            <div class="section-title">🔢 Data Maintenance</div>
+            <div style="background:var(--bg);border-radius:8px;padding:12px;margin-bottom:12px">
+                <div style="font-size:13px;color:var(--text2);margin-bottom:10px">
+                    Every family already gets a permanent Family ID (e.g. NSN-0001/1) when created. This one-time action assigns one to <b>existing</b> families that were saved before that — safe to run more than once, and only ever fills in families that don't have one yet.
+                </div>
+                <button class="btn-primary" onclick="backfillFamilyIds()">🔢 Assign Family IDs to Existing Records</button>
+                <div id="backfillAlert" style="margin-top:8px"></div>
+            </div>
             <div class="section-title" style="color:var(--warning)">⚠️ Danger Zone</div>
             <div style="background:#ffebee;border:1px solid #ea4c89;border-radius:8px;padding:12px">
                 <div style="font-size:13px;color:#cb2431;margin-bottom:10px">
@@ -869,7 +877,7 @@ const firebaseConfig = {
     appId: "1:610573950046:web:2b545f876953a4eb18a8cf"
 };
 const ADMIN_EMAIL = "enga018@gmail.com";
-const APP_VERSION = "v2.3.1";
+const APP_VERSION = "v2.4.0";
 
 
 firebase.initializeApp(firebaseConfig);
@@ -1505,14 +1513,26 @@ function esc(s){ return String(s == null ? '' : s).replace(/&/g,'&amp;').replace
 
 // Normalize a raw sticker number into the canonical NSN-0000 id (same rule as saveRecord).
 function formatPropertyId(raw){ const n = (raw||'').trim().replace(/^NSN-/i,'').replace(/^[0]*/,''); return n ? 'NSN-' + n.padStart(4,'0') : ''; }
-// A family's property-scoped id: NSN-0001/1, /2, ... (derived by position; falls back when id unknown).
-function familyDisplayId(propertyId, i){ return propertyId ? propertyId + '/' + (i+1) : 'Family ' + (i+1); }
+// A family's property-scoped id: NSN-0001/1, /2, ... Prefers the family's own stored
+// familyId (stable — assigned once, kept even if an earlier family is later removed);
+// falls back to a position-derived label for older families that predate that field.
+function familyDisplayId(propertyId, i, f){ return (f && f.familyId) || (propertyId ? propertyId + '/' + (i+1) : 'Family ' + (i+1)); }
 
 // The head member is the one tagged 'Head', else the first member.
 function familyHead(f){ const ms = (f && f.members) || []; return ms.find(m => m.relation === 'Head') || ms[0] || null; }
 function familyHeadName(f){ const h = familyHead(f); return h && h.name ? h.name : ''; }
 
-function addFamily(){ householdDraft.push({ contact:'', members:[{ name:'', gender:'', age:'', relation:'Head' }] }); renderHouseholds(); }
+// Numbers within the current draft only ever go up, even across add/remove, so a
+// family's id can never be reassigned to a different family once given out.
+let nextFamilyNum = 1;
+
+function addFamily(){
+    const propId = formatPropertyId((document.getElementById('propertyId')||{}).value);
+    const familyId = propId ? propId + '/' + nextFamilyNum : '';
+    nextFamilyNum++;
+    householdDraft.push({ familyId, contact:'', members:[{ name:'', gender:'', age:'', relation:'Head' }] });
+    renderHouseholds();
+}
 function removeFamily(fi){ householdDraft.splice(fi,1); renderHouseholds(); }
 function addMember(fi){ householdDraft[fi].members.push({ name:'', gender:'', age:'', relation:'' }); renderHouseholds(); }
 function removeMember(fi,mi){ householdDraft[fi].members.splice(mi,1); renderHouseholds(); }
@@ -1526,7 +1546,7 @@ function normalizeFamilies(families){
         if (f.headName && !members.some(m => m.relation === 'Head')) {
             members.unshift({ name: f.headName, gender:'', age:'', relation:'Head' });
         }
-        return { contact: f.contact || '', members };
+        return { familyId: f.familyId || '', contact: f.contact || '', members };
     });
 }
 
@@ -1546,7 +1566,7 @@ function renderHouseholds(){
     c.innerHTML = householdDraft.map((f, fi) => `
         <div style="border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:10px;background:var(--bg)">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-                <span style="font-weight:600;color:var(--primary)">👪 ${esc(familyDisplayId(pid, fi))}</span>
+                <span style="font-weight:600;color:var(--primary)">👪 ${esc(familyDisplayId(pid, fi, f))}</span>
                 <button type="button" onclick="removeFamily(${fi})" style="background:none;border:none;color:var(--danger,#cb2431);font-size:18px;cursor:pointer;padding:0 4px">✕</button>
             </div>
             <div class="form-group">
@@ -1586,7 +1606,7 @@ function cleanHouseholds(draft){
             const members = (f.members||[])
                 .map(m => ({ name:(m.name||'').trim(), gender:m.gender||'', age:(m.age===''||m.age==null)?'':Number(m.age), relation:m.relation||'' }))
                 .filter(m => m.name || m.age !== '' || m.gender || m.relation);
-            return { headName: familyHeadName({ members }), contact:(f.contact||'').trim(), members };
+            return { familyId: f.familyId || '', headName: familyHeadName({ members }), contact:(f.contact||'').trim(), members };
         })
         .filter(f => f.contact || f.members.length);
 }
@@ -1826,6 +1846,12 @@ function startEditRecord(r) {
     document.getElementById('remarks').value = r.remarks||'';
     // Load households into the draft (deep copy so edits don't mutate the live record)
     householdDraft = normalizeFamilies(Array.isArray(r.families) ? JSON.parse(JSON.stringify(r.families)) : []);
+    // Continue numbering after the highest existing family id so a family added mid-edit
+    // can't collide with one already on this property.
+    nextFamilyNum = 1 + householdDraft.reduce((max, f) => {
+        const n = parseInt(String(f.familyId||'').split('/').pop(), 10);
+        return Number.isFinite(n) && n > max ? n : max;
+    }, 0);
     renderHouseholds();
     // Restore photo BEFORE jumping to review (validation needs it)
     if (r.photo) {
@@ -1920,6 +1946,7 @@ function resetForm() {
     document.getElementById('residentialFields').classList.remove('hidden');
     document.getElementById('organizationName').removeAttribute('required');
     householdDraft = [];
+    nextFamilyNum = 1;
     pendingPhotoBlob = null;
     renderHouseholds();
     showWizardStep(0);
@@ -2250,7 +2277,7 @@ function householdHtml(r, full) {
     const summary = `<div class="record-detail">👨‍👩‍👧 <b>${s.families}</b> ${s.families===1?'family':'families'} · <b>${s.population}</b> ${s.population===1?'person':'people'} · ${s.children} children · ${s.males}M / ${s.females}F${s.others?' / '+s.others+'O':''}</div>`;
     if (!full) return summary;
     const fams = (r.families||[]).map((f,i)=>{
-        const label = esc(familyDisplayId(r.propertyId, i));
+        const label = esc(familyDisplayId(r.propertyId, i, f));
         const head = esc(f.headName);
         const contact = f.contact ? ` · 📱 ${esc(f.contact)}` : '';
         const members = (f.members||[]).map(m=>{
@@ -2746,6 +2773,43 @@ async function saveAdminSettings() {
     } catch(e) { box.innerHTML = `<div class="alert alert-error">${e.message}</div>`; }
 }
 
+// One-time backfill: freeze today's position-based family numbering (the same
+// NSN-0001/1 label already shown everywhere) into a permanent, stored familyId on
+// every existing family that doesn't have one yet. Idempotent — only ever fills in
+// families missing the field, so re-running it (or running it after new records with
+// their own familyId already exist) is safe and just does nothing extra.
+async function backfillFamilyIds() {
+    const box = document.getElementById('backfillAlert');
+    box.innerHTML = '<div class="alert alert-info">🔢 Scanning records…</div>';
+    try {
+        const snap = await db.collection('records').get();
+        let updatedRecords = 0, updatedFamilies = 0;
+        let batch = db.batch();
+        let opsInBatch = 0;
+        for (const doc of snap.docs) {
+            const data = doc.data();
+            const families = Array.isArray(data.families) ? data.families : [];
+            if (!families.length) continue;
+            let changed = false;
+            const next = families.map((f, i) => {
+                if (f.familyId) return f;
+                changed = true;
+                updatedFamilies++;
+                return { ...f, familyId: familyDisplayId(data.propertyId, i) };
+            });
+            if (!changed) continue;
+            batch.update(doc.ref, { families: next });
+            updatedRecords++;
+            opsInBatch++;
+            if (opsInBatch >= 400) { await batch.commit(); batch = db.batch(); opsInBatch = 0; }
+        }
+        if (opsInBatch > 0) await batch.commit();
+        box.innerHTML = updatedFamilies
+            ? `<div class="alert alert-success">✓ Assigned Family IDs to ${updatedFamilies} famil${updatedFamilies===1?'y':'ies'} across ${updatedRecords} record${updatedRecords===1?'':'s'}.</div>`
+            : '<div class="alert alert-success">✓ Nothing to do — every family already has an ID.</div>';
+    } catch(e) { box.innerHTML = `<div class="alert alert-error">${e.message}</div>`; }
+}
+
 // ========== EXPORT ==========
 
 async function exportAllPhotos(recordSet) {
@@ -2880,7 +2944,7 @@ function exportMembersCSV() {
                 const age = (m.age===''||m.age==null)?'':Number(m.age);
                 const isChild = age!=='' && !Number.isNaN(age) && age < 18 ? 'Yes' : (age==='' ? '' : 'No');
                 rows.push([
-                    r.propertyId, familyDisplayId(r.propertyId, fi), f.headName||'', f.contact||'',
+                    r.propertyId, familyDisplayId(r.propertyId, fi, f), f.headName||'', f.contact||'',
                     m.name||'', m.gender||'', age, isChild, m.relation||'',
                     allUsers[r.workerUid]?.name||r.workerEmail||''
                 ]);
