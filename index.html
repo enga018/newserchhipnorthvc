@@ -208,6 +208,12 @@
         .save-success-box{background:#fff;border-radius:14px;padding:28px 32px;text-align:center;box-shadow:0 8px 30px rgba(0,0,0,0.25);max-width:320px;animation:popIn 0.25s}
         @keyframes fadeIn{from{opacity:0}to{opacity:1}}
         @keyframes popIn{from{transform:scale(0.85);opacity:0}to{transform:scale(1);opacity:1}}
+        .conn-banner{display:none;border-radius:8px;padding:8px 12px;margin-bottom:12px;font-size:12px;font-weight:600;text-align:center;align-items:center;justify-content:center;gap:6px}
+        .conn-banner.online{display:flex;background:#e6ffed;color:#22863a;border:1px solid #28a745}
+        .conn-banner.offline{display:flex;background:#fff3cd;color:#856404;border:1px solid #ffc107}
+        .sync-badge{display:inline-flex;align-items:center;gap:4px;background:var(--primary-tint);color:var(--primary);padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600;margin-bottom:8px}
+        .sync-badge.syncing{animation:pulse 1.5s infinite}
+        @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
     </style>
 </head>
 <body>
@@ -281,6 +287,8 @@
 
         <!-- COLLECT TAB -->
         <div id="collect" class="form-section active">
+            <div id="connectionBanner" class="conn-banner online"><span id="connIcon">🟢</span><span id="connText">Online — data saves instantly</span></div>
+            <div id="syncBadge" class="sync-badge hidden"><span class="sync-icon">🔄</span><span id="syncText">0 pending</span></div>
             <div id="alertBox"></div>
             <div id="editBanner" class="hidden" style="background:#fff3cd;border:1px solid #ffc107;border-radius:6px;padding:10px 12px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center">
                 <span style="font-size:13px;color:#856404">✏️ Editing existing record</span>
@@ -870,12 +878,41 @@ if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js?v=' + APP_VERSION)
             .then(registration => {
+                if (registration.waiting) registration.waiting.postMessage({ type: 'SKIP_WAITING' });
                 console.log('ServiceWorker registration successful');
             })
             .catch(error => {
                 console.log('ServiceWorker registration failed: ', error);
             });
     });
+}
+
+// Connection status banner
+function updateConnectionBanner(){
+    const banner = document.getElementById('connectionBanner');
+    if (!banner) return;
+    const online = navigator.onLine;
+    banner.className = 'conn-banner ' + (online ? 'online' : 'offline');
+    document.getElementById('connIcon').textContent = online ? '🟢' : '🟡';
+    document.getElementById('connText').textContent = online ? 'Online — data saves instantly' : 'Offline — data saves locally & syncs later';
+}
+window.addEventListener('online', updateConnectionBanner);
+window.addEventListener('offline', updateConnectionBanner);
+updateConnectionBanner();
+
+// Pending sync counter
+let pendingCount = 0;
+function updateSyncBadge(){
+    const badge = document.getElementById('syncBadge');
+    if (!badge) return;
+    if (pendingCount > 0) {
+        badge.classList.remove('hidden');
+        badge.classList.add('syncing');
+        document.getElementById('syncText').textContent = pendingCount + ' record' + (pendingCount > 1 ? 's' : '') + ' pending sync';
+    } else {
+        badge.classList.add('hidden');
+        badge.classList.remove('syncing');
+    }
 }
 
 const db = firebase.firestore();
@@ -924,6 +961,7 @@ auth.onAuthStateChanged(async user => {
             loadAdminSettings();
         } else {
             document.getElementById('workerView').classList.remove('hidden');
+            updateConnectionBanner();
             // Auto-heal: if a logged-in worker has no profile (e.g. after a reset that
             // deleted the profile but not the Firebase Auth login), recreate a basic one
             // so the admin sees them and they function normally.
@@ -1575,6 +1613,7 @@ async function saveRecord(e) {
         }
     } catch(err) {
         // Offline or too slow to verify — don't block the save, just skip the check.
+        console.warn('Duplicate check skipped:', err.message);
     }
 
     const profile = myProfile;
@@ -1654,7 +1693,14 @@ async function saveRecord(e) {
                 data.correctionAllowDetails = firebase.firestore.FieldValue.delete();
             }
             const recordId = editingRecordId;
-            db.collection('records').doc(recordId).update(data).catch(err => {
+            pendingCount++;
+            updateSyncBadge();
+            db.collection('records').doc(recordId).update(data).then(() => {
+                pendingCount = Math.max(0, pendingCount - 1);
+                updateSyncBadge();
+            }).catch(err => {
+                pendingCount = Math.max(0, pendingCount - 1);
+                updateSyncBadge();
                 console.error('Background sync failed for', recordId, err);
                 showAlert('⚠️ ' + fullId + ' saved locally but failed to sync: ' + err.message, 'error');
             });
@@ -1666,7 +1712,14 @@ async function saveRecord(e) {
         } else {
             data.timestamp = firebase.firestore.FieldValue.serverTimestamp();
             const savedId = data.propertyId;
-            db.collection('records').add(data).catch(err => {
+            pendingCount++;
+            updateSyncBadge();
+            db.collection('records').add(data).then(() => {
+                pendingCount = Math.max(0, pendingCount - 1);
+                updateSyncBadge();
+            }).catch(err => {
+                pendingCount = Math.max(0, pendingCount - 1);
+                updateSyncBadge();
                 console.error('Background sync failed for', savedId, err);
                 showAlert('⚠️ ' + savedId + ' saved locally but failed to sync: ' + err.message, 'error');
             });
@@ -1675,7 +1728,9 @@ async function saveRecord(e) {
             showSaveSuccess(savedId, isAbsent, !navigator.onLine);
         }
     } catch(err) {
+        console.error('Save error:', err);
         showAlert('❌ Error: ' + err.message, 'error');
+        btn.textContent = editingRecordId ? '💾 Update Record' : '💾 Save & Sync'; btn.disabled = false;
     } finally {
         btn.textContent = '💾 Save & Sync'; btn.disabled = false;
     }
