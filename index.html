@@ -574,7 +574,7 @@
             <div class="stat-card" style="margin-bottom:12px">
                 <div class="section-title">🎲 Spot-Check Screening</div>
                 <div id="screeningProgress" style="font-size:13px;color:var(--text2);margin-bottom:10px"></div>
-                <button type="button" class="btn-primary" onclick="screenRandomRecord()">🎲 Screen a Random Record</button>
+                <button type="button" class="btn-primary" onclick="startScreening()">▶️ Start Screening</button>
             </div>
         </div>
 
@@ -673,7 +673,7 @@
 <!-- Send for Correction Modal (admin) -->
 <div id="correctionModal" class="modal">
     <div class="modal-content">
-        <button class="modal-close" onclick="document.getElementById('correctionModal').classList.remove('active')">×</button>
+        <button class="modal-close" onclick="closeCorrectionModal()">×</button>
         <div class="modal-header">↩️ Send for Correction</div>
         <div id="corrAlert"></div>
         <input type="hidden" id="corrRecordId">
@@ -695,13 +695,15 @@
 <!-- Spot-Check Screening Modal (admin) -->
 <div id="screeningModal" class="modal">
     <div class="modal-content">
-        <button class="modal-close" onclick="closeScreeningModal()">×</button>
+        <button class="modal-close" onclick="stopScreening()">×</button>
         <div class="modal-header">🎲 Screening: Random Record</div>
         <div id="screeningBody"></div>
         <div style="display:flex;gap:8px;margin-top:16px">
             <button type="button" class="btn-primary btn-success" style="flex:1" onclick="markScreenedOk()">✓ Looks Good</button>
             <button type="button" class="btn-primary" style="flex:1;background:#856404" onclick="screeningSendForCorrection()">↩️ Send for Correction</button>
         </div>
+        <button type="button" class="btn-primary" style="flex:1;margin-top:8px" onclick="markNotSure()">🤔 Not Sure</button>
+        <button type="button" class="btn-small" style="width:100%;margin-top:10px;background:var(--bg);color:var(--text2)" onclick="stopScreening()">⏹ Stop Screening</button>
     </div>
 </div>
 
@@ -867,7 +869,7 @@ const firebaseConfig = {
     appId: "1:610573950046:web:2b545f876953a4eb18a8cf"
 };
 const ADMIN_EMAIL = "enga018@gmail.com";
-const APP_VERSION = "v2.2.1";
+const APP_VERSION = "v2.3.0";
 
 
 firebase.initializeApp(firebaseConfig);
@@ -2358,8 +2360,14 @@ async function submitCorrection() {
             screenedBy: rec.screenedBy || ((currentUser && currentUser.email) || '')
         });
         document.getElementById('correctionModal').classList.remove('active');
-        closeScreeningModal();
         showAlert(propId + ' sent back to worker for correction', 'success');
+        if (screeningCorrectionPending) {
+            // Reached via the screening flow — count it and keep the session going,
+            // rather than the plain Records-tab correction's one-off close.
+            screeningCorrectionPending = false;
+            bumpScreeningCounter();
+            screenNextRecord();
+        }
     } catch(e) { box.innerHTML = `<div class="alert alert-error">${e.message}</div>`; }
 }
 
@@ -2378,31 +2386,63 @@ async function adminVerifyCorrection(id, propId) {
 // Random-sample QA: pick an unscreened complete record for the admin to eyeball,
 // rather than requiring every record to be reviewed (which would bottleneck on the admin).
 let screeningRecordId = null;
+let screeningActive = false;
+let screeningSeenIds = new Set();
+// Set only while the correction modal is open as part of a screening session, so
+// submitCorrection()/closeCorrectionModal() know whether to resume the screening loop
+// (the correction modal is shared with the plain Records-tab "Send for Correction" button,
+// which must keep behaving exactly as before — no counter bump, no auto-advance).
+let screeningCorrectionPending = false;
 
 function isScreenable(r) {
     const cs = correctionState(r);
     return !isRecordAbsent(r) && !r.screenedAt && cs !== 'pending' && cs !== 'fixed';
 }
 
-function updateScreeningProgress() {
-    const el = document.getElementById('screeningProgress');
-    if (!el) return;
-    const complete = allRecords.filter(r => !isRecordAbsent(r));
-    const screened = complete.filter(r => r.screenedAt);
-    el.textContent = complete.length ? `${screened.length} of ${complete.length} complete records screened` : 'No complete records yet';
+// Live "total screened" counter, shared across every screener — a running tally of
+// actions taken, not a "you're done" target, so there's no fixed denominator to hit.
+function subscribeScreeningStats() {
+    db.collection('settings').doc('screeningStats').onSnapshot(doc => {
+        const count = doc.exists ? (doc.data().totalScreened || 0) : 0;
+        const el = document.getElementById('screeningProgress');
+        if (el) el.textContent = `🎲 ${count} record${count === 1 ? '' : 's'} screened so far`;
+    });
 }
 
-function screenRandomRecord() {
+function bumpScreeningCounter() {
+    db.collection('settings').doc('screeningStats').set({
+        totalScreened: firebase.firestore.FieldValue.increment(1)
+    }, { merge: true }).catch(e => console.error('Screening counter update failed:', e));
+}
+
+function startScreening() {
+    screeningActive = true;
+    screeningSeenIds = new Set();
+    screenNextRecord();
+}
+
+function screenNextRecord() {
     const pool = allRecords.filter(isScreenable);
-    if (!pool.length) { showAlert('🎉 Nothing left to screen — every complete record has been screened or is mid-correction.', 'success'); return; }
-    const r = pool[Math.floor(Math.random() * pool.length)];
+    if (!pool.length) {
+        showAlert('🎉 Nothing left to screen — every complete record has been screened or is mid-correction.', 'success');
+        stopScreening();
+        return;
+    }
+    // Prefer a record not already shown this session so a small pool doesn't repeat
+    // immediately; once everything eligible has been seen this session, allow repeats.
+    const unseen = pool.filter(r => !screeningSeenIds.has(r.id));
+    const choices = unseen.length ? unseen : pool;
+    const r = choices[Math.floor(Math.random() * choices.length)];
     screeningRecordId = r.id;
+    screeningSeenIds.add(r.id);
     document.getElementById('screeningBody').innerHTML = recordDetailHtml(r);
     document.getElementById('screeningModal').classList.add('active');
 }
 
-function closeScreeningModal() {
+function stopScreening() {
+    screeningActive = false;
     screeningRecordId = null;
+    screeningSeenIds = new Set();
     document.getElementById('screeningModal').classList.remove('active');
 }
 
@@ -2414,18 +2454,38 @@ async function markScreenedOk() {
             screenedAt: new Date().toISOString(),
             screenedBy: (currentUser && currentUser.email) || ''
         });
-        closeScreeningModal();
-        showAlert('✓ Marked as screened — looks good', 'success');
+        bumpScreeningCounter();
+        screenNextRecord();
     } catch(e) { showAlert('Could not mark screened: ' + e.message, 'error'); }
 }
 
-// Reuses the existing correction modal/flow (adminMarkIncomplete + submitCorrection),
-// which also stamps screenedAt so this record leaves the screening pool either way.
+// Inconclusive — leaves no trace on the record (no screenedAt/screenedBy) so it stays
+// in the pool for another screener to look at, but still counts as an action taken.
+function markNotSure() {
+    if (!screeningRecordId) return;
+    bumpScreeningCounter();
+    screenNextRecord();
+}
+
+// Reuses the existing correction modal/flow (adminMarkIncomplete + submitCorrection).
+// Keeps screeningRecordId set (rather than clearing it, like the other two outcomes do)
+// so cancelling out of the correction modal can resume screening on the same record.
 function screeningSendForCorrection() {
     const rec = (allRecords||[]).find(x => x.id === screeningRecordId);
     if (!rec) return;
-    closeScreeningModal();
+    screeningCorrectionPending = true;
+    document.getElementById('screeningModal').classList.remove('active');
     adminMarkIncomplete(rec.id, rec.propertyId);
+}
+
+function closeCorrectionModal() {
+    document.getElementById('correctionModal').classList.remove('active');
+    if (screeningCorrectionPending) {
+        // Backed out without submitting — resume screening on the same record instead
+        // of losing the session.
+        screeningCorrectionPending = false;
+        document.getElementById('screeningModal').classList.add('active');
+    }
 }
 
 function adminDeleteRecord(id, propId) {
@@ -2470,6 +2530,7 @@ async function loadAdminData() {
             populateWorkerFilter();
             maybeRenderAdminOverview();
         });
+        subscribeScreeningStats();
     } catch(e) { console.error(e); }
 }
 
@@ -2487,6 +2548,7 @@ function loadScreenerData() {
             allRecords = snap.docs.map(d => ({id:d.id,...d.data()}));
             renderAdminOverview();
         });
+        subscribeScreeningStats();
     } catch(e) { console.error(e); }
 }
 
@@ -2507,7 +2569,6 @@ function renderAdminOverview() {
     document.getElementById('adminCompleteBar').style.width = apct + '%';
     const corrections = allRecords.filter(r=>r.needsCorrection===true).length;
     document.getElementById('adminCorrectionLine').textContent = corrections ? `🟡 ${corrections} record${corrections>1?'s':''} awaiting correction` : '';
-    updateScreeningProgress();
 
     const bc={}, pc={}, oc={};
     allRecords.forEach(r=>{ bc[r.buildingType]=(bc[r.buildingType]||0)+1; pc[r.propertyType]=(pc[r.propertyType]||0)+1; const ok=r.ownerCategory||'Individual'; oc[ok]=(oc[ok]||0)+1; });
