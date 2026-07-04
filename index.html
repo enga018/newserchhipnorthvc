@@ -161,7 +161,7 @@
         .admin-badge{background:rgba(255,215,0,0.3);border:1px solid rgba(255,215,0,0.5);padding:2px 10px;border-radius:10px;font-size:11px;font-weight:600;color:#ffd700;display:inline-block;margin-bottom:6px}
         .worker-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:10px}
         .worker-name{font-weight:600;font-size:15px;color:var(--primary)}
-        .worker-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-top:8px}
+        .worker-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-top:8px}
         .worker-stat{text-align:center;background:var(--bg);border-radius:6px;padding:8px}
         .worker-stat-val{font-size:17px;font-weight:700;color:var(--primary)}
         .worker-stat-lbl{font-size:10px;color:var(--text2);text-transform:uppercase}
@@ -2356,6 +2356,7 @@ async function loadAdminData() {
             allRecords = snap.docs.map(d => ({id:d.id,...d.data()}));
             adminRecordsLoaded = true;
             maybeRenderAdminOverview();
+            if (adminUsersLoaded) renderWorkers();
             filterRecords();
         });
         db.collection('users').onSnapshot(snap => {
@@ -2427,6 +2428,7 @@ function renderWorkers() {
         const todayCount = recs.filter(r=>r.localTimestamp&&new Date(r.localTimestamp).toDateString()===today).length;
         const absentCount = recs.filter(r=>needsFollowUp(r)).length;
         const completeCount = recs.length - absentCount;
+        const hh = recs.reduce((a,r)=>{ const s=householdStats(r); a.families+=s.families; a.population+=s.population; return a; }, {families:0,population:0});
         const hasRange = (typeof u.rangeStart === 'number' && typeof u.rangeEnd === 'number');
         const rangeText = hasRange
             ? `🎫 Stickers: NSN-${String(u.rangeStart).padStart(4,'0')} to NSN-${String(u.rangeEnd).padStart(4,'0')}`
@@ -2449,10 +2451,12 @@ function renderWorkers() {
                 ${hasRange?`<button class="btn-small" style="background:#999;color:white;margin-left:4px;padding:3px 8px" onclick="clearRange('${u.uid}','${u.name}')">Clear</button>`:''}
             </div>
             <div class="worker-stats">
-                <div class="worker-stat"><div class="worker-stat-val">${recs.length}</div><div class="worker-stat-lbl">Total</div></div>
+                <div class="worker-stat"><div class="worker-stat-val">${recs.length}</div><div class="worker-stat-lbl">Properties</div></div>
                 <div class="worker-stat"><div class="worker-stat-val" style="color:var(--success)">${completeCount}</div><div class="worker-stat-lbl">Complete</div></div>
                 <div class="worker-stat"><div class="worker-stat-val" style="color:var(--warning)">${absentCount}</div><div class="worker-stat-lbl">Incomplete</div></div>
                 <div class="worker-stat"><div class="worker-stat-val">${todayCount}</div><div class="worker-stat-lbl">Today</div></div>
+                <div class="worker-stat"><div class="worker-stat-val">${hh.families}</div><div class="worker-stat-lbl">Households</div></div>
+                <div class="worker-stat"><div class="worker-stat-val">${hh.population}</div><div class="worker-stat-lbl">Persons</div></div>
             </div>
         </div>`;
     }).join('');
