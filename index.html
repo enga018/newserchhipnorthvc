@@ -877,7 +877,7 @@ const firebaseConfig = {
     appId: "1:610573950046:web:2b545f876953a4eb18a8cf"
 };
 const ADMIN_EMAIL = "enga018@gmail.com";
-const APP_VERSION = "v2.4.0";
+const APP_VERSION = "v2.4.1";
 
 
 firebase.initializeApp(firebaseConfig);
@@ -2381,18 +2381,18 @@ async function submitCorrection() {
             correctionAllowDetails: allowDetails,
             adminFlaggedAt: now,
             correctionStatus: 'pending',
-            corrections: history,
-            // Sending a record for correction is itself a review, so it counts toward screening coverage.
-            screenedAt: rec.screenedAt || now,
-            screenedBy: rec.screenedBy || ((currentUser && currentUser.email) || '')
+            corrections: history
+            // Deliberately no screenedAt/screenedBy here: a record sent for correction
+            // isn't done being screened, it's just paused until the worker fixes it
+            // (isScreenable excludes 'pending' directly) — it should be screenable again,
+            // and doesn't count toward the "Looks Good" tally, once it comes back 'fixed'.
         });
         document.getElementById('correctionModal').classList.remove('active');
         showAlert(propId + ' sent back to worker for correction', 'success');
         if (screeningCorrectionPending) {
-            // Reached via the screening flow — count it and keep the session going,
-            // rather than the plain Records-tab correction's one-off close.
+            // Reached via the screening flow — keep the session going, but don't count
+            // it: only "Looks Good" counts toward the shared tally.
             screeningCorrectionPending = false;
-            bumpScreeningCounter();
             screenNextRecord();
         }
     } catch(e) { box.innerHTML = `<div class="alert alert-error">${e.message}</div>`; }
@@ -2421,13 +2421,17 @@ let screeningSeenIds = new Set();
 // which must keep behaving exactly as before — no counter bump, no auto-advance).
 let screeningCorrectionPending = false;
 
+// A record leaves the pool for good only once "Looks Good" is given (screenedAt set).
+// 'pending' correction is excluded while it's out with the worker, but 'fixed' (worker
+// has resubmitted) and 'verified' both come back into the pool — sending for correction
+// only pauses screening, it doesn't resolve it.
 function isScreenable(r) {
     const cs = correctionState(r);
-    return !isRecordAbsent(r) && !r.screenedAt && cs !== 'pending' && cs !== 'fixed';
+    return !isRecordAbsent(r) && !r.screenedAt && cs !== 'pending';
 }
 
-// Live "total screened" counter, shared across every screener — a running tally of
-// actions taken, not a "you're done" target, so there's no fixed denominator to hit.
+// Live counter, shared across every screener — counts only "Looks Good" verdicts (the
+// only outcome that actually resolves a record), not every action taken.
 // Stored as an extra field on settings/app (the doc already used for vcName) rather
 // than its own document — a brand-new doc silently fell outside whatever the Firestore
 // security rules grant, so writes failed and the counter stayed stuck at 0.
@@ -2435,7 +2439,7 @@ function subscribeScreeningStats() {
     db.collection('settings').doc('app').onSnapshot(doc => {
         const count = doc.exists ? (doc.data().totalScreened || 0) : 0;
         const el = document.getElementById('screeningProgress');
-        if (el) el.textContent = `🎲 ${count} record${count === 1 ? '' : 's'} screened so far`;
+        if (el) el.textContent = `✓ ${count} record${count === 1 ? '' : 's'} confirmed OK so far`;
     });
 }
 
@@ -2490,10 +2494,10 @@ async function markScreenedOk() {
 }
 
 // Inconclusive — leaves no trace on the record (no screenedAt/screenedBy) so it stays
-// in the pool for another screener to look at, but still counts as an action taken.
+// in the pool for another screener to look at, and doesn't count toward the tally
+// (only "Looks Good" does).
 function markNotSure() {
     if (!screeningRecordId) return;
-    bumpScreeningCounter();
     screenNextRecord();
 }
 
