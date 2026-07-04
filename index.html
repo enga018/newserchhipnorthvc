@@ -294,7 +294,11 @@
                 <span style="font-size:13px;color:#856404">✏️ Editing existing record</span>
                 <button type="button" onclick="cancelEdit();resetForm()" style="background:#856404;color:white;padding:4px 12px;font-size:12px;border-radius:4px">Cancel Edit</button>
             </div>
-            <form id="propertyForm" onsubmit="wizardSubmit(event)" style="background:var(--surface);border-radius:16px;padding:18px;box-shadow:0 2px 10px rgba(26,37,51,0.06);border:1px solid var(--border)">
+            <!-- novalidate: required/pattern fields (Property ID, phone) live in wizard steps that
+                 go display:none once you move on. Browsers silently refuse to submit a form with an
+                 invalid hidden control (can't focus it to show the validation bubble) — the Save
+                 button just does nothing, no error. All the same checks now run explicitly in JS below. -->
+            <form id="propertyForm" onsubmit="wizardSubmit(event)" novalidate style="background:var(--surface);border-radius:16px;padding:18px;box-shadow:0 2px 10px rgba(26,37,51,0.06);border:1px solid var(--border)">
                 <div class="wizard-progress" id="wizardProgress"></div>
 
                 <!-- STEP 1: PROPERTY -->
@@ -1384,7 +1388,9 @@ function wizardNext(){
 // Per-step gates reuse the same rules as saveRecord(); save itself re-validates everything.
 function validateWizardStep(id){
     if (id === 'property'){
-        if (!document.getElementById('propertyId').value.trim()) return alertFalse('🏷️ Enter the Property ID.');
+        const propId = document.getElementById('propertyId').value.trim();
+        if (!propId) return alertFalse('🏷️ Enter the Property ID.');
+        if (!/^(NSN-)?[0-9]{1,4}$/i.test(propId)) return alertFalse('🏷️ Property ID must be up to 4 digits (e.g. 0001).');
         if (!document.getElementById('propertyType').value) return alertFalse('🏠 Choose a Property Type.');
         if (!document.getElementById('ownerCategory').value) return alertFalse('🏛️ Choose an Owner Type.');
         if (!document.getElementById('buildingType').value) return alertFalse('🏗️ Choose a Building Type.');
@@ -1396,6 +1402,11 @@ function validateWizardStep(id){
         const photoEl = document.getElementById('photoPreview');
         const hasPhoto = photoEl.style.display !== 'none' && photoEl.src && photoEl.src !== window.location.href;
         if (!hasPhoto) return alertFalse('📷 Photo is required. Please take a photo first.');
+    }
+    if (id === 'occupant'){
+        const isInst = INSTITUTION_CATEGORIES.includes(document.getElementById('ownerCategory').value);
+        const phone = (isInst ? document.getElementById('instContact') : document.getElementById('contact')).value.trim();
+        if (phone && !/^[0-9]{10}$/.test(phone)) return alertFalse('📞 Contact number must be exactly 10 digits, or left blank.');
     }
     return true;
 }
@@ -1560,11 +1571,15 @@ async function saveRecord(e) {
     if (!lat || !lng) return showAlert('📍 GPS location is required. Please capture location first.', 'error');
     if (!hasPhoto) return showAlert('📷 Photo is required. Please take a photo first.', 'error');
 
+    const propIdRaw = document.getElementById('propertyId').value.trim();
+    if (!/^(NSN-)?[0-9]{1,4}$/i.test(propIdRaw)) return showAlert('🏷️ Property ID must be up to 4 digits (e.g. 0001).', 'error');
+
     const type = document.getElementById('propertyType').value;
     const ownerCategory = document.getElementById('ownerCategory').value;
     const isInst = INSTITUTION_CATEGORIES.includes(ownerCategory);
     const ownerName = isInst ? '' : document.getElementById('ownerName').value.trim();
     const contact = isInst ? document.getElementById('instContact').value.trim() : document.getElementById('contact').value.trim();
+    if (contact && !/^[0-9]{10}$/.test(contact)) return showAlert('📞 Contact number must be exactly 10 digits, or left blank.', 'error');
 
     // Collect institution sub-fields
     const orgName = isInst ? document.getElementById('organizationName').value.trim() : '';
