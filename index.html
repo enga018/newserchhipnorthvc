@@ -823,6 +823,59 @@
     </div>
 </div>
 
+<!-- Admin Direct Edit Modal — text fields only; no GPS/photo re-capture (admin isn't at the property) -->
+<div id="adminEditModal" class="modal">
+    <div class="modal-content">
+        <button class="modal-close" onclick="document.getElementById('adminEditModal').classList.remove('active')">×</button>
+        <div class="modal-header">✏️ Edit Record <span id="aePropId" style="color:var(--text2);font-weight:400;font-size:14px"></span></div>
+        <div id="aeAlert"></div>
+        <input type="hidden" id="aeId">
+        <div class="form-group">
+            <label>Property Type</label>
+            <select id="aePropertyType">
+                <option value="Residential">Residential (house, quarters)</option>
+                <option value="Commercial">Commercial (shop, bank, godown, hotel)</option>
+                <option value="Mixed Use">Mixed Use (shop + house)</option>
+                <option value="Institutional/Public">Institutional/Public (church, school, office, hall)</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Owner Type</label>
+            <select id="aeOwnerCategory" onchange="updateAdminEditFields()">
+                <option value="Individual">Individual (private person)</option>
+                <option value="Religious">Religious (church/temple/mosque)</option>
+                <option value="NGO">NGO (society, association)</option>
+                <option value="Government">Government (council, dept, school)</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Building Type</label>
+            <select id="aeBuildingType">
+                <option value="RCC">RCC (Reinforced Concrete)</option>
+                <option value="Semi RCC">Semi RCC</option>
+                <option value="Assam Type">Assam Type</option>
+            </select>
+        </div>
+        <div id="aeIndividualFields">
+            <div class="form-group"><label>Owner Name</label><input type="text" id="aeOwnerName"></div>
+            <div class="form-group"><label>Father/Husband Name</label><input type="text" id="aeFatherHusband"></div>
+            <div class="form-group"><label>Contact Number</label><input type="tel" id="aeContact" placeholder="10-digit mobile number"></div>
+        </div>
+        <div id="aeInstitutionFields" class="hidden">
+            <div class="form-group"><label>Organization/Institution Name</label><input type="text" id="aeOrgName"></div>
+            <div class="form-group"><label>Contact Person</label><input type="text" id="aeContactPerson"></div>
+            <div class="form-group"><label>Designation</label><input type="text" id="aeDesignation"></div>
+            <div class="form-group"><label>Contact Number</label><input type="tel" id="aeInstContact" placeholder="10-digit mobile number"></div>
+        </div>
+        <div class="form-group">
+            <label>Remarks</label>
+            <textarea id="aeRemarks" rows="2" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px"></textarea>
+        </div>
+        <div style="font-size:11px;color:var(--text2);margin-bottom:10px">GPS, photo, and household/family details aren't editable here — use Send for Correction if those need to change.</div>
+        <button class="btn-primary" onclick="saveAdminEdit()">💾 Save Changes</button>
+    </div>
+</div>
+
 <!-- Edit Worker Modal (admin) -->
 <div id="editWorkerModal" class="modal">
     <div class="modal-content">
@@ -877,7 +930,7 @@ const firebaseConfig = {
     appId: "1:610573950046:web:2b545f876953a4eb18a8cf"
 };
 const ADMIN_EMAIL = "enga018@gmail.com";
-const APP_VERSION = "v2.4.2";
+const APP_VERSION = "v2.5.0";
 
 
 firebase.initializeApp(firebaseConfig);
@@ -2340,8 +2393,11 @@ function recordCard(r, context) {
         <div class="record-actions">
             <button class="btn-small btn-primary" onclick='showDetail(${JSON.stringify(r).replace(/'/g,"&#39;")})'>👁 View</button>
             ${context === 'followup' ? `<button class="btn-small" style="background:#e65100;color:white" onclick='startEditRecord(${JSON.stringify(r).replace(/'/g,"&#39;")})'>✏️ Edit</button>` : ''}
+            ${isAdminView ? `<button class="btn-small" style="background:var(--primary);color:white" onclick='openAdminEdit(${JSON.stringify(r).replace(/'/g,"&#39;")})'>✏️ Edit</button>` : ''}
             ${isAdminView && cstate === 'fixed' ? `<button class="btn-small btn-success" onclick="adminVerifyCorrection('${r.id}','${r.propertyId}')">✓ Verify</button>` : ''}
             ${isAdminView && !absent && cstate !== 'pending' && cstate !== 'fixed' ? `<button class="btn-small" style="background:#856404;color:white" onclick="adminMarkIncomplete('${r.id}','${r.propertyId}')">↩️ Send for Correction</button>` : ''}
+            ${isAdminView && (cstate === 'pending' || cstate === 'fixed') ? `<button class="btn-small" style="background:#999;color:white" onclick="adminCancelCorrection('${r.id}','${r.propertyId}')">✕ Cancel Correction</button>` : ''}
+            ${isAdminView && r.screenedAt ? `<button class="btn-small" style="background:#6a1b9a;color:white" onclick="adminReopenScreening('${r.id}','${r.propertyId}')">↺ Reopen for Screening</button>` : ''}
             ${isAdminView ? `<button class="btn-small btn-danger" onclick="adminDeleteRecord('${r.id}','${r.propertyId}')">🗑 Delete</button>` : ''}
         </div>
     </div>`;
@@ -2532,6 +2588,107 @@ async function confirmDeleteRecord() {
         await db.collection('records').doc(id).delete();
         showAlert('Record ' + propId + ' deleted', 'success');
     } catch(e) { alert('Error: ' + e.message); }
+}
+
+/* ---------------- Admin supersede: direct edit, reopen screening, cancel correction ---------------- */
+
+// Admin fixing details directly, without routing through the worker. GPS/photo/households
+// stay out of scope on purpose — admin isn't physically at the property to redo those.
+function openAdminEdit(r) {
+    if (typeof r === 'string') r = JSON.parse(r);
+    document.getElementById('aeAlert').innerHTML = '';
+    document.getElementById('aeId').value = r.id;
+    document.getElementById('aePropId').textContent = r.propertyId;
+    document.getElementById('aePropertyType').value = r.propertyType || 'Residential';
+    document.getElementById('aeOwnerCategory').value = r.ownerCategory || 'Individual';
+    document.getElementById('aeBuildingType').value = r.buildingType || 'RCC';
+    document.getElementById('aeOwnerName').value = r.ownerName || '';
+    document.getElementById('aeFatherHusband').value = r.fatherHusbandName || '';
+    document.getElementById('aeContact').value = r.isInstitution ? '' : (r.contact || '');
+    document.getElementById('aeOrgName').value = r.organizationName || '';
+    document.getElementById('aeContactPerson').value = r.contactPerson || '';
+    document.getElementById('aeDesignation').value = r.designation || '';
+    document.getElementById('aeInstContact').value = r.isInstitution ? (r.contact || '') : '';
+    document.getElementById('aeRemarks').value = r.remarks || '';
+    updateAdminEditFields();
+    document.getElementById('adminEditModal').classList.add('active');
+}
+
+function updateAdminEditFields() {
+    const isInst = INSTITUTION_CATEGORIES.includes(document.getElementById('aeOwnerCategory').value);
+    document.getElementById('aeIndividualFields').classList.toggle('hidden', isInst);
+    document.getElementById('aeInstitutionFields').classList.toggle('hidden', !isInst);
+}
+
+async function saveAdminEdit() {
+    const id = document.getElementById('aeId').value;
+    const box = document.getElementById('aeAlert');
+    const isInst = INSTITUTION_CATEGORIES.includes(document.getElementById('aeOwnerCategory').value);
+    const contact = (isInst ? document.getElementById('aeInstContact') : document.getElementById('aeContact')).value.trim();
+    if (contact && !/^[0-9]{10}$/.test(contact)) { box.innerHTML = '<div class="alert alert-error">Contact number must be exactly 10 digits, or left blank.</div>'; return; }
+    const data = {
+        propertyType: document.getElementById('aePropertyType').value,
+        ownerCategory: document.getElementById('aeOwnerCategory').value,
+        buildingType: document.getElementById('aeBuildingType').value,
+        isInstitution: isInst,
+        contact,
+        remarks: document.getElementById('aeRemarks').value.trim()
+    };
+    if (isInst) {
+        data.organizationName = document.getElementById('aeOrgName').value.trim();
+        data.contactPerson = document.getElementById('aeContactPerson').value.trim();
+        data.designation = document.getElementById('aeDesignation').value.trim();
+        data.ownerName = data.contactPerson || data.organizationName;
+        data.ownerType = 'Contact Person';
+        data.fatherHusbandName = '';
+        // Same "needs follow-up" rule as saveRecord(): org name is mandatory, so its
+        // absence is caught before here; missing contact person/designation/phone means incomplete.
+        data.isAbsent = !data.organizationName || !data.contactPerson || !data.designation || !contact;
+    } else {
+        data.ownerName = document.getElementById('aeOwnerName').value.trim();
+        data.fatherHusbandName = document.getElementById('aeFatherHusband').value.trim();
+        data.ownerType = 'Owner';
+        data.organizationName = '';
+        data.contactPerson = '';
+        data.designation = '';
+        data.isAbsent = !data.ownerName || !data.fatherHusbandName || !contact;
+    }
+    try {
+        await db.collection('records').doc(id).update(data);
+        document.getElementById('adminEditModal').classList.remove('active');
+        showAlert('✓ Record updated', 'success');
+    } catch(e) { box.innerHTML = `<div class="alert alert-error">${e.message}</div>`; }
+}
+
+// Undo a "Looks Good" — puts the record back in the screening pool.
+async function adminReopenScreening(id, propId) {
+    try {
+        await db.collection('records').doc(id).update({
+            screenedAt: firebase.firestore.FieldValue.delete(),
+            screenedBy: firebase.firestore.FieldValue.delete()
+        });
+        showAlert((propId || 'Record') + ' reopened for screening', 'success');
+    } catch(e) { showAlert('Could not reopen: ' + e.message, 'error'); }
+}
+
+// Withdraw a pending/fixed correction request without waiting on the worker — e.g. it
+// turns out to have been flagged by mistake. Keeps the history entry for the audit trail.
+async function adminCancelCorrection(id, propId) {
+    try {
+        const rec = (allRecords||[]).find(x => x.id === id) || {};
+        const history = Array.isArray(rec.corrections) ? rec.corrections.slice() : [];
+        if (history.length) history[history.length-1] = { ...history[history.length-1], status: 'cancelled', cancelledAt: new Date().toISOString(), cancelledBy: (currentUser && currentUser.email) || '' };
+        await db.collection('records').doc(id).update({
+            needsCorrection: false,
+            correctionStatus: firebase.firestore.FieldValue.delete(),
+            adminFlagNote: firebase.firestore.FieldValue.delete(),
+            correctionAllowGps: firebase.firestore.FieldValue.delete(),
+            correctionAllowPhoto: firebase.firestore.FieldValue.delete(),
+            correctionAllowDetails: firebase.firestore.FieldValue.delete(),
+            corrections: history
+        });
+        showAlert((propId || 'Record') + ' correction cancelled', 'success');
+    } catch(e) { showAlert('Could not cancel: ' + e.message, 'error'); }
 }
 
 // ========== ADMIN DATA ==========
