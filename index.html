@@ -468,13 +468,32 @@
                 <div id="myOwnerBreakdown" style="font-size:13px;color:var(--text2);line-height:2"></div>
             </div>
             <div class="stat-card" style="margin-bottom:10px">
-                <div class="section-title">👨‍👩‍👧 Population & Households</div>
-                <div class="stats-grid" style="margin-top:8px">
-                    <div class="stat-card"><div class="stat-value" id="myFamilies">0</div><div class="stat-label">Families</div></div>
-                    <div class="stat-card"><div class="stat-value" id="myPopulation">0</div><div class="stat-label">Population</div></div>
-                    <div class="stat-card"><div class="stat-value" id="myChildren">0</div><div class="stat-label">Children</div></div>
-                    <div class="stat-card"><div class="stat-value" id="myMale">0</div><div class="stat-label">Male</div></div>
-                    <div class="stat-card"><div class="stat-value" id="myFemale">0</div><div class="stat-label">Female</div></div>
+                <div class="section-title">👨‍👩‍👧‍👦 Population &amp; Households</div>
+                <div class="stats-grid" style="margin-bottom:0">
+                    <div class="stat-card" style="grid-column:span 2;padding-bottom:14px">
+                        <div class="stat-value" id="myFamilies">0</div>
+                        <div class="stat-label">Families</div>
+                        <div style="font-size:11px;color:#9ca3af;text-align:center;margin:6px 0 4px;text-transform:uppercase;letter-spacing:0.4px">Members per Family</div>
+                        <div id="myFamilySizes" style="display:flex;justify-content:center;flex-wrap:wrap;row-gap:4px;column-gap:8px;font-size:13px;color:var(--text)"></div>
+                    </div>
+                    <div class="stat-card" style="grid-column:span 2;padding-bottom:14px">
+                        <div class="stat-value" id="myPopulation">0</div>
+                        <div class="stat-label">Population</div>
+                        <div style="font-size:11px;color:#9ca3af;text-align:center;margin:6px 0 2px;text-transform:uppercase;letter-spacing:0.4px">Gender</div>
+                        <div id="myPopGender" style="display:flex;justify-content:center;gap:14px;font-size:14px;color:var(--text)"></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="myAdults" style="color:var(--primary-dark)">0</div>
+                        <div class="stat-label">Adults</div>
+                        <div style="font-size:11px;color:#9ca3af;text-align:center;margin:6px 0 2px;text-transform:uppercase;letter-spacing:0.4px">Gender</div>
+                        <div id="myAdultGender" style="display:flex;justify-content:center;gap:14px;font-size:14px;color:var(--text)"></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="myChildren">0</div>
+                        <div class="stat-label">Children</div>
+                        <div style="font-size:11px;color:#9ca3af;text-align:center;margin:6px 0 2px;text-transform:uppercase;letter-spacing:0.4px">Gender</div>
+                        <div id="myChildGender" style="display:flex;justify-content:center;gap:14px;font-size:14px;color:var(--text)"></div>
+                    </div>
                 </div>
             </div>
             <div class="info-box" style="margin-top:4px">
@@ -554,13 +573,32 @@
                 <div id="adminOwnerBreakdown" style="font-size:13px;color:var(--text2);line-height:2"></div>
             </div>
             <div class="stat-card" style="margin-bottom:12px">
-                <div class="section-title">👨‍👩‍👧 Population & Households</div>
-                <div class="stats-grid" style="margin-top:8px">
-                    <div class="stat-card"><div class="stat-value" id="adminFamilies">0</div><div class="stat-label">Families</div></div>
-                    <div class="stat-card"><div class="stat-value" id="adminPopulation">0</div><div class="stat-label">Population</div></div>
-                    <div class="stat-card"><div class="stat-value" id="adminChildren">0</div><div class="stat-label">Children</div></div>
-                    <div class="stat-card"><div class="stat-value" id="adminMale">0</div><div class="stat-label">Male</div></div>
-                    <div class="stat-card"><div class="stat-value" id="adminFemale">0</div><div class="stat-label">Female</div></div>
+                <div class="section-title">👨‍👩‍👧‍👦 Population &amp; Households</div>
+                <div class="stats-grid" style="margin-bottom:0">
+                    <div class="stat-card" style="grid-column:span 2;padding-bottom:14px">
+                        <div class="stat-value" id="adminFamilies">0</div>
+                        <div class="stat-label">Families</div>
+                        <div style="font-size:11px;color:#9ca3af;text-align:center;margin:6px 0 4px;text-transform:uppercase;letter-spacing:0.4px">Members per Family</div>
+                        <div id="adminFamilySizes" style="display:flex;justify-content:center;flex-wrap:wrap;row-gap:4px;column-gap:8px;font-size:13px;color:var(--text)"></div>
+                    </div>
+                    <div class="stat-card" style="grid-column:span 2;padding-bottom:14px">
+                        <div class="stat-value" id="adminPopulation">0</div>
+                        <div class="stat-label">Population</div>
+                        <div style="font-size:11px;color:#9ca3af;text-align:center;margin:6px 0 2px;text-transform:uppercase;letter-spacing:0.4px">Gender</div>
+                        <div id="adminPopGender" style="display:flex;justify-content:center;gap:14px;font-size:14px;color:var(--text)"></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="adminAdults" style="color:var(--primary-dark)">0</div>
+                        <div class="stat-label">Adults</div>
+                        <div style="font-size:11px;color:#9ca3af;text-align:center;margin:6px 0 2px;text-transform:uppercase;letter-spacing:0.4px">Gender</div>
+                        <div id="adminAdultGender" style="display:flex;justify-content:center;gap:14px;font-size:14px;color:var(--text)"></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="adminChildren">0</div>
+                        <div class="stat-label">Children</div>
+                        <div style="font-size:11px;color:#9ca3af;text-align:center;margin:6px 0 2px;text-transform:uppercase;letter-spacing:0.4px">Gender</div>
+                        <div id="adminChildGender" style="display:flex;justify-content:center;gap:14px;font-size:14px;color:var(--text)"></div>
+                    </div>
                 </div>
             </div>
             <div class="stat-card" style="margin-bottom:12px" id="cardWorkerActivity">
@@ -930,7 +968,7 @@ const firebaseConfig = {
     appId: "1:610573950046:web:2b545f876953a4eb18a8cf"
 };
 const ADMIN_EMAIL = "enga018@gmail.com";
-const APP_VERSION = "v2.6.0";
+const APP_VERSION = "v2.7.0";
 
 
 firebase.initializeApp(firebaseConfig);
@@ -2078,6 +2116,8 @@ function householdStats(r) {
     // Children are auto-derived (age < 18); blank/unknown age counts as neither child nor adult.
     const fams = Array.isArray(r.families) ? r.families : [];
     let population = 0, males = 0, females = 0, others = 0, children = 0, adults = 0;
+    let childMales = 0, childFemales = 0, adultMales = 0, adultFemales = 0;
+    const familySizes = fams.map(f => (Array.isArray(f && f.members) ? f.members : []).length);
     for (const f of fams) {
         const members = Array.isArray(f && f.members) ? f.members : [];
         for (const m of members) {
@@ -2089,10 +2129,13 @@ function householdStats(r) {
             // blank/unknown gender is counted in population but not in gender buckets
             const hasAge = m && m.age !== '' && m.age != null;
             const age = Number(m && m.age);
-            if (hasAge && !Number.isNaN(age)) { if (age < 18) children++; else adults++; }
+            if (hasAge && !Number.isNaN(age)) {
+                if (age < 18) { children++; if (g === 'male') childMales++; else if (g === 'female') childFemales++; }
+                else { adults++; if (g === 'male') adultMales++; else if (g === 'female') adultFemales++; }
+            }
         }
     }
-    return { families: fams.length, population, males, females, others, children, adults };
+    return { families: fams.length, population, males, females, others, children, adults, childMales, childFemales, adultMales, adultFemales, familySizes };
 }
 function correctionState(r) {
     // none -> pending (worker must fix) -> fixed (awaiting admin) -> verified
@@ -2301,9 +2344,7 @@ function renderMyRecords(records) {
     if (oel) oel.innerHTML = breakdownBars(oc, 'No records yet');
 
     // Population & households for this worker's records
-    const hh = records.reduce((a,r)=>{ const s=householdStats(r); a.families+=s.families; a.population+=s.population; a.children+=s.children; a.males+=s.males; a.females+=s.females; return a; }, {families:0,population:0,children:0,males:0,females:0});
-    const set=(id,v)=>{ const e=document.getElementById(id); if(e) e.textContent=v; };
-    set('myFamilies',hh.families); set('myPopulation',hh.population); set('myChildren',hh.children); set('myMale',hh.males); set('myFemale',hh.females);
+    renderPopHouseholds('my', records);
 
     // Render record list with pagination (show first 10, then See More)
     const list = document.getElementById('myRecordsList');
@@ -2377,6 +2418,46 @@ function householdHtml(r, full) {
         return `<div style="margin-top:6px"><b>👪 ${label}</b>${head?' · '+head:''}${contact}<ul style="margin:2px 0 0 18px;padding:0">${members}</ul></div>`;
     }).join('');
     return summary + `<div style="background:var(--bg);border-radius:6px;padding:8px;margin-top:6px;font-size:12px;color:var(--text2)">${fams}</div>`;
+}
+
+// Render population & households dashboard for a set of records into elements
+// prefixed with "admin" or "my" (e.g. adminFamilies, myPopulation, etc.).
+function renderPopHouseholds(prefix, records) {
+    const hh = records.reduce((a,r)=>{
+        const s = householdStats(r);
+        a.families += s.families;
+        a.population += s.population;
+        a.children += s.children;
+        a.males += s.males;
+        a.females += s.females;
+        a.adults += s.adults;
+        a.adultMales += s.adultMales;
+        a.adultFemales += s.adultFemales;
+        a.childMales += s.childMales;
+        a.childFemales += s.childFemales;
+        if (s.familySizes) for (const sz of s.familySizes) a.familySizes.push(sz);
+        return a;
+    }, {families:0,population:0,children:0,males:0,females:0,adults:0,adultMales:0,adultFemales:0,childMales:0,childFemales:0,familySizes:[]});
+
+    const sz1 = hh.familySizes.filter(n=>n===1).length;
+    const sz2_5 = hh.familySizes.filter(n=>n>=2&&n<=5).length;
+    const sz6_10 = hh.familySizes.filter(n=>n>=6&&n<=10).length;
+    const sz10plus = hh.familySizes.filter(n=>n>10).length;
+    const fsParts = [];
+    if (sz1) fsParts.push(`1: <b>${sz1}</b>`);
+    if (sz2_5) fsParts.push(`2-5: <b>${sz2_5}</b>`);
+    if (sz6_10) fsParts.push(`6-10: <b>${sz6_10}</b>`);
+    if (sz10plus) fsParts.push(`10+: <b>${sz10plus}</b>`);
+    const set = (id,v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
+    const hset = (id,v) => { const e = document.getElementById(id); if (e) e.innerHTML = v; };
+    set(prefix+'Families', hh.families);
+    hset(prefix+'FamilySizes', fsParts.length ? fsParts.join(' <span style="color:#cbd5e1">|</span> ') : '<span style="color:#9ca3af">—</span>');
+    set(prefix+'Population', hh.population);
+    hset(prefix+'PopGender', `<span style="color:#db2777"><b>${hh.females}</b> F</span> <span style="color:#cbd5e1">|</span> <span style="color:#2563eb"><b>${hh.males}</b> M</span>`);
+    set(prefix+'Adults', hh.adults);
+    hset(prefix+'AdultGender', `<span style="color:#db2777"><b>${hh.adultFemales}</b> F</span> <span style="color:#cbd5e1">|</span> <span style="color:#2563eb"><b>${hh.adultMales}</b> M</span>`);
+    set(prefix+'Children', hh.children);
+    hset(prefix+'ChildGender', `<span style="color:#db2777"><b>${hh.childFemales}</b> F</span> <span style="color:#cbd5e1">|</span> <span style="color:#2563eb"><b>${hh.childMales}</b> M</span>`);
 }
 
 function recordCard(r, context) {
@@ -2800,12 +2881,7 @@ function renderAdminOverview() {
     document.getElementById('adminOwnerBreakdown').innerHTML = breakdownBars(oc, 'No data');
 
     // Population & households (folded across all records)
-    const hh = allRecords.reduce((a,r)=>{ const s=householdStats(r); a.families+=s.families; a.population+=s.population; a.children+=s.children; a.males+=s.males; a.females+=s.females; return a; }, {families:0,population:0,children:0,males:0,females:0});
-    document.getElementById('adminFamilies').textContent = hh.families;
-    document.getElementById('adminPopulation').textContent = hh.population;
-    document.getElementById('adminChildren').textContent = hh.children;
-    document.getElementById('adminMale').textContent = hh.males;
-    document.getElementById('adminFemale').textContent = hh.females;
+    renderPopHouseholds('admin', allRecords);
 
     document.getElementById('cardWorkerActivity').classList.toggle('hidden', isScreener);
     if (!isScreener) {

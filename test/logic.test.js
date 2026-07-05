@@ -89,12 +89,9 @@ test("needsFollowUp: admin-flagged corrections need follow-up even if present", 
 /* ---------------- householdStats ---------------- */
 
 test("householdStats: missing/empty families is all zeros", () => {
-  assert.deepEqual(householdStats({}), {
-    families: 0, population: 0, males: 0, females: 0, others: 0, children: 0, adults: 0
-  });
-  assert.deepEqual(householdStats({ families: [] }), {
-    families: 0, population: 0, males: 0, females: 0, others: 0, children: 0, adults: 0
-  });
+  const zero = { families: 0, population: 0, males: 0, females: 0, others: 0, children: 0, adults: 0, childMales: 0, childFemales: 0, adultMales: 0, adultFemales: 0, familySizes: [] };
+  assert.deepEqual(householdStats({}), zero);
+  assert.deepEqual(householdStats({ families: [] }), zero);
 });
 
 test("householdStats: counts families, population and gender split", () => {
@@ -113,6 +110,11 @@ test("householdStats: counts families, population and gender split", () => {
   assert.equal(s.males, 1);
   assert.equal(s.females, 1);
   assert.equal(s.others, 1);
+  assert.equal(s.adultMales, 1);
+  assert.equal(s.adultFemales, 1);
+  assert.equal(s.childMales, 0);
+  assert.equal(s.childFemales, 0);
+  assert.deepEqual(s.familySizes, [2, 1]);
 });
 
 test("householdStats: child boundary is age < 18 (17 child, 18 adult)", () => {
@@ -124,6 +126,11 @@ test("householdStats: child boundary is age < 18 (17 child, 18 adult)", () => {
   const s = householdStats(r);
   assert.equal(s.children, 2); // 17 and 0
   assert.equal(s.adults, 1);   // 18
+  assert.equal(s.childMales, 1); // 17yo male
+  assert.equal(s.childFemales, 1); // 0yo female
+  assert.equal(s.adultMales, 0);
+  assert.equal(s.adultFemales, 1); // 18yo female
+  assert.deepEqual(s.familySizes, [3]);
 });
 
 test("householdStats: blank/unknown gender is not counted as others", () => {
@@ -135,6 +142,11 @@ test("householdStats: blank/unknown gender is not counted as others", () => {
   const s = householdStats(r);
   assert.equal(s.population, 3);
   assert.equal(s.others, 1); // only explicit "Other" counts
+  assert.equal(s.adultMales, 0); // blank gender not counted
+  assert.equal(s.adultFemales, 0);
+  assert.equal(s.childMales, 0);
+  assert.equal(s.childFemales, 0);
+  assert.deepEqual(s.familySizes, [3]);
 });
 
 test("householdStats: blank/unknown age counts as neither child nor adult", () => {
@@ -146,6 +158,13 @@ test("householdStats: blank/unknown age counts as neither child nor adult", () =
   assert.equal(s.population, 2);
   assert.equal(s.children, 0);
   assert.equal(s.adults, 0);
+  assert.equal(s.childMales, 0);
+  assert.equal(s.childFemales, 0);
+  assert.equal(s.adultMales, 0);
+  assert.equal(s.adultFemales, 0);
+  assert.equal(s.males, 1);
+  assert.equal(s.females, 1);
+  assert.deepEqual(s.familySizes, [2]);
 });
 
 /* ---------------- correctionState ---------------- */
