@@ -877,7 +877,7 @@ const firebaseConfig = {
     appId: "1:610573950046:web:2b545f876953a4eb18a8cf"
 };
 const ADMIN_EMAIL = "enga018@gmail.com";
-const APP_VERSION = "v2.4.1";
+const APP_VERSION = "v2.4.2";
 
 
 firebase.initializeApp(firebaseConfig);
@@ -2432,21 +2432,16 @@ function isScreenable(r) {
 
 // Live counter, shared across every screener — counts only "Looks Good" verdicts (the
 // only outcome that actually resolves a record), not every action taken.
-// Stored as an extra field on settings/app (the doc already used for vcName) rather
-// than its own document — a brand-new doc silently fell outside whatever the Firestore
-// security rules grant, so writes failed and the counter stayed stuck at 0.
-function subscribeScreeningStats() {
-    db.collection('settings').doc('app').onSnapshot(doc => {
-        const count = doc.exists ? (doc.data().totalScreened || 0) : 0;
-        const el = document.getElementById('screeningProgress');
-        if (el) el.textContent = `✓ ${count} record${count === 1 ? '' : 's'} confirmed OK so far`;
-    });
-}
-
-function bumpScreeningCounter() {
-    db.collection('settings').doc('app').set({
-        totalScreened: firebase.firestore.FieldValue.increment(1)
-    }, { merge: true }).catch(e => console.error('Screening counter update failed:', e));
+// Derived directly from allRecords (screenedAt is only ever set by markScreenedOk())
+// rather than a separate Firestore doc/write: a dedicated counter doc kept silently
+// failing to update in production (most likely scoped out of the Firestore write rules,
+// unlike the records collection itself, which every role here already proves it can
+// write to). Reading data that's already loaded needs no extra permission at all.
+function renderScreeningCounter() {
+    const el = document.getElementById('screeningProgress');
+    if (!el) return;
+    const count = allRecords.filter(r => r.screenedAt).length;
+    el.textContent = `✓ ${count} record${count === 1 ? '' : 's'} confirmed OK so far`;
 }
 
 function startScreening() {
@@ -2488,7 +2483,8 @@ async function markScreenedOk() {
             screenedAt: new Date().toISOString(),
             screenedBy: (currentUser && currentUser.email) || ''
         });
-        bumpScreeningCounter();
+        // Counter is derived from allRecords, not bumped explicitly — it updates itself
+        // once this write lands and the records listener re-fires renderAdminOverview().
         screenNextRecord();
     } catch(e) { showAlert('Could not mark screened: ' + e.message, 'error'); }
 }
@@ -2564,7 +2560,6 @@ async function loadAdminData() {
             populateWorkerFilter();
             maybeRenderAdminOverview();
         });
-        subscribeScreeningStats();
     } catch(e) { console.error(e); }
 }
 
@@ -2582,7 +2577,6 @@ function loadScreenerData() {
             allRecords = snap.docs.map(d => ({id:d.id,...d.data()}));
             renderAdminOverview();
         });
-        subscribeScreeningStats();
     } catch(e) { console.error(e); }
 }
 
@@ -2603,6 +2597,7 @@ function renderAdminOverview() {
     document.getElementById('adminCompleteBar').style.width = apct + '%';
     const corrections = allRecords.filter(r=>r.needsCorrection===true).length;
     document.getElementById('adminCorrectionLine').textContent = corrections ? `🟡 ${corrections} record${corrections>1?'s':''} awaiting correction` : '';
+    renderScreeningCounter();
 
     const bc={}, pc={}, oc={};
     allRecords.forEach(r=>{ bc[r.buildingType]=(bc[r.buildingType]||0)+1; pc[r.propertyType]=(pc[r.propertyType]||0)+1; const ok=r.ownerCategory||'Individual'; oc[ok]=(oc[ok]||0)+1; });
