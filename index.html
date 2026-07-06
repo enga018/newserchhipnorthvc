@@ -918,7 +918,7 @@ const firebaseConfig = {
     appId: "1:610573950046:web:2b545f876953a4eb18a8cf"
 };
 const ADMIN_EMAIL = "enga018@gmail.com";
-const APP_VERSION = "v2.14.10";
+const APP_VERSION = "v2.14.11";
 
 
 firebase.initializeApp(firebaseConfig);
@@ -2573,14 +2573,22 @@ function householdHtml(r, full) {
     if (!full) return summary;
     const fams = (r.families||[]).map((f,i)=>{
         const ut = f.type || 'Residential';
-        const label = ut + (f.occupied === false ? ' (Empty)' : '');
-        const head = esc(f.headName);
-        const contact = f.contact ? ` · 📱 ${esc(f.contact)}` : '';
-        const members = (f.members||[]).map(m=>{
-            const bits = [esc(m.name)||'(no name)', m.gender||'', (m.age===''||m.age==null)?'':m.age+'y', m.relation||''].filter(Boolean);
-            return `<li>${bits.join(' · ')}</li>`;
-        }).join('') || '<li style="color:#999">No members listed</li>';
-        return `<div style="margin-top:6px"><b>🏪 ${label}</b>${head?' · '+head:''}${contact}<ul style="margin:2px 0 0 18px;padding:0">${members}</ul></div>`;
+        const label = ut + (f.occupied === false ? ' (Vacant)' : '');
+        const isRes = ut === 'Residential';
+        const head = isRes ? esc(f.headName) : '';
+        const contact = isRes && f.contact ? ` · 📱 ${esc(f.contact)}` : '';
+        let members;
+        if (isRes) {
+            members = (f.members||[]).map(m=>{
+                const bits = [esc(m.name)||'(no name)', m.gender||'', (m.age===''||m.age==null)?'':m.age+'y', m.relation||''].filter(Boolean);
+                return `<li>${bits.join(' · ')}</li>`;
+            }).join('') || '<li style="color:#999">No members listed</li>';
+        } else if (f.occupied !== false) {
+            members = f.label ? `<li>${esc(f.label)}</li>` : '<li style="color:#999">(unnamed)</li>';
+        } else {
+            members = '<li style="color:#999">Vacant</li>';
+        }
+        return `<div style="margin-top:6px"><b>🏪 ${label}</b>${head ? ' · ' + head : ''}${contact}<ul style="margin:2px 0 0 18px;padding:0">${members}</ul></div>`;
     }).join('');
     return summary + `<div style="background:var(--bg);border-radius:6px;padding:8px;margin-top:6px;font-size:12px;color:var(--text2)">${fams}</div>`;
 }
