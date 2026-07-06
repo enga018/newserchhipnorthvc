@@ -10,7 +10,7 @@ const path = require("node:path");
    "BEGIN/END testable logic" markers) and evaluate it in isolation. The tests
    therefore exercise the exact code that goes live. */
 function loadLogic() {
-  const html = fs.readFileSync(path.join(__dirname, "..", "index.html"), "utf8");
+  const html = fs.readFileSync(path.join(__dirname, "..", "app", "index.html"), "utf8");
   const m = html.match(/=== BEGIN testable logic ===[\s\S]*?\*\/([\s\S]*?)\/\* === END testable logic ===/);
   if (!m) throw new Error("testable logic block not found in index.html");
   return new Function(
