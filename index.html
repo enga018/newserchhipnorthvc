@@ -938,7 +938,7 @@ const firebaseConfig = {
     appId: "1:610573950046:web:2b545f876953a4eb18a8cf"
 };
 const ADMIN_EMAIL = "enga018@gmail.com";
-const APP_VERSION = "v2.13.3";
+const APP_VERSION = "v2.13.4";
 
 
 firebase.initializeApp(firebaseConfig);
@@ -1544,15 +1544,7 @@ function validateWizardStep(id){
         for (let fi=0; fi<householdDraft.length; fi++){
             const f = householdDraft[fi];
             if (!f.occupied) continue;
-            if (f.type === 'Residential'){
-                for (let mi=0; mi<(f.members||[]).length; mi++){
-                    const m = f.members[mi];
-                    if (m.age === '' || m.age == null) return alertFalse(`🏪 Unit ${fi+1}: Member ${mi+1} is missing an age.`);
-                    if (!m.gender) return alertFalse(`🏪 Unit ${fi+1}: Member ${mi+1} is missing a gender.`);
-                }
-            } else {
-                if (!(f.label||'').trim()) return alertFalse(`🏪 Unit ${fi+1} is missing a name/label.`);
-            }
+            if (f.contact && !/^[0-9]{10}$/.test(f.contact)) return alertFalse(`🏪 Unit ${fi+1}: Contact number must be exactly 10 digits, or left blank.`);
         }
     }
     return true;
@@ -1607,7 +1599,7 @@ function renderReview(){
                 if (u.type === 'Residential') summary += ` · ${ms} ${ms===1?'member':'members'}`;
                 else summary += ` · ${u.label||'(no label)'}`;
             } else {
-                summary += ' · Empty';
+                summary += ' · Vacant';
             }
             return summary;
         }).join('<br>');
@@ -1630,10 +1622,11 @@ function unitDisplayId(i){ return 'Unit ' + (i+1); }
 function familyHead(f){ const ms = (f && f.members) || []; return ms.find(m => m.relation === 'Self') || ms[0] || null; }
 function familyHeadName(f){ const h = familyHead(f); return h && h.name ? h.name : ''; }
 
-// Derive property type from non-empty unit types
+// Derive property type from unit types (considers vacant units too so an all-vacant
+// property reflects the actual unit type rather than defaulting to Residential).
 function derivePropertyType(units){
     const types = new Set((units||[]).filter(u => u.occupied !== false).map(u => u.type || 'Residential'));
-    if (types.size === 0) return 'Residential';
+    if (types.size === 0) return (units||[]).length ? (units[0].type || 'Residential') : 'Residential';
     if (types.size === 1) return [...types][0];
     return 'Mixed Use';
 }
@@ -1698,19 +1691,17 @@ function renderUnits(){
         const nonResHint = isCommercial ? 'Enter the business name — not a person\'s name' : 'Enter the facility name — not a person\'s name';
         return `
         <div style="border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:10px;background:var(--bg)">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:6px">
-                <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center">
-                    <span style="font-weight:600;color:var(--primary)">🏪 ${esc(unitDisplayId(fi))}</span>
-                    <select onchange="updateUnitType(${fi},this.value)" style="max-width:200px;font-size:13px;min-height:auto">
-                        ${UNIT_TYPES.map(t=>`<option value="${t}" ${f.type===t?'selected':''}>${UNIT_TYPE_LABELS[t]}</option>`).join('')}
-                    </select>
-                    ${!isInstitutional ? `
-                    <label style="display:flex;align-items:center;gap:4px;font-size:12px;color:var(--text2);font-weight:400;cursor:pointer">
-                        <input type="checkbox" ${!isOccupied?'checked':''} onchange="updateUnitOccupied(${fi},!this.checked)" style="width:auto"> Empty
-                    </label>` : ''}
-                </div>
+            <div style="font-weight:600;color:var(--primary);margin-bottom:6px">🏪 ${esc(unitDisplayId(fi))}</div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;gap:6px">
+                ${!isInstitutional ? `
+                <label style="display:flex;align-items:center;gap:4px;font-size:12px;color:var(--text2);font-weight:400;cursor:pointer">
+                    <input type="checkbox" ${!isOccupied?'checked':''} onchange="updateUnitOccupied(${fi},!this.checked)" style="width:auto"> Vacant
+                </label>` : '<span></span>'}
                 <button type="button" onclick="removeUnit(${fi})" style="background:none;border:none;color:var(--danger);font-size:18px;cursor:pointer;padding:4px 8px">✕</button>
             </div>
+            <select onchange="updateUnitType(${fi},this.value)" style="max-width:200px;font-size:13px;min-height:auto;margin-bottom:8px">
+                ${UNIT_TYPES.map(t=>`<option value="${t}" ${f.type===t?'selected':''}>${UNIT_TYPE_LABELS[t]}</option>`).join('')}
+            </select>
             ${isOccupied ? `
             ${isResidential ? `
             <div style="background:var(--primary-tint);border-radius:8px;padding:10px;margin-bottom:8px">
@@ -1759,7 +1750,7 @@ function renderUnits(){
                 <div style="font-size:11px;color:var(--text2);margin-top:4px">${esc(nonResHint)}</div>
             </div>
             `}
-            ` : '<div style="color:var(--text2);font-size:13px;padding:8px 0">🏠 This unit is empty</div>'}
+            ` : '<div style="color:var(--text2);font-size:13px;padding:8px 0">🏠 This unit is vacant</div>'}
         </div>
     `}).join('');
     refreshUnitSummary();
@@ -2876,7 +2867,7 @@ function renderAeUnits() {
         const isComm = f.type === 'Commercial';
         const memberCount = (f.members||[]).length;
         if (!f.occupied) {
-            return `<div style="font-size:13px;color:var(--text2);padding:4px 0">🏠 Unit ${fi+1}: ${esc(UNIT_TYPE_LABELS[f.type]||f.type)} — Empty</div>`;
+            return `<div style="font-size:13px;color:var(--text2);padding:4px 0">🏠 Unit ${fi+1}: ${esc(UNIT_TYPE_LABELS[f.type]||f.type)} — Vacant</div>`;
         }
         if (isRes) {
             return `<div style="font-size:13px;color:var(--text);padding:4px 0">🏪 Unit ${fi+1}: ${esc(UNIT_TYPE_LABELS[f.type]||f.type)} · ${memberCount} ${memberCount===1?'member':'members'} <span style="font-size:11px;color:var(--text2)">(read-only)</span></div>`;
