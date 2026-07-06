@@ -683,6 +683,13 @@
                 <button class="btn-primary" onclick="backfillFamilyIds()">🔢 Assign Family IDs to Existing Records</button>
                 <div id="backfillAlert" style="margin-top:8px"></div>
             </div>
+            <div style="background:var(--bg);border-radius:8px;padding:12px;margin-bottom:12px">
+                <div style="font-size:13px;color:var(--text2);margin-bottom:10px">
+                    Scans all existing records and marks any that have family members with missing age or gender as <b>Needs Correction</b>, so workers can fill them in. Safe to run more than once — only records with missing data are flagged.
+                </div>
+                <button class="btn-primary" onclick="flagMissingMemberData()">🔍 Flag Records with Missing Member Data</button>
+                <div id="flagMissingAlert" style="margin-top:8px"></div>
+            </div>
             <div class="section-title" style="color:var(--warning)">⚠️ Danger Zone</div>
             <div style="background:#ffebee;border:1px solid #ea4c89;border-radius:8px;padding:12px">
                 <div style="font-size:13px;color:#cb2431;margin-bottom:10px">
@@ -953,7 +960,7 @@ const firebaseConfig = {
     appId: "1:610573950046:web:2b545f876953a4eb18a8cf"
 };
 const ADMIN_EMAIL = "enga018@gmail.com";
-const APP_VERSION = "v2.8.0";
+const APP_VERSION = "v2.9.0";
 
 
 firebase.initializeApp(firebaseConfig);
@@ -1544,6 +1551,21 @@ function validateWizardStep(id){
         const phone = (isInst ? document.getElementById('instContact') : document.getElementById('contact')).value.trim();
         if (phone && !/^[0-9]{10}$/.test(phone)) return alertFalse('📞 Contact number must be exactly 10 digits, or left blank.');
     }
+    if (id === 'households'){
+        const type = document.getElementById('propertyType').value;
+        if (!propertyHasHouseholds(type)) return true;
+        if (!householdDraft || householdDraft.length === 0) return alertFalse('👨‍👩‍👧 Add at least one family.');
+        const memberCount = householdDraft.reduce((n,f)=>n+(f.members||[]).length,0);
+        if (memberCount === 0) return alertFalse('👨‍👩‍👧 Add at least one family member.');
+        for (let fi=0; fi<householdDraft.length; fi++){
+            const f = householdDraft[fi];
+            for (let mi=0; mi<(f.members||[]).length; mi++){
+                const m = f.members[mi];
+                if (m.age === '' || m.age == null) return alertFalse(`👨‍👩‍👧 Member ${mi+1} in family ${fi+1} is missing an age.`);
+                if (!m.gender) return alertFalse(`👨‍👩‍👧 Member ${mi+1} in family ${fi+1} is missing a gender.`);
+            }
+        }
+    }
     return true;
 }
 function alertFalse(msg){ showAlert(msg, 'error'); return false; }
@@ -1658,13 +1680,13 @@ function renderHouseholds(){
             ${f.members.map((m, mi) => `
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;border-top:1px dashed var(--border);padding-top:8px;margin-bottom:6px">
                         <input type="text" value="${esc(m.name)}" placeholder="${mi===0?'Head of family name':'Member name'}" oninput="updateMemberField(${fi},${mi},'name',this.value)" style="grid-column:1 / -1">
-                        <select onchange="updateMemberField(${fi},${mi},'gender',this.value)">
-                            <option value="">Gender</option>
+                        <select required onchange="updateMemberField(${fi},${mi},'gender',this.value)">
+                            <option value="">Gender *</option>
                             <option value="Male" ${m.gender==='Male'?'selected':''}>Male</option>
                             <option value="Female" ${m.gender==='Female'?'selected':''}>Female</option>
                             <option value="Other" ${m.gender==='Other'?'selected':''}>Other</option>
                         </select>
-                        <input type="number" min="0" max="120" value="${esc(m.age)}" placeholder="Age" oninput="updateMemberField(${fi},${mi},'age',this.value)">
+                        <input type="number" min="0" max="120" value="${esc(m.age)}" placeholder="Age *" required oninput="updateMemberField(${fi},${mi},'age',this.value)">
                         ${mi===0 ? '<input type="hidden" value="Head" name="relation">' : `
                         <select onchange="updateMemberField(${fi},${mi},'relation',this.value)">
                             <option value="">Relation to head</option>
@@ -2439,8 +2461,8 @@ function renderPopHouseholds(prefix, records) {
     hset(prefix+'FamilySizes', fsParts.length ? fsParts.join(' <span style="color:#cbd5e1">|</span> ') : '<span style="color:#9ca3af">—</span>');
     set(prefix+'Population', hh.population);
     hset(prefix+'PopGender', `<span style="color:#2563eb"><b>${hh.males}</b> M</span> <span style="color:#cbd5e1">|</span> <span style="color:#db2777"><b>${hh.females}</b> F</span>`);
-    set(prefix+'Adults', hh.adults);
-    hset(prefix+'AdultGender', `<span style="color:#2563eb"><b>${hh.adultMales}</b> M</span> <span style="color:#cbd5e1">|</span> <span style="color:#db2777"><b>${hh.adultFemales}</b> F</span>`);
+    set(prefix+'Adults', hh.population - hh.children);
+    hset(prefix+'AdultGender', `<span style="color:#2563eb"><b>${hh.males - hh.childMales}</b> M</span> <span style="color:#cbd5e1">|</span> <span style="color:#db2777"><b>${hh.females - hh.childFemales}</b> F</span>`);
     set(prefix+'Children', hh.children);
     hset(prefix+'ChildGender', `<span style="color:#2563eb"><b>${hh.childMales}</b> M</span> <span style="color:#cbd5e1">|</span> <span style="color:#db2777"><b>${hh.childFemales}</b> F</span>`);
 }
@@ -3062,6 +3084,58 @@ async function backfillFamilyIds() {
         box.innerHTML = updatedFamilies
             ? `<div class="alert alert-success">✓ Assigned Family IDs to ${updatedFamilies} famil${updatedFamilies===1?'y':'ies'} across ${updatedRecords} record${updatedRecords===1?'':'s'}.</div>`
             : '<div class="alert alert-success">✓ Nothing to do — every family already has an ID.</div>';
+    } catch(e) { box.innerHTML = `<div class="alert alert-error">${e.message}</div>`; }
+}
+
+// One-time backfill: scan all records and flag those with family members missing age
+// or gender as needing correction, so workers can complete the data. Idempotent —
+// skips records that are already flagged for correction.
+async function flagMissingMemberData() {
+    const box = document.getElementById('flagMissingAlert');
+    box.innerHTML = '<div class="alert alert-info">🔍 Scanning records…</div>';
+    try {
+        const snap = await db.collection('records').get();
+        let flaggedRecords = 0;
+        let batch = db.batch();
+        let opsInBatch = 0;
+        const now = new Date().toISOString();
+        const note = 'Missing member age or gender — please fill in';
+        for (const doc of snap.docs) {
+            const data = doc.data();
+            if (data.needsCorrection === true) continue; // already flagged
+            const families = Array.isArray(data.families) ? data.families : [];
+            let missing = false;
+            for (const f of families) {
+                const members = Array.isArray(f && f.members) ? f.members : [];
+                for (const m of members) {
+                    if (m.age === '' || m.age == null || !m.gender) {
+                        missing = true;
+                        break;
+                    }
+                }
+                if (missing) break;
+            }
+            if (!missing) continue;
+            const history = Array.isArray(data.corrections) ? data.corrections.slice() : [];
+            history.push({ note, flaggedAt: now, flaggedBy: (currentUser && currentUser.email) || '', status: 'pending' });
+            batch.update(doc.ref, {
+                needsCorrection: true,
+                correctionStatus: 'pending',
+                adminFlagNote: note,
+                adminFlaggedAt: now,
+                correctionAllowGps: false,
+                correctionAllowPhoto: false,
+                correctionAllowDetails: true,
+                corrections: history
+            });
+            flaggedRecords++;
+            opsInBatch++;
+            if (opsInBatch >= 400) { await batch.commit(); batch = db.batch(); opsInBatch = 0; }
+        }
+        if (opsInBatch > 0) await batch.commit();
+        box.innerHTML = flaggedRecords
+            ? `<div class="alert alert-success">✓ Flagged ${flaggedRecords} record${flaggedRecords===1?'':'s'} with missing member data.</div>`
+            : '<div class="alert alert-success">✓ Nothing to flag — all members have age and gender.</div>';
     } catch(e) { box.innerHTML = `<div class="alert alert-error">${e.message}</div>`; }
 }
 
