@@ -1757,6 +1757,10 @@ async function saveRecord(e) {
         // Residential/Commercial: missing owner name, father/husband, or phone = needs follow-up
         isAbsent = !ownerName || !fatherHusband || !contact;
     }
+    // Also mark incomplete if any family member has empty details
+    if (propertyHasHouseholds(type) && familyMembersIncomplete(householdDraft)) {
+        isAbsent = true;
+    }
     const fullId = 'NSN-' + document.getElementById('propertyId').value.trim().replace(/^NSN-/i,'').replace(/^[0]*/,'').padStart(4,'0');
 
     // RANGE CHECK (hard block for NEW records only; edits to own records always allowed)
@@ -2099,6 +2103,7 @@ function missingFields(r) {
         if (!r.fatherHusbandName) m.push('Father/Husband name');
         if (!r.contact) m.push('Phone number');
     }
+    if (familyMembersIncomplete(r.families)) m.push('Family member details');
     return m;
 }
 function isRecordAbsent(r) {
@@ -2108,6 +2113,21 @@ function isRecordAbsent(r) {
     if (r.isInstitution) return false;
     return !r.ownerName;
 }
+// Check if any family member has empty details (name, gender, age, or relation)
+function familyMembersIncomplete(families) {
+    const fams = Array.isArray(families) ? families : [];
+    for (const f of fams) {
+        const members = Array.isArray(f && f.members) ? f.members : [];
+        for (const m of members) {
+            if (!(m && m.name && m.name.toString().trim())) return true;
+            if (!(m && m.gender)) return true;
+            if (m && (m.age === '' || m.age == null)) return true;
+            if (!(m && m.relation)) return true;
+        }
+    }
+    return false;
+}
+
 function householdStats(r) {
     // Roll a property's families/members into headline counts.
     // Children are auto-derived (age < 18); blank/unknown age counts as neither child nor adult.
