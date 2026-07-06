@@ -133,7 +133,7 @@ test("householdStats: child boundary is age < 18 (17 child, 18 adult)", () => {
   assert.deepEqual(s.familySizes, [3]);
 });
 
-test("householdStats: blank/unknown gender is not counted as others", () => {
+test("householdStats: blank/unknown gender counts as other", () => {
   const r = { families: [{ members: [
     { name: "A", gender: "", age: 30 },
     { name: "B", age: 25 },
@@ -141,8 +141,8 @@ test("householdStats: blank/unknown gender is not counted as others", () => {
   ]}]};
   const s = householdStats(r);
   assert.equal(s.population, 3);
-  assert.equal(s.others, 1); // only explicit "Other" counts
-  assert.equal(s.adultMales, 0); // blank gender not counted
+  assert.equal(s.others, 3); // blank/unknown also counts as other
+  assert.equal(s.adultMales, 0);
   assert.equal(s.adultFemales, 0);
   assert.equal(s.childMales, 0);
   assert.equal(s.childFemales, 0);
