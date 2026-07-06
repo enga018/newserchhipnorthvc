@@ -514,7 +514,6 @@
         </div>
         <nav class="bottomnav">
             <button type="button" class="navbtn tab-btn active" onclick="switchAdminTab('overview',this)"><span class="navicon">📊</span>Overview</button>
-            <button type="button" class="navbtn tab-btn" onclick="switchAdminTab('screening',this)"><span class="navicon">🎲</span>Screening</button>
             <button type="button" class="navbtn tab-btn admin-only-tab" onclick="switchAdminTab('allrecords',this)"><span class="navicon">📁</span>Records</button>
             <button type="button" class="navbtn tab-btn admin-only-tab" onclick="switchAdminTab('workers',this)"><span class="navicon">👥</span>Workers</button>
             <button type="button" class="navbtn tab-btn admin-only-tab" onclick="switchAdminTab('adminsettings',this)"><span class="navicon">⚙️</span>Settings</button>
@@ -565,15 +564,6 @@
             <div class="stat-card" style="margin-bottom:12px" id="cardWorkerActivity">
                 <div class="section-title">👥 Worker Activity Today</div>
                 <div id="adminWorkerToday" style="font-size:13px;color:var(--text2)"></div>
-            </div>
-        </div>
-
-        <!-- SCREENING -->
-        <div id="screening" class="form-section">
-            <div class="stat-card" style="margin-bottom:12px">
-                <div class="section-title">🎲 Spot-Check Screening</div>
-                <div id="screeningProgress" style="font-size:13px;color:var(--text2);margin-bottom:10px"></div>
-                <button type="button" class="btn-primary" onclick="startScreening()">▶️ Start Screening</button>
             </div>
         </div>
 
@@ -634,15 +624,15 @@
                     <label>Role</label>
                     <select id="newWorkerRole">
                         <option value="worker">👤 Worker — collects field data</option>
-                        <option value="screener">🔎 Screener — spot-checks records only, no worker access</option>
+                        <option value="supervisor">🔎 Supervisor — oversees workers and reviews records</option>
                     </select>
                 </div>
                 <button class="btn-primary" onclick="addWorker()">➕ Create Account</button>
             </div>
             <div class="section-title">Registered Workers</div>
             <div id="workersList"></div>
-            <div class="section-title">Registered Screeners</div>
-            <div id="screenersList"></div>
+            <div class="section-title">Registered Supervisors</div>
+            <div id="supervisorsList"></div>
         </div>
 
         <!-- SETTINGS -->
@@ -707,21 +697,6 @@
             <label style="display:flex;align-items:center;gap:8px;font-weight:400"><input type="checkbox" id="corrDetails" checked style="width:auto"> ✏️ Fix Details (name, phone, etc.)</label>
         </div>
         <button class="btn-primary" onclick="submitCorrection()">↩️ Send to Worker</button>
-    </div>
-</div>
-
-<!-- Spot-Check Screening Modal (admin) -->
-<div id="screeningModal" class="modal">
-    <div class="modal-content">
-        <button class="modal-close" onclick="stopScreening()">×</button>
-        <div class="modal-header">🎲 Screening: Random Record</div>
-        <div id="screeningBody"></div>
-        <div style="display:flex;gap:8px;margin-top:16px">
-            <button type="button" class="btn-primary btn-success" style="flex:1" onclick="markScreenedOk()">✓ Looks Good</button>
-            <button type="button" class="btn-primary" style="flex:1;background:#856404" onclick="screeningSendForCorrection()">↩️ Send for Correction</button>
-        </div>
-        <button type="button" class="btn-primary" style="flex:1;margin-top:8px" onclick="markNotSure()">🤔 Not Sure</button>
-        <button type="button" class="btn-small" style="width:100%;margin-top:10px;background:var(--bg);color:var(--text2)" onclick="stopScreening()">⏹ Stop Screening</button>
     </div>
 </div>
 
@@ -937,7 +912,7 @@ const firebaseConfig = {
     appId: "1:610573950046:web:2b545f876953a4eb18a8cf"
 };
 const ADMIN_EMAIL = "enga018@gmail.com";
-const APP_VERSION = "v2.13.8";
+const APP_VERSION = "v2.14.0";
 
 
 firebase.initializeApp(firebaseConfig);
@@ -1037,7 +1012,7 @@ let photoCaptureDateText = null;
 
 let currentUser = null;
 let isAdmin = false;
-let isScreener = false;
+let isSupervisor = false;
 let allRecords = [];
 let allUsers = {};
 let myRecordsCache = [];
@@ -1054,7 +1029,7 @@ auth.onAuthStateChanged(async user => {
         currentUser = user;
         isAdmin = user.email === ADMIN_EMAIL;
         const profile = await getUserProfile(user.uid);
-        isScreener = !isAdmin && profile?.role === 'screener';
+        isSupervisor = !isAdmin && (profile?.role === 'screener' || profile?.role === 'supervisor');
         // Block disabled/removed workers — their Auth account still exists (client SDK
         // cannot delete other users), so we enforce access here at the app level.
         if (!isAdmin && profile?.disabled === true) {
@@ -1067,14 +1042,15 @@ auth.onAuthStateChanged(async user => {
         document.getElementById('splashScreen').classList.add('hidden');
         document.getElementById('authScreen').classList.add('hidden');
         document.getElementById('mainApp').classList.remove('hidden');
-        if (isAdmin || isScreener) {
+        if (isAdmin || isSupervisor) {
             document.getElementById('adminView').classList.remove('hidden');
-            const roleName = isScreener ? 'Screener' : 'Admin';
+            const roleName = isSupervisor ? 'Supervisor' : 'Admin';
             const adminName = profile?.name || roleName;
-            document.getElementById('adminNameBadge').textContent = (isScreener ? '🔎 ' : '⚙️ ') + adminName;
-            document.getElementById('adminRoleBadge').textContent = isScreener ? '🔎 SCREENER' : '👑 ADMIN';
-            if (isScreener) {
-                enterScreenerMode();
+            document.getElementById('adminNameBadge').textContent = (isSupervisor ? '🔎 ' : '⚙️ ') + adminName;
+            document.getElementById('adminRoleBadge').textContent = isSupervisor ? '🔎 SUPERVISOR' : '👑 ADMIN';
+            if (isSupervisor) {
+                document.querySelectorAll('.admin-only-tab').forEach(b => b.classList.add('hidden'));
+                loadAdminData();
             } else {
                 document.querySelectorAll('.admin-only-tab').forEach(b => b.classList.remove('hidden'));
                 loadAdminData();
@@ -1191,7 +1167,7 @@ async function addWorker() {
         });
         await secondaryAuth.signOut();
         secondaryApp.delete();
-        showAddWorkerAlert('✓ ' + (role === 'screener' ? 'Screener' : 'Worker') + ' account created successfully!', 'success');
+        showAddWorkerAlert('✓ ' + (role === 'supervisor' ? 'Supervisor' : 'Worker') + ' account created successfully!', 'success');
         document.getElementById('newWorkerName').value = '';
         document.getElementById('newWorkerPhone').value = '';
         document.getElementById('newWorkerEmail').value = '';
@@ -1310,10 +1286,10 @@ async function saveAdminProfile() {
     const box = document.getElementById('apAlert');
     if (!name) { box.innerHTML = '<div class="alert alert-error">Name cannot be empty</div>'; return; }
     try {
-        // Preserve the caller's actual role — this modal is shared by admin and screener,
-        // and hardcoding 'admin' here would silently demote a screener saving their name.
-        await db.collection('users').doc(currentUser.uid).set({ name, email: currentUser.email, role: isScreener ? 'screener' : 'admin' }, { merge:true });
-        document.getElementById('adminNameBadge').textContent = (isScreener ? '🔎 ' : '⚙️ ') + name;
+        // Preserve the caller's actual role — this modal is shared by admin and supervisor,
+        // and hardcoding 'admin' here would silently demote a supervisor saving their name.
+        await db.collection('users').doc(currentUser.uid).set({ name, email: currentUser.email, role: isSupervisor ? 'supervisor' : 'admin' }, { merge:true });
+        document.getElementById('adminNameBadge').textContent = (isSupervisor ? '🔎 ' : '⚙️ ') + name;
         box.innerHTML = '<div class="alert alert-success">✓ Saved!</div>';
         setTimeout(()=>{ document.getElementById('adminProfileModal').classList.remove('active'); }, 1500);
     } catch(e) { box.innerHTML = `<div class="alert alert-error">${e.message}</div>`; }
@@ -2638,7 +2614,6 @@ function recordCard(r, context) {
             ${isAdminView && cstate === 'fixed' ? `<button class="btn-small btn-success" onclick="adminVerifyCorrection('${r.id}','${r.propertyId}')">✓ Verify</button>` : ''}
             ${isAdminView && !absent && cstate !== 'pending' && cstate !== 'fixed' ? `<button class="btn-small" style="background:#856404;color:white" onclick="adminMarkIncomplete('${r.id}','${r.propertyId}')">↩️ Send for Correction</button>` : ''}
             ${isAdminView && (cstate === 'pending' || cstate === 'fixed') ? `<button class="btn-small" style="background:#999;color:white" onclick="adminCancelCorrection('${r.id}','${r.propertyId}')">✕ Cancel Correction</button>` : ''}
-            ${isAdminView && r.screenedAt ? `<button class="btn-small" style="background:#6a1b9a;color:white" onclick="adminReopenScreening('${r.id}','${r.propertyId}')">↺ Reopen for Screening</button>` : ''}
             ${isAdminView ? `<button class="btn-small btn-danger" onclick="adminDeleteRecord('${r.id}','${r.propertyId}')">🗑 Delete</button>` : ''}
         </div>
     </div>`;
@@ -2686,12 +2661,6 @@ async function submitCorrection() {
         });
         document.getElementById('correctionModal').classList.remove('active');
         showAlert(propId + ' sent back to worker for correction', 'success');
-        if (screeningCorrectionPending) {
-            // Reached via the screening flow — keep the session going, but don't count
-            // it: only "Looks Good" counts toward the shared tally.
-            screeningCorrectionPending = false;
-            screenNextRecord();
-        }
     } catch(e) { box.innerHTML = `<div class="alert alert-error">${e.message}</div>`; }
 }
 
@@ -2706,113 +2675,8 @@ async function adminVerifyCorrection(id, propId) {
     } catch(e) { showAlert('Could not verify: ' + e.message, 'error'); }
 }
 
-/* ---------------- Spot-check screening ---------------- */
-// Random-sample QA: pick an unscreened complete record for the admin to eyeball,
-// rather than requiring every record to be reviewed (which would bottleneck on the admin).
-let screeningRecordId = null;
-let screeningActive = false;
-let screeningSeenIds = new Set();
-// Set only while the correction modal is open as part of a screening session, so
-// submitCorrection()/closeCorrectionModal() know whether to resume the screening loop
-// (the correction modal is shared with the plain Records-tab "Send for Correction" button,
-// which must keep behaving exactly as before — no counter bump, no auto-advance).
-let screeningCorrectionPending = false;
-
-// A record leaves the pool for good only once "Looks Good" is given (screenedAt set).
-// 'pending' correction is excluded while it's out with the worker, but 'fixed' (worker
-// has resubmitted) and 'verified' both come back into the pool — sending for correction
-// only pauses screening, it doesn't resolve it.
-function isScreenable(r) {
-    const cs = correctionState(r);
-    return !isRecordAbsent(r) && !r.screenedAt && cs !== 'pending';
-}
-
-// Live counter, shared across every screener — counts only "Looks Good" verdicts (the
-// only outcome that actually resolves a record), not every action taken.
-// Derived directly from allRecords (screenedAt is only ever set by markScreenedOk())
-// rather than a separate Firestore doc/write: a dedicated counter doc kept silently
-// failing to update in production (most likely scoped out of the Firestore write rules,
-// unlike the records collection itself, which every role here already proves it can
-// write to). Reading data that's already loaded needs no extra permission at all.
-function renderScreeningCounter() {
-    const el = document.getElementById('screeningProgress');
-    if (!el) return;
-    const count = allRecords.filter(r => r.screenedAt).length;
-    el.textContent = `✓ ${count} record${count === 1 ? '' : 's'} confirmed OK so far`;
-}
-
-function startScreening() {
-    screeningActive = true;
-    screeningSeenIds = new Set();
-    screenNextRecord();
-}
-
-function screenNextRecord() {
-    const pool = allRecords.filter(isScreenable);
-    if (!pool.length) {
-        showAlert('🎉 Nothing left to screen — every complete record has been screened or is mid-correction.', 'success');
-        stopScreening();
-        return;
-    }
-    // Prefer a record not already shown this session so a small pool doesn't repeat
-    // immediately; once everything eligible has been seen this session, allow repeats.
-    const unseen = pool.filter(r => !screeningSeenIds.has(r.id));
-    const choices = unseen.length ? unseen : pool;
-    const r = choices[Math.floor(Math.random() * choices.length)];
-    screeningRecordId = r.id;
-    screeningSeenIds.add(r.id);
-    document.getElementById('screeningBody').innerHTML = recordDetailHtml(r);
-    document.getElementById('screeningModal').classList.add('active');
-}
-
-function stopScreening() {
-    screeningActive = false;
-    screeningRecordId = null;
-    screeningSeenIds = new Set();
-    document.getElementById('screeningModal').classList.remove('active');
-}
-
-async function markScreenedOk() {
-    const id = screeningRecordId;
-    if (!id) return;
-    try {
-        await db.collection('records').doc(id).update({
-            screenedAt: new Date().toISOString(),
-            screenedBy: (currentUser && currentUser.email) || ''
-        });
-        // Counter is derived from allRecords, not bumped explicitly — it updates itself
-        // once this write lands and the records listener re-fires renderAdminOverview().
-        screenNextRecord();
-    } catch(e) { showAlert('Could not mark screened: ' + e.message, 'error'); }
-}
-
-// Inconclusive — leaves no trace on the record (no screenedAt/screenedBy) so it stays
-// in the pool for another screener to look at, and doesn't count toward the tally
-// (only "Looks Good" does).
-function markNotSure() {
-    if (!screeningRecordId) return;
-    screenNextRecord();
-}
-
-// Reuses the existing correction modal/flow (adminMarkIncomplete + submitCorrection).
-// Keeps screeningRecordId set (rather than clearing it, like the other two outcomes do)
-// so cancelling out of the correction modal can resume screening on the same record.
-function screeningSendForCorrection() {
-    const rec = (allRecords||[]).find(x => x.id === screeningRecordId);
-    if (!rec) return;
-    screeningCorrectionPending = true;
-    document.getElementById('screeningModal').classList.remove('active');
-    adminMarkIncomplete(rec.id, rec.propertyId);
-}
-
 function closeCorrectionModal() {
     document.getElementById('correctionModal').classList.remove('active');
-    if (screeningCorrectionPending) {
-        // Backed out without submitting — resume screening on the same record instead
-        // of losing the session.
-        screeningCorrectionPending = false;
-        document.getElementById('screeningModal').classList.add('active');
-    }
 }
 
 function adminDeleteRecord(id, propId) {
@@ -2831,7 +2695,7 @@ async function confirmDeleteRecord() {
     } catch(e) { alert('Error: ' + e.message); }
 }
 
-/* ---------------- Admin supersede: direct edit, reopen screening, cancel correction ---------------- */
+/* ---------------- Admin supersede: direct edit, cancel correction ---------------- */
 
 // Admin fixing details directly. GPS/photo stay out of scope — admin isn't at the property.
 // Unit labels can be edited here; other family details still need Send for Correction.
@@ -2992,17 +2856,6 @@ async function saveAdminEdit() {
     } catch(e) { box.innerHTML = `<div class="alert alert-error">${e.message}</div>`; }
 }
 
-// Undo a "Looks Good" — puts the record back in the screening pool.
-async function adminReopenScreening(id, propId) {
-    try {
-        await db.collection('records').doc(id).update({
-            screenedAt: firebase.firestore.FieldValue.delete(),
-            screenedBy: firebase.firestore.FieldValue.delete()
-        });
-        showAlert((propId || 'Record') + ' reopened for screening', 'success');
-    } catch(e) { showAlert('Could not reopen: ' + e.message, 'error'); }
-}
-
 // Withdraw a pending/fixed correction request without waiting on the worker — e.g. it
 // turns out to have been flagged by mistake. Keeps the history entry for the audit trail.
 async function adminCancelCorrection(id, propId) {
@@ -3052,23 +2905,6 @@ async function loadAdminData() {
     } catch(e) { console.error(e); }
 }
 
-// Screener gets Overview + screening only — no Records/Workers/Settings tabs, and no
-// worker-identifying info anywhere (so we never even subscribe to the users collection).
-function enterScreenerMode() {
-    document.querySelectorAll('.admin-only-tab').forEach(b => b.classList.add('hidden'));
-    switchAdminTab('overview', document.querySelector('#adminView .tab-btn'));
-    loadScreenerData();
-}
-
-function loadScreenerData() {
-    try {
-        db.collection('records').orderBy('localTimestamp','desc').onSnapshot(snap => {
-            allRecords = snap.docs.map(d => ({id:d.id,...d.data()}));
-            renderAdminOverview();
-        });
-    } catch(e) { console.error(e); }
-}
-
 function renderAdminOverview() {
     const today = new Date().toDateString();
     const completed = allRecords.filter(r => !needsFollowUp(r));
@@ -3081,8 +2917,6 @@ function renderAdminOverview() {
     document.getElementById('adminTodayTotal').textContent = todayRecords.length;
     document.getElementById('adminTodayIncomplete').textContent = todayIncomplete;
 
-    renderScreeningCounter();
-
     const bc={}, pc={}, oc={};
     completed.forEach(r=>{ bc[r.buildingType]=(bc[r.buildingType]||0)+1; pc[r.propertyType]=(pc[r.propertyType]||0)+1; const ok=r.ownerCategory||'Individual'; oc[ok]=(oc[ok]||0)+1; });
     document.getElementById('adminBuildingBreakdown').innerHTML = stackedBarChart(bc, 'No data');
@@ -3091,8 +2925,8 @@ function renderAdminOverview() {
 
     renderPopHouseholds('admin', completed);
 
-    document.getElementById('cardWorkerActivity').classList.toggle('hidden', isScreener);
-    if (!isScreener) {
+    document.getElementById('cardWorkerActivity').classList.toggle('hidden', isSupervisor);
+    if (!isSupervisor) {
         const tw={};
         todayRecords.forEach(r=>{
             const n=allUsers[r.workerUid]?.name||r.workerEmail||'Unknown';
@@ -3120,9 +2954,9 @@ function renderAllRecords(filtered) {
 }
 
 function renderWorkers() {
-    const workers = Object.values(allUsers).filter(u => u.email !== ADMIN_EMAIL && !u.disabled && u.role !== 'screener');
-    const screeners = Object.values(allUsers).filter(u => u.email !== ADMIN_EMAIL && !u.disabled && u.role === 'screener');
-    renderScreenerAccounts(screeners);
+    const workers = Object.values(allUsers).filter(u => u.email !== ADMIN_EMAIL && !u.disabled && u.role !== 'supervisor');
+    const supervisors = Object.values(allUsers).filter(u => u.email !== ADMIN_EMAIL && !u.disabled && u.role === 'supervisor');
+    renderSupervisorAccounts(supervisors);
     const el = document.getElementById('workersList');
     if (!workers.length) { el.innerHTML='<div class="empty-state"><div class="empty-state-icon">👥</div><p>No workers yet. Add one above.</p></div>'; return; }
     el.innerHTML = workers.map(u => {
@@ -3165,13 +2999,13 @@ function renderWorkers() {
     }).join('');
 }
 
-// Screeners don't collect data, so they get a lightweight account-management row
+// Supervisors don't collect data, so they get a lightweight account-management row
 // (no field stats, no sticker range) instead of the full worker-card layout.
-function renderScreenerAccounts(screeners) {
-    const el = document.getElementById('screenersList');
+function renderSupervisorAccounts(supervisors) {
+    const el = document.getElementById('supervisorsList');
     if (!el) return;
-    if (!screeners.length) { el.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🔎</div><p>No screeners yet.</p></div>'; return; }
-    el.innerHTML = screeners.map(u => `<div class="worker-card">
+    if (!supervisors.length) { el.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🔎</div><p>No supervisors yet.</p></div>'; return; }
+    el.innerHTML = supervisors.map(u => `<div class="worker-card">
             <div style="display:flex;justify-content:space-between;align-items:start">
                 <div>
                     <div class="worker-name">🔎 ${esc(u.name)}</div>
@@ -3190,7 +3024,7 @@ function populateWorkerFilter() {
     const sel = document.getElementById('filterWorker');
     const cur = sel.value;
     sel.innerHTML = '<option value="">All Workers</option>' +
-        Object.values(allUsers).filter(u=>u.email!==ADMIN_EMAIL && !u.disabled && u.role!=='screener').map(u=>`<option value="${u.uid}">${esc(u.name)}</option>`).join('');
+        Object.values(allUsers).filter(u=>u.email!==ADMIN_EMAIL && !u.disabled && u.role!=='supervisor').map(u=>`<option value="${u.uid}">${esc(u.name)}</option>`).join('');
     sel.value = cur;
 }
 
