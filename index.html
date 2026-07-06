@@ -968,7 +968,7 @@ const firebaseConfig = {
     appId: "1:610573950046:web:2b545f876953a4eb18a8cf"
 };
 const ADMIN_EMAIL = "enga018@gmail.com";
-const APP_VERSION = "v2.7.0";
+const APP_VERSION = "v2.7.1";
 
 
 firebase.initializeApp(firebaseConfig);
@@ -2454,8 +2454,8 @@ function renderPopHouseholds(prefix, records) {
     hset(prefix+'FamilySizes', fsParts.length ? fsParts.join(' <span style="color:#cbd5e1">|</span> ') : '<span style="color:#9ca3af">—</span>');
     set(prefix+'Population', hh.population);
     hset(prefix+'PopGender', `<span style="color:#db2777"><b>${hh.females}</b> F</span> <span style="color:#cbd5e1">|</span> <span style="color:#2563eb"><b>${hh.males}</b> M</span>`);
-    set(prefix+'Adults', hh.adults);
-    hset(prefix+'AdultGender', `<span style="color:#db2777"><b>${hh.adultFemales}</b> F</span> <span style="color:#cbd5e1">|</span> <span style="color:#2563eb"><b>${hh.adultMales}</b> M</span>`);
+    set(prefix+'Adults', hh.population - hh.children);
+    hset(prefix+'AdultGender', `<span style="color:#db2777"><b>${hh.females - hh.childFemales}</b> F</span> <span style="color:#cbd5e1">|</span> <span style="color:#2563eb"><b>${hh.males - hh.childMales}</b> M</span>`);
     set(prefix+'Children', hh.children);
     hset(prefix+'ChildGender', `<span style="color:#db2777"><b>${hh.childFemales}</b> F</span> <span style="color:#cbd5e1">|</span> <span style="color:#2563eb"><b>${hh.childMales}</b> M</span>`);
 }
