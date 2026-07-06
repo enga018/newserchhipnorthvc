@@ -454,15 +454,13 @@
                 <div class="stat-card"><div class="stat-value" id="myTodayTotal">0</div><div class="stat-label">Today Total</div></div>
                 <div class="stat-card warning"><div class="stat-value" id="myTodayIncomplete">0</div><div class="stat-label">Today Incomplete</div></div>
             </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
-                <div class="stat-card">
-                    <div class="section-title">🏗️ Building Types</div>
-                    <div id="myBuildingBreakdown" style="font-size:13px;color:var(--text2);line-height:2"></div>
-                </div>
-                <div class="stat-card">
-                    <div class="section-title">🏠 Property Types</div>
-                    <div id="myPropertyBreakdown" style="font-size:13px;color:var(--text2);line-height:2"></div>
-                </div>
+            <div class="stat-card" style="margin-bottom:10px">
+                <div class="section-title">🏗️ Building Types</div>
+                <div id="myBuildingBreakdown" style="font-size:13px;color:var(--text2);line-height:2"></div>
+            </div>
+            <div class="stat-card" style="margin-bottom:10px">
+                <div class="section-title">🏠 Property Types</div>
+                <div id="myPropertyBreakdown" style="font-size:13px;color:var(--text2);line-height:2"></div>
             </div>
             <div class="stat-card" style="margin-bottom:10px">
                 <div class="section-title">🏛️ Owner Types</div>
@@ -551,15 +549,13 @@
                 <div class="stat-card"><div class="stat-value" id="adminTodayTotal">0</div><div class="stat-label">Today Total</div></div>
                 <div class="stat-card warning"><div class="stat-value" id="adminTodayIncomplete">0</div><div class="stat-label">Today Incomplete</div></div>
             </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
-                <div class="stat-card">
-                    <div class="section-title">🏗️ Building Types</div>
-                    <div id="adminBuildingBreakdown" style="font-size:13px;color:var(--text2);line-height:2"></div>
-                </div>
-                <div class="stat-card">
-                    <div class="section-title">🏠 Property Types</div>
-                    <div id="adminPropertyBreakdown" style="font-size:13px;color:var(--text2);line-height:2"></div>
-                </div>
+            <div class="stat-card" style="margin-bottom:12px">
+                <div class="section-title">🏗️ Building Types</div>
+                <div id="adminBuildingBreakdown" style="font-size:13px;color:var(--text2);line-height:2"></div>
+            </div>
+            <div class="stat-card" style="margin-bottom:12px">
+                <div class="section-title">🏠 Property Types</div>
+                <div id="adminPropertyBreakdown" style="font-size:13px;color:var(--text2);line-height:2"></div>
             </div>
             <div class="stat-card" style="margin-bottom:12px">
                 <div class="section-title">🏛️ Owner Types</div>
@@ -611,6 +607,10 @@
 
         <!-- ALL RECORDS -->
         <div id="allrecords" class="form-section">
+            <div class="form-group" style="margin-bottom:10px">
+                <label>Search Property ID</label>
+                <input type="text" id="filterPropertyId" placeholder="e.g. 0001 or NSN-0001" oninput="filterRecords()">
+            </div>
             <div class="filter-bar">
                 <select id="filterWorker" onchange="filterRecords()"><option value="">All Workers</option></select>
                 <select id="filterType" onchange="filterRecords()">
@@ -968,7 +968,7 @@ const firebaseConfig = {
     appId: "1:610573950046:web:2b545f876953a4eb18a8cf"
 };
 const ADMIN_EMAIL = "enga018@gmail.com";
-const APP_VERSION = "v2.10.0";
+const APP_VERSION = "v2.10.1";
 
 
 firebase.initializeApp(firebaseConfig);
@@ -3023,6 +3023,7 @@ function getFilteredRecords() {
     const tf = document.getElementById('filterType').value;
     const of = document.getElementById('filterOwner').value;
     const sf = document.getElementById('filterStatus').value;
+    const pidSearch = document.getElementById('filterPropertyId').value.trim().toLowerCase().replace(/^nsn-/, '');
     let f = allRecords;
     if (wf) f = f.filter(r=>r.workerUid===wf);
     if (tf) f = f.filter(r=>r.propertyType===tf);
@@ -3030,6 +3031,7 @@ function getFilteredRecords() {
     if (sf==='complete') f = f.filter(r=>!needsFollowUp(r));
     if (sf==='absent') f = f.filter(r=>isRecordAbsent(r));
     if (sf==='correction') f = f.filter(r=>r.needsCorrection===true);
+    if (pidSearch) f = f.filter(r => (r.propertyId || '').toLowerCase().replace(/^nsn-/, '').includes(pidSearch));
     return f;
 }
 
