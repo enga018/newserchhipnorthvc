@@ -479,12 +479,7 @@
                         <div class="stat-label">Population</div>
                         <div id="myPopGender" style="margin-top:8px"></div>
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-value" id="myAdults" style="color:var(--primary-dark)">0</div>
-                        <div class="stat-label">Adults</div>
-                        <div id="myAdultGender" style="margin-top:8px"></div>
-                    </div>
-                    <div class="stat-card">
+                    <div class="stat-card" style="grid-column:span 2;padding-bottom:14px">
                         <div class="stat-value" id="myChildren">0</div>
                         <div class="stat-label">Children</div>
                         <div id="myChildGender" style="margin-top:8px"></div>
@@ -570,12 +565,7 @@
                         <div class="stat-label">Population</div>
                         <div id="adminPopGender" style="margin-top:8px"></div>
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-value" id="adminAdults" style="color:var(--primary-dark)">0</div>
-                        <div class="stat-label">Adults</div>
-                        <div id="adminAdultGender" style="margin-top:8px"></div>
-                    </div>
-                    <div class="stat-card">
+                    <div class="stat-card" style="grid-column:span 2;padding-bottom:14px">
                         <div class="stat-value" id="adminChildren">0</div>
                         <div class="stat-label">Children</div>
                         <div id="adminChildGender" style="margin-top:8px"></div>
@@ -960,7 +950,7 @@ const firebaseConfig = {
     appId: "1:610573950046:web:2b545f876953a4eb18a8cf"
 };
 const ADMIN_EMAIL = "enga018@gmail.com";
-const APP_VERSION = "v2.11.0";
+const APP_VERSION = "v2.11.1";
 
 
 firebase.initializeApp(firebaseConfig);
@@ -2486,8 +2476,6 @@ function renderPopHouseholds(prefix, records) {
     hset(prefix+'FamilySizes', stackedBarChart(hhMap, 'No data', hhColors, true));
     set(prefix+'Population', hh.population);
     hset(prefix+'PopGender', stackedBarChart({Male: hh.males, Female: hh.females}, 'No data', ['#2563eb','#db2777'], true));
-    set(prefix+'Adults', hh.population - hh.children);
-    hset(prefix+'AdultGender', stackedBarChart({Male: hh.males - hh.childMales, Female: hh.females - hh.childFemales}, 'No data', ['#2563eb','#db2777'], true));
     set(prefix+'Children', hh.children);
     hset(prefix+'ChildGender', stackedBarChart({Male: hh.childMales, Female: hh.childFemales}, 'No data', ['#2563eb','#db2777'], true));
 }
