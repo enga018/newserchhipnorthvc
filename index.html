@@ -914,7 +914,7 @@ const firebaseConfig = {
     appId: "1:610573950046:web:2b545f876953a4eb18a8cf"
 };
 const ADMIN_EMAIL = "enga018@gmail.com";
-const APP_VERSION = "v2.14.2";
+const APP_VERSION = "v2.14.3";
 
 
 firebase.initializeApp(firebaseConfig);
@@ -2612,6 +2612,7 @@ function recordCard(r, context) {
             ${r.adminFlagNote ? `<div style="background:#fff3cd;border-radius:4px;padding:5px 8px;margin-top:5px;font-size:12px;color:#856404">⚠️ <b>Fix needed:</b> ${esc(r.adminFlagNote)}</div>` : ''}
             <div class="record-actions">
                 <button class="btn-small btn-primary" onclick='showDetail(${JSON.stringify(r).replace(/'/g,"&#39;")})'>👁 View</button>
+                ${!absent && cstate !== 'pending' && cstate !== 'fixed' ? `<button class="btn-small" style="background:#856404;color:white" onclick="adminMarkIncomplete('${r.id}','${r.propertyId}')">↩️ Send for Correction</button>` : ''}
             </div>
         </div>`;
     }
