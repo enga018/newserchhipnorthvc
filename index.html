@@ -514,8 +514,8 @@
         </div>
         <nav class="bottomnav">
             <button type="button" class="navbtn tab-btn active" onclick="switchAdminTab('overview',this)"><span class="navicon">📊</span>Overview</button>
-            <button type="button" class="navbtn tab-btn admin-only-tab" onclick="switchAdminTab('allrecords',this)"><span class="navicon">📁</span>Records</button>
-            <button type="button" class="navbtn tab-btn admin-only-tab" onclick="switchAdminTab('workers',this)"><span class="navicon">👥</span>Workers</button>
+            <button type="button" class="navbtn tab-btn" onclick="switchAdminTab('allrecords',this)"><span class="navicon">📁</span>Records</button>
+            <button type="button" class="navbtn tab-btn" onclick="switchAdminTab('workers',this)"><span class="navicon">👥</span>Workers</button>
             <button type="button" class="navbtn tab-btn admin-only-tab" onclick="switchAdminTab('adminsettings',this)"><span class="navicon">⚙️</span>Settings</button>
         </nav>
 
@@ -596,12 +596,14 @@
                     <option value="verify">🔵 Needs Verification</option>
                 </select>
             </div>
+            <div id="exportButtonsWrap">
             <div style="display:flex;gap:8px;margin-bottom:8px">
                 <button class="btn-primary" onclick="exportFilteredData()" style="flex:1">⬇️ Export CSV</button>
                 <button class="btn-primary" onclick="exportFilteredPhotos()" style="flex:1;background:#6a1b9a">🖼️ Photos ZIP</button>
             </div>
             <div style="display:flex;gap:8px;margin-bottom:8px">
                 <button class="btn-primary" onclick="exportMembersCSV()" style="flex:1;background:#0b7285">👨‍👩‍👧 Export Members CSV</button>
+            </div>
             </div>
             <div id="photoExportStatus" style="font-size:12px;color:var(--text2);margin-bottom:8px"></div>
             <div style="font-size:12px;color:var(--text2);margin-bottom:8px" id="recordCount"></div>
@@ -613,7 +615,7 @@
 
         <!-- WORKERS -->
         <div id="workers" class="form-section">
-            <div class="add-worker-box">
+            <div class="add-worker-box" id="addAccountBox">
                 <div class="section-title">➕ Add Account</div>
                 <div id="addWorkerAlert"></div>
                 <div class="form-group"><label>Full Name</label><input type="text" id="newWorkerName" placeholder="Full name"></div>
@@ -631,7 +633,7 @@
             </div>
             <div class="section-title">Registered Workers</div>
             <div id="workersList"></div>
-            <div class="section-title">Registered Supervisors</div>
+            <div class="section-title" id="supervisorsSectionTitle">Registered Supervisors</div>
             <div id="supervisorsList"></div>
         </div>
 
@@ -912,7 +914,7 @@ const firebaseConfig = {
     appId: "1:610573950046:web:2b545f876953a4eb18a8cf"
 };
 const ADMIN_EMAIL = "enga018@gmail.com";
-const APP_VERSION = "v2.14.0";
+const APP_VERSION = "v2.14.1";
 
 
 firebase.initializeApp(firebaseConfig);
@@ -2586,7 +2588,36 @@ function recordCard(r, context) {
         </div>`;
     }
 
+    // Supervisor view — complete records, view-only, no worker identity, no actions
+    if (context === 'supervisor') {
+        const isInst = INSTITUTION_CATEGORIES.includes(r.ownerCategory);
+        const ownerDisplay = esc(isInst ? (r.contactPerson || r.organizationName || '—') : (r.ownerName || '—'));
+        return `<div class="record-card ${absent||correction?'absent':'complete'}">
+            <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:6px">
+                <div>
+                    <span class="record-id">ID: ${esc(r.propertyId)}</span>
+                    ${statusBadge}
+                </div>
+                <div style="font-size:11px;color:#999;text-align:right">${r.localTimestamp ? new Date(r.localTimestamp).toLocaleDateString() : ''}</div>
+            </div>
+            ${r.organizationName ? `<div class="record-detail"><b>Org:</b> ${esc(r.organizationName)}</div>` : ''}
+            ${r.ownerName ? `<div class="record-detail"><b>${esc(r.ownerType||'Owner')}:</b> ${esc(r.ownerName)}</div>` : ''}
+            ${r.contact ? `<div class="record-detail">📱 ${esc(r.contact)}</div>` : ''}
+            <div class="record-detail">🏠 ${esc(r.propertyType)} &nbsp;|&nbsp; 🏗️ ${esc(r.buildingType)}${r.ownerCategory && r.ownerCategory!=='Individual' ? ' &nbsp;|&nbsp; 🏛️ '+esc(r.ownerCategory) : ''}</div>
+            ${householdHtml(r, false)}
+            <div style="margin-top:5px">
+                ${r.photo ? '<span class="badge badge-photo">📷 Photo</span> ' : ''}
+                ${r.latitude ? '<span class="badge badge-gps">📍 GPS</span> ' : ''}
+            </div>
+            ${r.adminFlagNote ? `<div style="background:#fff3cd;border-radius:4px;padding:5px 8px;margin-top:5px;font-size:12px;color:#856404">⚠️ <b>Fix needed:</b> ${esc(r.adminFlagNote)}</div>` : ''}
+            <div class="record-actions">
+                <button class="btn-small btn-primary" onclick='showDetail(${JSON.stringify(r).replace(/'/g,"&#39;")})'>👁 View</button>
+            </div>
+        </div>`;
+    }
+
     // Full view for admin and follow-up
+
     return `<div class="record-card ${absent||correction?'absent':'complete'}">
         <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:6px">
             <div>
@@ -2950,7 +2981,7 @@ function renderAllRecords(filtered) {
     const empty = document.getElementById('allEmptyRecords');
     if (!records.length) { list.innerHTML=''; empty.classList.remove('hidden'); return; }
     empty.classList.add('hidden');
-    list.innerHTML = records.map(r => recordCard(r, 'admin')).join('');
+    list.innerHTML = records.map(r => recordCard(r, isSupervisor ? 'supervisor' : 'admin')).join('');
 }
 
 function renderWorkers() {
@@ -2958,7 +2989,7 @@ function renderWorkers() {
     const supervisors = Object.values(allUsers).filter(u => u.email !== ADMIN_EMAIL && !u.disabled && u.role === 'supervisor');
     renderSupervisorAccounts(supervisors);
     const el = document.getElementById('workersList');
-    if (!workers.length) { el.innerHTML='<div class="empty-state"><div class="empty-state-icon">👥</div><p>No workers yet. Add one above.</p></div>'; return; }
+    if (!workers.length) { el.innerHTML='<div class="empty-state"><div class="empty-state-icon">👥</div><p>No workers yet.</p></div>'; return; }
     el.innerHTML = workers.map(u => {
         const recs = allRecords.filter(r=>r.workerUid===u.uid);
         const today = new Date().toDateString();
@@ -2977,16 +3008,18 @@ function renderWorkers() {
                     <div style="font-size:12px;color:var(--text2)">📧 ${u.email}</div>
                     <div style="font-size:12px;color:var(--text2)">📱 ${u.phone||'N/A'}</div>
                 </div>
+                ${!isSupervisor ? `
                 <div style="display:flex;flex-direction:column;gap:4px">
                     <button class="btn-small" style="background:var(--primary);color:white" onclick="openEditWorker('${u.uid}','${(u.name||'').replace(/'/g,"&#39;")}','${u.phone||''}')">✏️ Edit</button>
                     <button class="btn-small btn-danger" onclick="deleteWorker('${u.uid}','${u.name}')">🗑 Remove</button>
-                </div>
+                </div>` : ''}
             </div>
+            ${!isSupervisor ? `
             <div style="background:${hasRange?'#e6ffed':'#fff3cd'};border-radius:6px;padding:6px 10px;margin-top:8px;font-size:12px;color:${hasRange?'#22863a':'#856404'}">
                 ${rangeText}
                 <button class="btn-small" style="background:var(--primary);color:white;margin-left:8px;padding:3px 8px" onclick="assignRange('${u.uid}','${u.name}',${hasRange?u.rangeStart:'null'},${hasRange?u.rangeEnd:'null'})">${hasRange?'Change':'Assign'}</button>
                 ${hasRange?`<button class="btn-small" style="background:#999;color:white;margin-left:4px;padding:3px 8px" onclick="clearRange('${u.uid}','${u.name}')">Clear</button>`:''}
-            </div>
+            </div>` : ''}
             <div class="worker-stats">
                 <div class="worker-stat"><div class="worker-stat-val">${recs.length}</div><div class="worker-stat-lbl">Properties</div></div>
                 <div class="worker-stat"><div class="worker-stat-val" style="color:var(--success)">${completeCount}</div><div class="worker-stat-lbl">Complete</div></div>
@@ -3382,6 +3415,29 @@ function switchAdminTab(tabId, btn) {
     document.querySelectorAll('#adminView .tab-btn').forEach(b=>b.classList.remove('active'));
     document.getElementById(tabId).classList.add('active');
     if (btn) btn.classList.add('active');
+    if (tabId === 'allrecords') { prepareRecordsTab(); renderAllRecords(getFilteredRecords()); }
+    if (tabId === 'workers') { prepareWorkersTab(); renderWorkers(); }
+}
+
+function prepareRecordsTab() {
+    if (!isSupervisor) {
+        document.getElementById('filterStatus').style.display = '';
+        document.getElementById('filterWorker').style.display = '';
+        document.getElementById('exportButtonsWrap').style.display = '';
+        return;
+    }
+    document.getElementById('filterStatus').value = 'complete';
+    document.getElementById('filterStatus').style.display = 'none';
+    document.getElementById('filterWorker').value = '';
+    document.getElementById('filterWorker').style.display = 'none';
+    document.getElementById('exportButtonsWrap').style.display = 'none';
+}
+
+function prepareWorkersTab() {
+    const show = !isSupervisor;
+    document.getElementById('addAccountBox').style.display = show ? '' : 'none';
+    document.getElementById('supervisorsSectionTitle').style.display = show ? '' : 'none';
+    document.getElementById('supervisorsList').style.display = show ? '' : 'none';
 }
 
 function showSaveSuccess(propId, isAbsent, offline) {
