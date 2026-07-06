@@ -467,7 +467,7 @@
                         <div class="stat-value" id="myFamilies">0</div>
                         <div class="stat-label">Households</div>
                         <div style="font-size:11px;color:#9ca3af;text-align:center;margin:6px 0 4px;text-transform:uppercase;letter-spacing:0.4px">Members per Household</div>
-                        <div id="myFamilySizes" style="display:flex;justify-content:center;flex-wrap:wrap;row-gap:4px;column-gap:8px;font-size:13px;color:var(--text)"></div>
+                        <div id="myFamilySizes" style="display:flex;flex-direction:column;align-items:center;gap:4px;font-size:13px;color:var(--text)"></div>
                     </div>
                     <div class="stat-card" style="grid-column:span 2;padding-bottom:14px">
                         <div class="stat-value" id="myPopulation">0</div>
@@ -564,7 +564,7 @@
                         <div class="stat-value" id="adminFamilies">0</div>
                         <div class="stat-label">Households</div>
                         <div style="font-size:11px;color:#9ca3af;text-align:center;margin:6px 0 4px;text-transform:uppercase;letter-spacing:0.4px">Members per Household</div>
-                        <div id="adminFamilySizes" style="display:flex;justify-content:center;flex-wrap:wrap;row-gap:4px;column-gap:8px;font-size:13px;color:var(--text)"></div>
+                        <div id="adminFamilySizes" style="display:flex;flex-direction:column;align-items:center;gap:4px;font-size:13px;color:var(--text)"></div>
                     </div>
                     <div class="stat-card" style="grid-column:span 2;padding-bottom:14px">
                         <div class="stat-value" id="adminPopulation">0</div>
@@ -960,7 +960,7 @@ const firebaseConfig = {
     appId: "1:610573950046:web:2b545f876953a4eb18a8cf"
 };
 const ADMIN_EMAIL = "enga018@gmail.com";
-const APP_VERSION = "v2.9.0";
+const APP_VERSION = "v2.9.1";
 
 
 firebase.initializeApp(firebaseConfig);
@@ -2444,21 +2444,27 @@ function renderPopHouseholds(prefix, records) {
         return a;
     }, {families:0,population:0,children:0,males:0,females:0,adults:0,adultMales:0,adultFemales:0,childMales:0,childFemales:0,familySizes:[]});
 
-    const sz1 = hh.familySizes.filter(n=>n===1).length;
-    const sz2_4 = hh.familySizes.filter(n=>n>=2&&n<=4).length;
-    const sz5_7 = hh.familySizes.filter(n=>n>=5&&n<=7).length;
-    const sz8_10 = hh.familySizes.filter(n=>n>=8&&n<=10).length;
-    const sz10plus = hh.familySizes.filter(n=>n>10).length;
-    const fsParts = [];
-    if (sz1) fsParts.push(`1: <b>${sz1}</b>`);
-    if (sz2_4) fsParts.push(`2-4: <b>${sz2_4}</b>`);
-    if (sz5_7) fsParts.push(`5-7: <b>${sz5_7}</b>`);
-    if (sz8_10) fsParts.push(`8-10: <b>${sz8_10}</b>`);
-    if (sz10plus) fsParts.push(`10+: <b>${sz10plus}</b>`);
+    const freq = {};
+    hh.familySizes.forEach(n => { freq[n] = (freq[n] || 0) + 1; });
+
+    const categories = [
+        { label: 'Small', min: 1, max: 3 },
+        { label: 'Medium', min: 4, max: 6 },
+        { label: 'Large', min: 7, max: 9 },
+        { label: 'Very Large', min: 10, max: Infinity }
+    ];
+    const categoryRows = categories.map(cat => {
+        const sizes = Object.keys(freq).map(Number).filter(n => n >= cat.min && n <= cat.max).sort((a,b)=>a-b);
+        if (!sizes.length) return '';
+        const total = sizes.reduce((sum,n)=>sum+freq[n],0);
+        const details = sizes.map(n => `${n}: <b>${freq[n]}</b>`).join(' <span style="color:#cbd5e1">|</span> ');
+        return `<div style="display:flex;justify-content:center;flex-wrap:wrap;row-gap:4px;column-gap:8px"><b>${cat.label} (${total}):</b> ${details}</div>`;
+    }).filter(Boolean);
+
     const set = (id,v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
     const hset = (id,v) => { const e = document.getElementById(id); if (e) e.innerHTML = v; };
     set(prefix+'Families', hh.families);
-    hset(prefix+'FamilySizes', fsParts.length ? fsParts.join(' <span style="color:#cbd5e1">|</span> ') : '<span style="color:#9ca3af">—</span>');
+    hset(prefix+'FamilySizes', categoryRows.length ? categoryRows.join('') : '<span style="color:#9ca3af">—</span>');
     set(prefix+'Population', hh.population);
     hset(prefix+'PopGender', `<span style="color:#2563eb"><b>${hh.males}</b> M</span> <span style="color:#cbd5e1">|</span> <span style="color:#db2777"><b>${hh.females}</b> F</span>`);
     set(prefix+'Adults', hh.population - hh.children);
