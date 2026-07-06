@@ -537,7 +537,6 @@
                 <div class="stat-card warning"><div class="stat-value" id="adminIncomplete">0</div><div class="stat-label">Incomplete</div></div>
             </div>
             <div class="stats-grid">
-                <div class="stat-card" style="background:var(--primary-tint);border-color:var(--primary-light)"><div class="stat-value" id="adminNeedsVerify">0</div><div class="stat-label">🔵 Needs Verification</div></div>
                 <div class="stat-card"><div class="stat-value" id="adminTodayTotal">0</div><div class="stat-label">Today Total</div></div>
                 <div class="stat-card warning"><div class="stat-value" id="adminTodayIncomplete">0</div><div class="stat-label">Today Incomplete</div></div>
             </div>
@@ -2908,11 +2907,9 @@ function renderAdminOverview() {
     const incompleteCount = allRecords.length - completed.length;
     const todayRecords = allRecords.filter(r=>r.localTimestamp&&new Date(r.localTimestamp).toDateString()===today);
     const todayIncomplete = todayRecords.filter(r=>needsFollowUp(r)).length;
-    const needsVerify = allRecords.filter(r=>correctionState(r)==='fixed').length;
 
     document.getElementById('adminTotal').textContent = allRecords.length;
     document.getElementById('adminIncomplete').textContent = incompleteCount;
-    document.getElementById('adminNeedsVerify').textContent = needsVerify;
     document.getElementById('adminTodayTotal').textContent = todayRecords.length;
     document.getElementById('adminTodayIncomplete').textContent = todayIncomplete;
 
