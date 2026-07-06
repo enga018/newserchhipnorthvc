@@ -914,7 +914,7 @@ const firebaseConfig = {
     appId: "1:610573950046:web:2b545f876953a4eb18a8cf"
 };
 const ADMIN_EMAIL = "enga018@gmail.com";
-const APP_VERSION = "v2.14.4";
+const APP_VERSION = "v2.14.5";
 
 
 firebase.initializeApp(firebaseConfig);
@@ -2186,11 +2186,11 @@ function householdStats(r) {
     // Roll a property's families/members into headline counts.
     // Children are auto-derived (age < 18); blank/unknown age counts as neither child nor adult.
     const fams = Array.isArray(r.families) ? r.families : [];
+    const resFams = fams.filter(f => !f.type || f.type === 'Residential');
     let population = 0, males = 0, females = 0, children = 0, adults = 0;
     let childMales = 0, childFemales = 0, adultMales = 0, adultFemales = 0;
-    const familySizes = fams.map(f => (Array.isArray(f && f.members) ? f.members : []).length);
-    for (const f of fams) {
-        if (f.type && f.type !== 'Residential') continue;
+    const familySizes = resFams.map(f => (Array.isArray(f && f.members) ? f.members : []).length);
+    for (const f of resFams) {
         const members = Array.isArray(f && f.members) ? f.members : [];
         for (const m of members) {
             population++;
@@ -2206,7 +2206,7 @@ function householdStats(r) {
             }
         }
     }
-    return { families: fams.length, population, males, females, children, adults, childMales, childFemales, adultMales, adultFemales, familySizes };
+    return { families: resFams.length, population, males, females, children, adults, childMales, childFemales, adultMales, adultFemales, familySizes };
 }
 function correctionState(r) {
     // none -> pending (worker must fix) -> fixed (awaiting admin) -> verified
@@ -2491,13 +2491,22 @@ function stackedBarChart(map, emptyMsg, colors, preserveOrder){
 // Household summary line (+ optional full family/member breakdown) for record views.
 function householdHtml(r, full) {
     const s = householdStats(r);
-    if (!s.families) {
-        const totalUnits = (r.families||[]).length;
-        if (totalUnits > 0) return '<div class="record-detail">🏪 ' + totalUnits + ' unit' + (totalUnits>1?'s':'') + ' · no residential / no population</div>';
-        return '<div class="record-detail">🏠 Vacant / no household recorded</div>';
-    }
     const totalUnits = (r.families||[]).length;
-    const summary = `<div class="record-detail">🏪 <b>${totalUnits}</b> unit${totalUnits>1?'s':''} · 👨‍👩‍👧 <b>${s.families}</b> ${s.families===1?'family':'families'} · <b>${s.population}</b> ${s.population===1?'person':'people'} · ${s.children} children · ${s.males}M / ${s.females}F</div>`;
+    const commCount = (r.families||[]).filter(f => f.type === 'Commercial').length;
+    const instCount = (r.families||[]).filter(f => f.type === 'Institutional/Public').length;
+    if (!s.families) {
+        if (!totalUnits) return '<div class="record-detail">🏠 Vacant / no household recorded</div>';
+        const parts = ['🏪 ' + totalUnits + ' unit' + (totalUnits>1?'s':'')];
+        if (commCount) parts.push(commCount + ' commercial');
+        if (instCount) parts.push(instCount + ' institutional/public');
+        parts.push('no residential / no population');
+        return '<div class="record-detail">' + parts.join(' · ') + '</div>';
+    }
+    const unitParts = ['🏪 <b>' + totalUnits + '</b> unit' + (totalUnits>1?'s':'')];
+    if (commCount) unitParts.push('<b>' + commCount + '</b> commercial');
+    if (instCount) unitParts.push('<b>' + instCount + '</b> institutional/public');
+    unitParts.push('👨‍👩‍👧 <b>' + s.families + '</b> ' + (s.families===1?'family':'families') + ' · <b>' + s.population + '</b> ' + (s.population===1?'person':'people') + ' · ' + s.children + ' children · ' + s.males + 'M / ' + s.females + 'F');
+    const summary = '<div class="record-detail">' + unitParts.join(' · ') + '</div>';
     if (!full) return summary;
     const fams = (r.families||[]).map((f,i)=>{
         const ut = f.type || 'Residential';
