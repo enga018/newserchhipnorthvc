@@ -2472,8 +2472,13 @@ function renderPopHouseholds(prefix, records) {
 
     const set = (id,v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
     const hset = (id,v) => { const e = document.getElementById(id); if (e) e.innerHTML = v; };
+    const detailSizes = Object.keys(freq).map(Number).sort((a,b)=>a-b);
+    const detailLine = detailSizes.length
+        ? `<div style="font-size:11px;color:var(--text2);margin-top:6px;text-align:center">Members: ${detailSizes.map(n=>`${n}: <b>${freq[n]}</b>`).join(' <span style="color:#cbd5e1">|</span> ')}</div>`
+        : '';
+
     set(prefix+'Families', hh.families);
-    hset(prefix+'FamilySizes', stackedBarChart(hhMap, 'No data', hhColors, true));
+    hset(prefix+'FamilySizes', stackedBarChart(hhMap, 'No data', hhColors, true) + detailLine);
     set(prefix+'Population', hh.population);
     hset(prefix+'PopGender', stackedBarChart({Male: hh.males, Female: hh.females}, 'No data', ['#2563eb','#db2777'], true));
     set(prefix+'Children', hh.children);
