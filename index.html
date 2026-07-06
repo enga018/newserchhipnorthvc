@@ -914,7 +914,7 @@ const firebaseConfig = {
     appId: "1:610573950046:web:2b545f876953a4eb18a8cf"
 };
 const ADMIN_EMAIL = "enga018@gmail.com";
-const APP_VERSION = "v2.14.3";
+const APP_VERSION = "v2.14.4";
 
 
 firebase.initializeApp(firebaseConfig);
@@ -1617,7 +1617,7 @@ function addMember(fi){ householdDraft[fi].members.push({ name:'', gender:'', ag
 function removeMember(fi,mi){ householdDraft[fi].members.splice(mi,1); renderUnits(); }
 function updateFamilyField(fi,field,value){ householdDraft[fi][field] = value; refreshUnitSummary(); }
 function updateMemberField(fi,mi,field,value){ householdDraft[fi].members[mi][field] = value; refreshUnitSummary(); }
-function updateUnitType(fi, value){ householdDraft[fi].type = value; if (value === 'Institutional/Public') householdDraft[fi].occupied = true; renderUnits(); }
+function updateUnitType(fi, value){ householdDraft[fi].type = value; if (value === 'Institutional/Public') householdDraft[fi].occupied = true; if (value !== 'Residential') { householdDraft[fi].members = []; householdDraft[fi].contact = ''; } renderUnits(); }
 function updateUnitOccupied(fi, checked){ householdDraft[fi].occupied = checked; renderUnits(); }
 
 // Backward-compat: older drafts/records stored a separate headName. Fold it in as a Head member.
@@ -1749,10 +1749,11 @@ function renderUnits(){
 function cleanHouseholds(draft){
     return (draft || [])
         .map(f => {
-            const members = (f.members||[])
+            const isRes = f.type === 'Residential';
+            const members = isRes ? (f.members||[])
                 .map(m => ({ name:(m.name||'').trim(), gender:m.gender||'', age:(m.age===''||m.age==null)?'':Number(m.age), relation:m.relation||'' }))
-                .filter(m => m.name || m.age !== '' || m.gender || m.relation);
-            return { type: f.type || 'Residential', occupied: f.occupied !== false, label: (f.label||'').trim(), headName: familyHeadName({ members }), contact:(f.contact||'').trim(), members };
+                .filter(m => m.name || m.age !== '' || m.gender || m.relation) : [];
+            return { type: f.type || 'Residential', occupied: f.occupied !== false, label: (f.label||'').trim(), headName: isRes ? familyHeadName({ members }) : '', contact: isRes ? (f.contact||'').trim() : '', members };
         })
         .filter(f => f.contact || f.members.length || f.label);
 }
@@ -2189,6 +2190,7 @@ function householdStats(r) {
     let childMales = 0, childFemales = 0, adultMales = 0, adultFemales = 0;
     const familySizes = fams.map(f => (Array.isArray(f && f.members) ? f.members : []).length);
     for (const f of fams) {
+        if (f.type && f.type !== 'Residential') continue;
         const members = Array.isArray(f && f.members) ? f.members : [];
         for (const m of members) {
             population++;
@@ -2841,7 +2843,7 @@ function renderAeUnits() {
     document.getElementById('aePropertyType').innerHTML = '🏠 Property Type: <b>' + esc(derivePropertyType(aeFamilies)) + '</b> (derived from units)';
 }
 
-function aeUpdateUnitType(fi, value){ aeFamilies[fi].type = value; if (value === 'Institutional/Public') aeFamilies[fi].occupied = true; }
+function aeUpdateUnitType(fi, value){ aeFamilies[fi].type = value; if (value === 'Institutional/Public') aeFamilies[fi].occupied = true; if (value !== 'Residential') { aeFamilies[fi].members = []; aeFamilies[fi].contact = ''; } }
 function aeAddUnit(){ aeFamilies.push({ type:'Residential', occupied:true, label:'', contact:'', members:[{ name:'', gender:'', age:'', relation:'Self' }] }); renderAeUnits(); }
 function aeRemoveUnit(fi){ aeFamilies.splice(fi, 1); }
 function aeAddMember(fi){ if (!aeFamilies[fi].members) aeFamilies[fi].members = []; aeFamilies[fi].members.push({ name:'', gender:'', age:'', relation:'' }); }
@@ -2880,6 +2882,8 @@ async function saveAdminEdit() {
         data.designation = '';
         data.isAbsent = !data.ownerName || !data.fatherHusbandName || !contact;
     }
+    // Strip member/contact data from non-Residential units
+    aeFamilies.forEach(f => { if (f.type !== 'Residential') { f.members = []; f.contact = ''; } });
     if (aeFamilies.some(u => u.type !== 'Residential' && u.occupied && !(u.label||'').trim())) {
         data.isAbsent = true;
     }
