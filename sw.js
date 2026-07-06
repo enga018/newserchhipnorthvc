@@ -3,8 +3,8 @@ const params = new URLSearchParams(self.location.search);
 const appVersion = params.get('v') || 'unknown';
 const CACHE_NAME = 'property-tax-' + appVersion;
 const urlsToCache = [
-  './',
-  './index.html',
+  './app/',
+  './app/index.html',
   './manifest.json',
   './icons/icon-96.png',
   './icons/icon-192.png',
