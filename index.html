@@ -449,6 +449,10 @@
                 <div id="myBuildingBreakdown" style="font-size:13px;color:var(--text2);line-height:2"></div>
             </div>
             <div class="stat-card" style="margin-bottom:10px">
+                <div class="section-title">🏠 Property Types</div>
+                <div id="myPropertyBreakdown" style="font-size:13px;color:var(--text2);line-height:2"></div>
+            </div>
+            <div class="stat-card" style="margin-bottom:10px">
                 <div class="section-title">🏛️ Owner Types</div>
                 <div id="myOwnerBreakdown" style="font-size:13px;color:var(--text2);line-height:2"></div>
             </div>
@@ -529,6 +533,10 @@
             <div class="stat-card" style="margin-bottom:12px">
                 <div class="section-title">🏗️ Building Types</div>
                 <div id="adminBuildingBreakdown" style="font-size:13px;color:var(--text2);line-height:2"></div>
+            </div>
+            <div class="stat-card" style="margin-bottom:12px">
+                <div class="section-title">🏠 Property Types</div>
+                <div id="adminPropertyBreakdown" style="font-size:13px;color:var(--text2);line-height:2"></div>
             </div>
             <div class="stat-card" style="margin-bottom:12px">
                 <div class="section-title">🏛️ Owner Types</div>
@@ -2353,6 +2361,12 @@ function renderMyRecords(records) {
     const el = document.getElementById('myBuildingBreakdown');
     if (el) el.innerHTML = stackedBarChart(bc, 'No records yet');
 
+    // Property type breakdown (completed only)
+    const pc = {};
+    completed.forEach(r => { pc[r.propertyType] = (pc[r.propertyType]||0)+1; });
+    const pel = document.getElementById('myPropertyBreakdown');
+    if (pel) pel.innerHTML = stackedBarChart(pc, 'No records yet');
+
     // Owner type breakdown (completed only)
     const oc = {};
     completed.forEach(r => { const k = r.ownerCategory||'Individual'; oc[k] = (oc[k]||0)+1; });
@@ -2919,9 +2933,10 @@ function renderAdminOverview() {
 
     renderScreeningCounter();
 
-    const bc={}, oc={};
-    completed.forEach(r=>{ bc[r.buildingType]=(bc[r.buildingType]||0)+1; const ok=r.ownerCategory||'Individual'; oc[ok]=(oc[ok]||0)+1; });
+    const bc={}, pc={}, oc={};
+    completed.forEach(r=>{ bc[r.buildingType]=(bc[r.buildingType]||0)+1; pc[r.propertyType]=(pc[r.propertyType]||0)+1; const ok=r.ownerCategory||'Individual'; oc[ok]=(oc[ok]||0)+1; });
     document.getElementById('adminBuildingBreakdown').innerHTML = stackedBarChart(bc, 'No data');
+    document.getElementById('adminPropertyBreakdown').innerHTML = stackedBarChart(pc, 'No data');
     document.getElementById('adminOwnerBreakdown').innerHTML = stackedBarChart(oc, 'No data');
 
     renderPopHouseholds('admin', completed);
