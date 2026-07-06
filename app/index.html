@@ -653,6 +653,13 @@
                 <button class="btn-primary" onclick="flagMissingMemberData()">🔍 Flag Records with Missing Member Data</button>
                 <div id="flagMissingAlert" style="margin-top:8px"></div>
             </div>
+            <div style="background:var(--bg);border-radius:8px;padding:12px;margin-bottom:12px">
+                <div style="font-size:13px;color:var(--text2);margin-bottom:10px">
+                    Some older records may have family members with relation <b>"Head"</b> instead of <b>"Self"</b>. This one-time action converts them all to "Self" so the head of family is consistently identified. Safe to run more than once — only members with "Head" are touched.
+                </div>
+                <button class="btn-primary" onclick="normalizeHeadToSelf()">🔄 Normalize "Head" → "Self"</button>
+                <div id="normalizeHeadAlert" style="margin-top:8px"></div>
+            </div>
             <div class="section-title" style="color:var(--warning)">⚠️ Danger Zone</div>
             <div style="background:#ffebee;border:1px solid #ea4c89;border-radius:8px;padding:12px">
                 <div style="font-size:13px;color:#cb2431;margin-bottom:10px">
@@ -940,7 +947,7 @@ const firebaseConfig = {
     appId: "1:610573950046:web:2b545f876953a4eb18a8cf"
 };
 const ADMIN_EMAIL = "enga018@gmail.com";
-const APP_VERSION = "v2.16.1";
+const APP_VERSION = "v2.16.2";
 
 
 firebase.initializeApp(firebaseConfig);
@@ -1628,8 +1635,8 @@ function formatPropertyId(raw){ const n = (raw||'').trim().replace(/^NSN-/i,'').
 // falls back to a position-derived label for older families that predate that field.
 function unitDisplayId(i){ return 'Unit ' + (i+1); }
 
-// The head member is the one tagged 'Self', else the first member.
-function familyHead(f){ const ms = (f && f.members) || []; return ms.find(m => m.relation === 'Self') || ms[0] || null; }
+// The head member is the one tagged 'Self' (or legacy 'Head'), else the first member.
+function familyHead(f){ const ms = (f && f.members) || []; return ms.find(m => m.relation === 'Self' || m.relation === 'Head') || ms[0] || null; }
 function familyHeadName(f){ const h = familyHead(f); return h && h.name ? h.name : ''; }
 
 // Derive property type from unit types (considers vacant units too so an all-vacant
@@ -1668,7 +1675,7 @@ function updateUnitOccupied(fi, checked){ householdDraft[fi].occupied = checked;
 function normalizeFamilies(families){
     return (families || []).map(f => {
         const members = Array.isArray(f.members) ? f.members.slice() : [];
-        if (f.headName && !members.some(m => m.relation === 'Self')) {
+        if (f.headName && !members.some(m => m.relation === 'Self' || m.relation === 'Head')) {
             members.unshift({ name: f.headName, gender:'', age:'', relation:'Self' });
         }
         return { type: f.type || 'Residential', occupied: f.occupied !== false, label: f.label || '', familyId: f.familyId || '', contact: f.contact || '', members };
@@ -1747,7 +1754,7 @@ function renderUnits(){
                     <input type="number" min="0" max="120" value="${esc(head.age||'')}" placeholder="Age *" required oninput="updateMemberField(${fi},0,'age',this.value)">
                     <input type="tel" value="${esc(f.contact||'')}" placeholder="Contact (10-digit)" pattern="[0-9]{10}" oninput="updateFamilyField(${fi},'contact',this.value)" style="grid-column:1 / -1">
                     <select disabled style="grid-column:1 / -1;opacity:0.65;cursor:not-allowed">
-                        <option value="Self" selected>Self</option>
+                        <option value="${esc(head.relation||'Self')}" selected>${esc(head.relation||'Self')}</option>
                     </select>
                 </div>
             </div>
@@ -2919,7 +2926,7 @@ function renderAeUnits() {
                         <input type="number" min="0" max="120" value="${esc(head.age||'')}" placeholder="Age" onchange="aeFamilies[${fi}].members[0].age=this.value" style="padding:8px 10px;font-size:13px;border:1px solid var(--border);border-radius:6px">
                         <input type="tel" value="${esc(f.contact||'')}" placeholder="Contact (10-digit)" pattern="[0-9]{10}" onchange="aeFamilies[${fi}].contact=this.value" style="grid-column:1 / -1;padding:8px 10px;font-size:13px;border:1px solid var(--border);border-radius:6px">
                         <select disabled style="grid-column:1 / -1;padding:8px 10px;font-size:13px;min-height:auto;border:1px solid var(--border);border-radius:6px;opacity:0.65;cursor:not-allowed">
-                            <option value="Self" selected>Self</option>
+                            <option value="${esc(head.relation||'Self')}" selected>${esc(head.relation||'Self')}</option>
                         </select>
                     </div>
                 </div>
@@ -3405,6 +3412,44 @@ async function flagMissingMemberData() {
         box.innerHTML = flaggedRecords
             ? `<div class="alert alert-success">✓ Flagged ${flaggedRecords} record${flaggedRecords===1?'':'s'} with missing member data.</div>`
             : '<div class="alert alert-success">✓ Nothing to flag — all members have age and gender.</div>';
+    } catch(e) { box.innerHTML = `<div class="alert alert-error">${e.message}</div>`; }
+}
+
+// One-time backfill: scan all records and convert any family member relation from
+// "Head" to "Self" for consistency. Idempotent — skips records that don't need it.
+async function normalizeHeadToSelf() {
+    const box = document.getElementById('normalizeHeadAlert');
+    box.innerHTML = '<div class="alert alert-info">🔄 Scanning records…</div>';
+    try {
+        const snap = await db.collection('records').get();
+        let updatedRecords = 0, updatedMembers = 0;
+        let batch = db.batch();
+        let opsInBatch = 0;
+        for (const doc of snap.docs) {
+            const data = doc.data();
+            const families = Array.isArray(data.families) ? data.families : [];
+            if (!families.length) continue;
+            let changed = false;
+            const next = families.map(f => {
+                const members = Array.isArray(f.members) ? f.members : [];
+                let familyChanged = false;
+                const updated = members.map(m => {
+                    if (m.relation === 'Head') { familyChanged = true; updatedMembers++; return { ...m, relation: 'Self' }; }
+                    return m;
+                });
+                if (familyChanged) { changed = true; return { ...f, members: updated }; }
+                return f;
+            });
+            if (!changed) continue;
+            batch.update(doc.ref, { families: next });
+            updatedRecords++;
+            opsInBatch++;
+            if (opsInBatch >= 400) { await batch.commit(); batch = db.batch(); opsInBatch = 0; }
+        }
+        if (opsInBatch > 0) await batch.commit();
+        box.innerHTML = updatedMembers
+            ? `<div class="alert alert-success">✓ Normalized ${updatedMembers} member${updatedMembers===1?'':'s'} (Head → Self) across ${updatedRecords} record${updatedRecords===1?'':'s'}.</div>`
+            : '<div class="alert alert-success">✓ Nothing to do — all family heads already use "Self".</div>';
     } catch(e) { box.innerHTML = `<div class="alert alert-error">${e.message}</div>`; }
 }
 
