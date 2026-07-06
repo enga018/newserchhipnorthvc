@@ -938,7 +938,7 @@ const firebaseConfig = {
     appId: "1:610573950046:web:2b545f876953a4eb18a8cf"
 };
 const ADMIN_EMAIL = "enga018@gmail.com";
-const APP_VERSION = "v2.13.6";
+const APP_VERSION = "v2.13.7";
 
 
 firebase.initializeApp(firebaseConfig);
@@ -2879,7 +2879,46 @@ function renderAeUnits() {
             return `<div style="font-size:13px;color:var(--text2);padding:4px 0">🏠 Unit ${fi+1}: ${esc(UNIT_TYPE_LABELS[f.type]||f.type)} — Vacant</div>`;
         }
         if (isRes) {
-            return `<div style="font-size:13px;color:var(--text);padding:4px 0">🏪 Unit ${fi+1}: ${esc(UNIT_TYPE_LABELS[f.type]||f.type)} · ${memberCount} ${memberCount===1?'member':'members'} <span style="font-size:11px;color:var(--text2)">(read-only)</span></div>`;
+            const head = (f.members||[])[0] || {};
+            const others = (f.members||[]).slice(1);
+            return `<div style="margin-bottom:8px;padding:10px;border:1px solid var(--border);border-radius:8px">
+                <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:8px">🏪 Unit ${fi+1}: ${esc(UNIT_TYPE_LABELS[f.type]||f.type)} · ${memberCount} ${memberCount===1?'member':'members'}</div>
+                <div style="background:var(--primary-tint);border-radius:8px;padding:10px;margin-bottom:8px">
+                    <div style="font-size:12px;font-weight:600;color:var(--primary);margin-bottom:6px">Head of Family</div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+                        <input type="text" value="${esc(head.name||'')}" placeholder="Name" onchange="aeFamilies[${fi}].members[0].name=this.value" style="grid-column:1 / -1;padding:8px 10px;font-size:13px;border:1px solid var(--border);border-radius:6px">
+                        <select onchange="aeFamilies[${fi}].members[0].gender=this.value" style="padding:8px 10px;font-size:13px;min-height:auto;border:1px solid var(--border);border-radius:6px">
+                            <option value="">Gender</option>
+                            <option value="Male" ${head.gender==='Male'?'selected':''}>Male</option>
+                            <option value="Female" ${head.gender==='Female'?'selected':''}>Female</option>
+                        </select>
+                        <input type="number" min="0" max="120" value="${esc(head.age||'')}" placeholder="Age" onchange="aeFamilies[${fi}].members[0].age=this.value" style="padding:8px 10px;font-size:13px;border:1px solid var(--border);border-radius:6px">
+                        <select disabled style="grid-column:1 / -1;padding:8px 10px;font-size:13px;min-height:auto;border:1px solid var(--border);border-radius:6px;opacity:0.65;cursor:not-allowed">
+                            <option value="Self" selected>Self</option>
+                        </select>
+                    </div>
+                </div>
+                ${others.length > 0 ? `
+                <div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:6px">Other Members</div>
+                ${others.map((m, mi) => {
+                    const idx = mi + 1;
+                    return `<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;border-top:1px dashed var(--border);padding-top:8px;margin-bottom:6px">
+                        <input type="text" value="${esc(m.name||'')}" placeholder="Member ${mi+1}" onchange="aeFamilies[${fi}].members[${idx}].name=this.value" style="grid-column:1 / -1;padding:8px 10px;font-size:13px;border:1px solid var(--border);border-radius:6px">
+                        <select onchange="aeFamilies[${fi}].members[${idx}].gender=this.value" style="padding:8px 10px;font-size:13px;min-height:auto;border:1px solid var(--border);border-radius:6px">
+                            <option value="">Gender</option>
+                            <option value="Male" ${m.gender==='Male'?'selected':''}>Male</option>
+                            <option value="Female" ${m.gender==='Female'?'selected':''}>Female</option>
+                        </select>
+                        <input type="number" min="0" max="120" value="${esc(m.age||'')}" placeholder="Age" onchange="aeFamilies[${fi}].members[${idx}].age=this.value" style="padding:8px 10px;font-size:13px;border:1px solid var(--border);border-radius:6px">
+                        <select onchange="aeFamilies[${fi}].members[${idx}].relation=this.value" style="padding:8px 10px;font-size:13px;min-height:auto;border:1px solid var(--border);border-radius:6px">
+                            <option value="">Relation</option>
+                            ${RELATIONS.filter(rel=>rel!=='Self').map(rel=>`<option value="${rel}" ${m.relation===rel?'selected':''}>${rel}</option>`).join('')}
+                        </select>
+                        <span></span>
+                    </div>`;
+                }).join('')}
+                ` : ''}
+            </div>`;
         }
         const aeLabel = isComm ? 'Business / Shop Name' : 'Facility / Institution Name';
         const aePlaceholder = isComm ? 'e.g. Corner shop, Bank, Godown' : 'e.g. Church hall, School wing, Office';
@@ -2927,6 +2966,9 @@ async function saveAdminEdit() {
         data.isAbsent = !data.ownerName || !data.fatherHusbandName || !contact;
     }
     if (aeFamilies.some(u => u.type !== 'Residential' && u.occupied && !(u.label||'').trim())) {
+        data.isAbsent = true;
+    }
+    if (aeFamilies.some(u => u.type === 'Residential' && u.occupied && familyMembersIncomplete([u]))) {
         data.isAbsent = true;
     }
     data.families = aeFamilies;
