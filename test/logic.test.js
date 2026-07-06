@@ -89,7 +89,7 @@ test("needsFollowUp: admin-flagged corrections need follow-up even if present", 
 /* ---------------- householdStats ---------------- */
 
 test("householdStats: missing/empty families is all zeros", () => {
-  const zero = { families: 0, population: 0, males: 0, females: 0, others: 0, children: 0, adults: 0, childMales: 0, childFemales: 0, adultMales: 0, adultFemales: 0, familySizes: [] };
+  const zero = { families: 0, population: 0, males: 0, females: 0, children: 0, adults: 0, childMales: 0, childFemales: 0, adultMales: 0, adultFemales: 0, familySizes: [] };
   assert.deepEqual(householdStats({}), zero);
   assert.deepEqual(householdStats({ families: [] }), zero);
 });
@@ -101,17 +101,16 @@ test("householdStats: counts families, population and gender split", () => {
       { name: "B", gender: "Female", age: 38, relation: "Spouse" },
     ]},
     { headName: "C", members: [
-      { name: "C", gender: "Other", age: 25, relation: "Head" },
+      { name: "C", gender: "Female", age: 25, relation: "Head" },
     ]},
   ]};
   const s = householdStats(r);
   assert.equal(s.families, 2);
   assert.equal(s.population, 3);
   assert.equal(s.males, 1);
-  assert.equal(s.females, 1);
-  assert.equal(s.others, 1);
+  assert.equal(s.females, 2);
   assert.equal(s.adultMales, 1);
-  assert.equal(s.adultFemales, 1);
+  assert.equal(s.adultFemales, 2);
   assert.equal(s.childMales, 0);
   assert.equal(s.childFemales, 0);
   assert.deepEqual(s.familySizes, [2, 1]);
@@ -133,16 +132,17 @@ test("householdStats: child boundary is age < 18 (17 child, 18 adult)", () => {
   assert.deepEqual(s.familySizes, [3]);
 });
 
-test("householdStats: blank/unknown gender is not counted as others", () => {
+test("householdStats: blank/unknown gender is not counted in gender totals", () => {
   const r = { families: [{ members: [
     { name: "A", gender: "", age: 30 },
     { name: "B", age: 25 },
-    { name: "C", gender: "Other", age: 20 },
+    { name: "C", gender: "", age: 20 },
   ]}]};
   const s = householdStats(r);
   assert.equal(s.population, 3);
-  assert.equal(s.others, 1); // only explicit "Other" counts
-  assert.equal(s.adultMales, 0); // blank gender not counted
+  assert.equal(s.males, 0);
+  assert.equal(s.females, 0);
+  assert.equal(s.adultMales, 0);
   assert.equal(s.adultFemales, 0);
   assert.equal(s.childMales, 0);
   assert.equal(s.childFemales, 0);
