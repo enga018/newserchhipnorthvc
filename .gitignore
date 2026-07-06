@@ -2,3 +2,9 @@ node_modules/
 .DS_Store
 *.swp
 vibe_images/
+service-account-*.json
+*-firebase-adminsdk-*.json
+users.json
+users-new.json
+migrate.js
+migrate-records.js

@@ -939,15 +939,15 @@
 <script>
 // ========== FIREBASE CONFIG ==========
 const firebaseConfig = {
-    apiKey: "AIzaSyA52OUpDLqbV0x57QP_Nen48BFzYlJb0tc",
-    authDomain: "property-tax-collector-96db4.firebaseapp.com",
-    projectId: "property-tax-collector-96db4",
-    storageBucket: "property-tax-collector-96db4.firebasestorage.app",
-    messagingSenderId: "610573950046",
-    appId: "1:610573950046:web:2b545f876953a4eb18a8cf"
+    apiKey: "AIzaSyCkOVmm1cndO_O7M_82RCXmaJey4oYKyaE",
+    authDomain: "newserchhipnorthvc.firebaseapp.com",
+    projectId: "newserchhipnorthvc",
+    storageBucket: "newserchhipnorthvc.firebasestorage.app",
+    messagingSenderId: "547385765757",
+    appId: "1:547385765757:web:df18cd27e9161b7d1c2614"
 };
 const ADMIN_EMAIL = "enga018@gmail.com";
-const APP_VERSION = "v2.16.2";
+const APP_VERSION = "v2.17.0";
 
 
 firebase.initializeApp(firebaseConfig);
@@ -1649,7 +1649,7 @@ function derivePropertyType(units){
 }
 
 function addUnit(){
-    householdDraft.push({ type:'Residential', occupied:true, label:'', contact:'', members:[{ name:'', gender:'', age:'', relation:'Self' }] });
+    householdDraft.push({ type:'Residential', occupied:true, label:'', contact:'', isTemporaryResidence:false, members:[{ name:'', gender:'', age:'', relation:'Self' }] });
     renderUnits();
 }
 function removeUnit(fi){ householdDraft.splice(fi,1); renderUnits(); }
@@ -1678,7 +1678,7 @@ function normalizeFamilies(families){
         if (f.headName && !members.some(m => m.relation === 'Self' || m.relation === 'Head')) {
             members.unshift({ name: f.headName, gender:'', age:'', relation:'Self' });
         }
-        return { type: f.type || 'Residential', occupied: f.occupied !== false, label: f.label || '', familyId: f.familyId || '', contact: f.contact || '', members };
+        return { type: f.type || 'Residential', occupied: f.occupied !== false, label: f.label || '', familyId: f.familyId || '', contact: f.contact || '', isTemporaryResidence: f.isTemporaryResidence || false, members };
     });
 }
 
@@ -1757,6 +1757,10 @@ function renderUnits(){
                         <option value="${esc(head.relation||'Self')}" selected>${esc(head.relation||'Self')}</option>
                     </select>
                 </div>
+                <div style="margin-top:8px;display:flex;align-items:center;gap:8px">
+                    <input type="checkbox" id="tempResidence-${fi}" ${f.isTemporaryResidence?'checked':''} onchange="updateFamilyField(${fi},'isTemporaryResidence',this.checked)" style="width:auto;cursor:pointer">
+                    <label for="tempResidence-${fi}" style="font-size:13px;color:var(--text);cursor:pointer">Temporary Residence</label>
+                </div>
             </div>
             ${otherMembers.length > 0 ? `
             <div style="font-size:13px;font-weight:600;color:var(--text);margin:8px 0 6px">Other Members</div>
@@ -1804,7 +1808,7 @@ function cleanHouseholds(draft){
             const members = isRes ? (f.members||[])
                 .map(m => ({ name:(m.name||'').trim(), gender:m.gender||'', age:(m.age===''||m.age==null)?'':Number(m.age), relation:m.relation||'' }))
                 .filter(m => m.name || m.age !== '' || m.gender || m.relation) : [];
-            return { type: f.type || 'Residential', occupied: f.occupied !== false, label: (f.label||'').trim(), headName: isRes ? familyHeadName({ members }) : '', contact: isRes ? (f.contact||'').trim() : '', members };
+            return { type: f.type || 'Residential', occupied: f.occupied !== false, label: (f.label||'').trim(), headName: isRes ? familyHeadName({ members }) : '', contact: isRes ? (f.contact||'').trim() : '', isTemporaryResidence: f.isTemporaryResidence || false, members };
         })
         .filter(f => f.contact || f.members.length || f.label);
 }
@@ -2100,7 +2104,7 @@ function startEditRecord(r) {
     householdDraft = normalizeFamilies(Array.isArray(r.families) ? JSON.parse(JSON.stringify(r.families)) : []);
     // If old record has no families, create one default Residential unit
     if (householdDraft.length === 0) {
-        householdDraft = [{ type:'Residential', occupied:true, label:'', contact:'', members:[{ name:'', gender:'', age:'', relation:'Self' }] }];
+        householdDraft = [{ type:'Residential', occupied:true, label:'', contact:'', isTemporaryResidence:false, members:[{ name:'', gender:'', age:'', relation:'Self' }] }];
     }
     renderUnits();
     if (r.photo) {
