@@ -439,18 +439,15 @@
         <div id="myrecords" class="form-section">
             <div class="section-title">My Work Summary</div>
             <div class="stats-grid">
-                <div class="stat-card"><div class="stat-value" id="myTotal">0</div><div class="stat-label">Total Done</div></div>
-                <div class="stat-card"><div class="stat-value" id="myComplete" style="color:var(--success)">0</div><div class="stat-label">Complete</div></div>
-                <div class="stat-card"><div class="stat-value" id="myAbsent" style="color:var(--warning)">0</div><div class="stat-label">Incomplete</div></div>
-                <div class="stat-card"><div class="stat-value" id="myToday">0</div><div class="stat-label">Today</div></div>
-            </div>
-            <div class="stat-card" style="margin-bottom:10px">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-                    <span style="font-size:13px;font-weight:600;color:var(--text)">Completion</span>
-                    <span id="myCompletePct" style="font-size:15px;font-weight:700;color:var(--success)">0%</span>
+                <div class="stat-card">
+                    <div class="stat-value" id="myTotal">0</div>
+                    <div class="stat-label">Total Done</div>
+                    <div style="font-size:12px;color:var(--warning);margin-top:2px" id="myTotalIncomplete"></div>
                 </div>
-                <div style="background:var(--bg);border-radius:8px;height:10px;overflow:hidden">
-                    <div id="myCompleteBar" style="background:linear-gradient(90deg,#22863a,#2ea043);height:100%;width:0%;transition:width 0.4s"></div>
+                <div class="stat-card">
+                    <div class="stat-value" id="myToday">0</div>
+                    <div class="stat-label">Today</div>
+                    <div style="font-size:12px;color:var(--warning);margin-top:2px" id="myTodayIncomplete"></div>
                 </div>
             </div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
@@ -472,8 +469,8 @@
                 <div class="stats-grid" style="margin-bottom:0">
                     <div class="stat-card" style="grid-column:span 2;padding-bottom:14px">
                         <div class="stat-value" id="myFamilies">0</div>
-                        <div class="stat-label">Families</div>
-                        <div style="font-size:11px;color:#9ca3af;text-align:center;margin:6px 0 4px;text-transform:uppercase;letter-spacing:0.4px">Members per Family</div>
+                        <div class="stat-label">Households</div>
+                        <div style="font-size:11px;color:#9ca3af;text-align:center;margin:6px 0 4px;text-transform:uppercase;letter-spacing:0.4px">Members per Household</div>
                         <div id="myFamilySizes" style="display:flex;justify-content:center;flex-wrap:wrap;row-gap:4px;column-gap:8px;font-size:13px;color:var(--text)"></div>
                     </div>
                     <div class="stat-card" style="grid-column:span 2;padding-bottom:14px">
@@ -542,21 +539,18 @@
 
         <!-- OVERVIEW -->
         <div id="overview" class="form-section active">
-            <div class="stats-grid">
-                <div class="stat-card"><div class="stat-value" id="adminTotal">0</div><div class="stat-label">Total Records</div></div>
-                <div class="stat-card"><div class="stat-value" id="adminToday">0</div><div class="stat-label">Today</div></div>
-                <div class="stat-card warning"><div class="stat-value" id="adminAbsent">0</div><div class="stat-label">Incomplete</div></div>
+            <div class="stats-grid" style="grid-template-columns:1fr 1fr 1fr">
+                <div class="stat-card">
+                    <div class="stat-value" id="adminTotal">0</div>
+                    <div class="stat-label">Total Records</div>
+                    <div style="font-size:12px;color:var(--warning);margin-top:2px" id="adminTotalIncomplete"></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="adminToday">0</div>
+                    <div class="stat-label">Today</div>
+                    <div style="font-size:12px;color:var(--warning);margin-top:2px" id="adminTodayIncomplete"></div>
+                </div>
                 <div class="stat-card" id="statCardWorkers"><div class="stat-value" id="adminWorkerCount">0</div><div class="stat-label">Workers</div></div>
-            </div>
-            <div class="stat-card" style="margin-bottom:12px">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-                    <span style="font-size:13px;font-weight:600;color:var(--text)">Overall Completion</span>
-                    <span id="adminCompletePct" style="font-size:15px;font-weight:700;color:var(--success)">0%</span>
-                </div>
-                <div style="background:var(--bg);border-radius:8px;height:10px;overflow:hidden">
-                    <div id="adminCompleteBar" style="background:linear-gradient(90deg,#22863a,#2ea043);height:100%;width:0%;transition:width 0.4s"></div>
-                </div>
-                <div id="adminCorrectionLine" style="font-size:12px;color:#856404;margin-top:8px"></div>
             </div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
                 <div class="stat-card">
@@ -577,8 +571,8 @@
                 <div class="stats-grid" style="margin-bottom:0">
                     <div class="stat-card" style="grid-column:span 2;padding-bottom:14px">
                         <div class="stat-value" id="adminFamilies">0</div>
-                        <div class="stat-label">Families</div>
-                        <div style="font-size:11px;color:#9ca3af;text-align:center;margin:6px 0 4px;text-transform:uppercase;letter-spacing:0.4px">Members per Family</div>
+                        <div class="stat-label">Households</div>
+                        <div style="font-size:11px;color:#9ca3af;text-align:center;margin:6px 0 4px;text-transform:uppercase;letter-spacing:0.4px">Members per Household</div>
                         <div id="adminFamilySizes" style="display:flex;justify-content:center;flex-wrap:wrap;row-gap:4px;column-gap:8px;font-size:13px;color:var(--text)"></div>
                     </div>
                     <div class="stat-card" style="grid-column:span 2;padding-bottom:14px">
@@ -968,7 +962,7 @@ const firebaseConfig = {
     appId: "1:610573950046:web:2b545f876953a4eb18a8cf"
 };
 const ADMIN_EMAIL = "enga018@gmail.com";
-const APP_VERSION = "v2.7.1";
+const APP_VERSION = "v2.8.0";
 
 
 firebase.initializeApp(firebaseConfig);
@@ -2311,40 +2305,38 @@ async function loadMyRecords() {
 function renderMyRecords(records) {
     const today = new Date().toDateString();
     const incomplete = records.filter(r=>needsFollowUp(r)).length;
-    const complete = records.length - incomplete;
-    const todayCount = records.filter(r=>r.localTimestamp && new Date(r.localTimestamp).toDateString()===today).length;
+    const completed = records.filter(r => !needsFollowUp(r));
+    const todayRecords = records.filter(r=>r.localTimestamp && new Date(r.localTimestamp).toDateString()===today);
+    const todayIncomplete = todayRecords.filter(r=>needsFollowUp(r)).length;
 
     const fb = document.getElementById('followupBadge');
     if (fb) { fb.textContent = incomplete > 99 ? '99+' : incomplete; fb.classList.toggle('show', incomplete > 0); }
 
     document.getElementById('myTotal').textContent = records.length;
-    document.getElementById('myComplete').textContent = complete;
-    document.getElementById('myAbsent').textContent = incomplete;
-    document.getElementById('myToday').textContent = todayCount;
-    const pct = records.length ? Math.round((complete / records.length) * 100) : 0;
-    document.getElementById('myCompletePct').textContent = pct + '%';
-    document.getElementById('myCompleteBar').style.width = pct + '%';
+    document.getElementById('myTotalIncomplete').textContent = incomplete ? `${incomplete} incomplete` : '';
+    document.getElementById('myToday').textContent = todayRecords.length;
+    document.getElementById('myTodayIncomplete').textContent = todayIncomplete ? `${todayIncomplete} incomplete` : '';
 
-    // Building type breakdown
+    // Building type breakdown (completed only)
     const bc = {};
-    records.forEach(r => { bc[r.buildingType] = (bc[r.buildingType]||0)+1; });
+    completed.forEach(r => { bc[r.buildingType] = (bc[r.buildingType]||0)+1; });
     const el = document.getElementById('myBuildingBreakdown');
     if (el) el.innerHTML = breakdownBars(bc, 'No records yet');
 
-    // Property type breakdown
+    // Property type breakdown (completed only)
     const pc = {};
-    records.forEach(r => { pc[r.propertyType] = (pc[r.propertyType]||0)+1; });
+    completed.forEach(r => { pc[r.propertyType] = (pc[r.propertyType]||0)+1; });
     const pel = document.getElementById('myPropertyBreakdown');
     if (pel) pel.innerHTML = breakdownBars(pc, 'No records yet');
 
-    // Owner type breakdown
+    // Owner type breakdown (completed only)
     const oc = {};
-    records.forEach(r => { const k = r.ownerCategory||'Individual'; oc[k] = (oc[k]||0)+1; });
+    completed.forEach(r => { const k = r.ownerCategory||'Individual'; oc[k] = (oc[k]||0)+1; });
     const oel = document.getElementById('myOwnerBreakdown');
     if (oel) oel.innerHTML = breakdownBars(oc, 'No records yet');
 
-    // Population & households for this worker's records
-    renderPopHouseholds('my', records);
+    // Population & households for this worker's completed records
+    renderPopHouseholds('my', completed);
 
     // Render record list with pagination (show first 10, then See More)
     const list = document.getElementById('myRecordsList');
@@ -2440,24 +2432,26 @@ function renderPopHouseholds(prefix, records) {
     }, {families:0,population:0,children:0,males:0,females:0,adults:0,adultMales:0,adultFemales:0,childMales:0,childFemales:0,familySizes:[]});
 
     const sz1 = hh.familySizes.filter(n=>n===1).length;
-    const sz2_5 = hh.familySizes.filter(n=>n>=2&&n<=5).length;
-    const sz6_10 = hh.familySizes.filter(n=>n>=6&&n<=10).length;
+    const sz2_4 = hh.familySizes.filter(n=>n>=2&&n<=4).length;
+    const sz5_7 = hh.familySizes.filter(n=>n>=5&&n<=7).length;
+    const sz8_10 = hh.familySizes.filter(n=>n>=8&&n<=10).length;
     const sz10plus = hh.familySizes.filter(n=>n>10).length;
     const fsParts = [];
     if (sz1) fsParts.push(`1: <b>${sz1}</b>`);
-    if (sz2_5) fsParts.push(`2-5: <b>${sz2_5}</b>`);
-    if (sz6_10) fsParts.push(`6-10: <b>${sz6_10}</b>`);
+    if (sz2_4) fsParts.push(`2-4: <b>${sz2_4}</b>`);
+    if (sz5_7) fsParts.push(`5-7: <b>${sz5_7}</b>`);
+    if (sz8_10) fsParts.push(`8-10: <b>${sz8_10}</b>`);
     if (sz10plus) fsParts.push(`10+: <b>${sz10plus}</b>`);
     const set = (id,v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
     const hset = (id,v) => { const e = document.getElementById(id); if (e) e.innerHTML = v; };
     set(prefix+'Families', hh.families);
     hset(prefix+'FamilySizes', fsParts.length ? fsParts.join(' <span style="color:#cbd5e1">|</span> ') : '<span style="color:#9ca3af">—</span>');
     set(prefix+'Population', hh.population);
-    hset(prefix+'PopGender', `<span style="color:#db2777"><b>${hh.females}</b> F</span> <span style="color:#cbd5e1">|</span> <span style="color:#2563eb"><b>${hh.males}</b> M</span>`);
+    hset(prefix+'PopGender', `<span style="color:#2563eb"><b>${hh.males}</b> M</span> <span style="color:#cbd5e1">|</span> <span style="color:#db2777"><b>${hh.females}</b> F</span>`);
     set(prefix+'Adults', hh.population - hh.children);
-    hset(prefix+'AdultGender', `<span style="color:#db2777"><b>${hh.females - hh.childFemales}</b> F</span> <span style="color:#cbd5e1">|</span> <span style="color:#2563eb"><b>${hh.males - hh.childMales}</b> M</span>`);
+    hset(prefix+'AdultGender', `<span style="color:#2563eb"><b>${hh.males - hh.childMales}</b> M</span> <span style="color:#cbd5e1">|</span> <span style="color:#db2777"><b>${hh.females - hh.childFemales}</b> F</span>`);
     set(prefix+'Children', hh.children);
-    hset(prefix+'ChildGender', `<span style="color:#db2777"><b>${hh.childFemales}</b> F</span> <span style="color:#cbd5e1">|</span> <span style="color:#2563eb"><b>${hh.childMales}</b> M</span>`);
+    hset(prefix+'ChildGender', `<span style="color:#2563eb"><b>${hh.childMales}</b> M</span> <span style="color:#cbd5e1">|</span> <span style="color:#db2777"><b>${hh.childFemales}</b> F</span>`);
 }
 
 function recordCard(r, context) {
@@ -2857,39 +2851,43 @@ function loadScreenerData() {
 
 function renderAdminOverview() {
     const today = new Date().toDateString();
+    const completed = allRecords.filter(r => !needsFollowUp(r));
+    const incompleteCount = allRecords.length - completed.length;
+    const todayRecords = allRecords.filter(r=>r.localTimestamp&&new Date(r.localTimestamp).toDateString()===today);
+    const todayIncomplete = todayRecords.filter(r=>needsFollowUp(r)).length;
+
     document.getElementById('adminTotal').textContent = allRecords.length;
-    document.getElementById('adminToday').textContent = allRecords.filter(r=>r.localTimestamp&&new Date(r.localTimestamp).toDateString()===today).length;
-    document.getElementById('adminAbsent').textContent = allRecords.filter(r=>needsFollowUp(r)).length;
-    // Screener sees no worker-identifying info at all — this stat and the Worker Activity
-    // card below both name individual workers, so they're hidden entirely rather than scrubbed.
+    document.getElementById('adminTotalIncomplete').textContent = incompleteCount ? `${incompleteCount} incomplete` : '';
+    document.getElementById('adminToday').textContent = todayRecords.length;
+    document.getElementById('adminTodayIncomplete').textContent = todayIncomplete ? `${todayIncomplete} incomplete` : '';
+
     document.getElementById('statCardWorkers').classList.toggle('hidden', isScreener);
     if (!isScreener) document.getElementById('adminWorkerCount').textContent = Object.values(allUsers).filter(u=>u.email!==ADMIN_EMAIL && !u.disabled).length;
 
-    const incompleteCount = allRecords.filter(r=>needsFollowUp(r)).length;
-    const completeCount = allRecords.length - incompleteCount;
-    const apct = allRecords.length ? Math.round((completeCount / allRecords.length) * 100) : 0;
-    document.getElementById('adminCompletePct').textContent = apct + '%';
-    document.getElementById('adminCompleteBar').style.width = apct + '%';
-    const corrections = allRecords.filter(r=>r.needsCorrection===true).length;
-    document.getElementById('adminCorrectionLine').textContent = corrections ? `🟡 ${corrections} record${corrections>1?'s':''} awaiting correction` : '';
     renderScreeningCounter();
 
     const bc={}, pc={}, oc={};
-    allRecords.forEach(r=>{ bc[r.buildingType]=(bc[r.buildingType]||0)+1; pc[r.propertyType]=(pc[r.propertyType]||0)+1; const ok=r.ownerCategory||'Individual'; oc[ok]=(oc[ok]||0)+1; });
+    completed.forEach(r=>{ bc[r.buildingType]=(bc[r.buildingType]||0)+1; pc[r.propertyType]=(pc[r.propertyType]||0)+1; const ok=r.ownerCategory||'Individual'; oc[ok]=(oc[ok]||0)+1; });
     document.getElementById('adminBuildingBreakdown').innerHTML = breakdownBars(bc, 'No data');
     document.getElementById('adminPropertyBreakdown').innerHTML = breakdownBars(pc, 'No data');
     document.getElementById('adminOwnerBreakdown').innerHTML = breakdownBars(oc, 'No data');
 
-    // Population & households (folded across all records)
-    renderPopHouseholds('admin', allRecords);
+    renderPopHouseholds('admin', completed);
 
     document.getElementById('cardWorkerActivity').classList.toggle('hidden', isScreener);
     if (!isScreener) {
         const tw={};
-        allRecords.filter(r=>r.localTimestamp&&new Date(r.localTimestamp).toDateString()===today)
-            .forEach(r=>{ const n=allUsers[r.workerUid]?.name||r.workerEmail||'Unknown'; tw[n]=(tw[n]||0)+1; });
+        todayRecords.forEach(r=>{
+            const n=allUsers[r.workerUid]?.name||r.workerEmail||'Unknown';
+            if (!tw[n]) tw[n] = {total:0, incomplete:0};
+            tw[n].total++;
+            if (needsFollowUp(r)) tw[n].incomplete++;
+        });
         document.getElementById('adminWorkerToday').innerHTML = Object.entries(tw).map(([k,v])=>
-            `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border)"><span>👤 ${k}</span><b>${v} records</b></div>`
+            `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border)">
+                <span>👤 ${k}</span>
+                <span><b>${v.total}</b>${v.incomplete ? ` <span style="color:var(--warning);font-size:12px">(${v.incomplete} incomplete)</span>` : ''}</span>
+            </div>`
         ).join('') || '<div style="color:#999;padding:8px 0">No submissions today</div>';
     }
 }
