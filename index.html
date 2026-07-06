@@ -156,6 +156,14 @@
         .bd-track{background:var(--bg);border-radius:6px;height:8px;overflow:hidden}
         .bd-fill{background:var(--primary);height:100%;border-radius:6px;transition:width 0.4s}
 
+        /* STACKED BAR CHART */
+        .sb-chart{margin-top:8px}
+        .sb-track{display:flex;height:14px;border-radius:7px;overflow:hidden;background:var(--bg);box-shadow:inset 0 1px 2px rgba(0,0,0,0.06)}
+        .sb-segment{height:100%;transition:width 0.4s ease;min-width:2px}
+        .sb-legend{display:flex;flex-wrap:wrap;gap:6px 12px;margin-top:10px;font-size:12px;color:var(--text)}
+        .sb-legend-item{display:flex;align-items:center;gap:5px}
+        .sb-dot{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+
         /* ADMIN */
         .admin-header{position:sticky;top:6px;z-index:60;background:var(--primary-dark);color:white;padding:14px 18px;border-radius:var(--radius-lg);margin-bottom:16px;box-shadow:var(--shadow-md)}
         .admin-badge{background:rgba(255,215,0,0.3);border:1px solid rgba(255,215,0,0.5);padding:2px 10px;border-radius:10px;font-size:11px;font-weight:600;color:#ffd700;display:inline-block;margin-bottom:6px}
@@ -960,7 +968,7 @@ const firebaseConfig = {
     appId: "1:610573950046:web:2b545f876953a4eb18a8cf"
 };
 const ADMIN_EMAIL = "enga018@gmail.com";
-const APP_VERSION = "v2.9.1";
+const APP_VERSION = "v2.10.0";
 
 
 firebase.initializeApp(firebaseConfig);
@@ -2334,19 +2342,19 @@ function renderMyRecords(records) {
     const bc = {};
     completed.forEach(r => { bc[r.buildingType] = (bc[r.buildingType]||0)+1; });
     const el = document.getElementById('myBuildingBreakdown');
-    if (el) el.innerHTML = breakdownBars(bc, 'No records yet');
+    if (el) el.innerHTML = stackedBarChart(bc, 'No records yet');
 
     // Property type breakdown (completed only)
     const pc = {};
     completed.forEach(r => { pc[r.propertyType] = (pc[r.propertyType]||0)+1; });
     const pel = document.getElementById('myPropertyBreakdown');
-    if (pel) pel.innerHTML = breakdownBars(pc, 'No records yet');
+    if (pel) pel.innerHTML = stackedBarChart(pc, 'No records yet');
 
     // Owner type breakdown (completed only)
     const oc = {};
     completed.forEach(r => { const k = r.ownerCategory||'Individual'; oc[k] = (oc[k]||0)+1; });
     const oel = document.getElementById('myOwnerBreakdown');
-    if (oel) oel.innerHTML = breakdownBars(oc, 'No records yet');
+    if (oel) oel.innerHTML = stackedBarChart(oc, 'No records yet');
 
     // Population & households for this worker's completed records
     renderPopHouseholds('my', completed);
@@ -2402,6 +2410,23 @@ function breakdownBars(map, emptyMsg){
         const pct = Math.round(v / total * 100);
         return `<div class="bd-row"><div class="bd-top"><span>${k}</span><b>${v} · ${pct}%</b></div><div class="bd-track"><div class="bd-fill" style="width:${pct}%"></div></div></div>`;
     }).join('');
+}
+
+const SB_COLORS = ['#2563eb','#16a34a','#ca8a04','#dc2626','#7c3aed','#0891b2','#ea580c','#4b5563'];
+
+// Render a {label: count} map as a single stacked bar chart with legend.
+function stackedBarChart(map, emptyMsg){
+    const entries = Object.entries(map || {});
+    if (!entries.length) return `<div style="color:var(--text2)">${emptyMsg || 'No data'}</div>`;
+    const total = entries.reduce((a,[,v]) => a + v, 0) || 1;
+    const sorted = entries.sort((a,b) => b[1]-a[1]);
+    const items = sorted.map(([k,v], i) => {
+        const pct = v / total * 100;
+        return { k, v, pct, color: SB_COLORS[i % SB_COLORS.length] };
+    });
+    const bar = `<div class="sb-track">${items.map(x => `<div class="sb-segment" style="width:${x.pct.toFixed(2)}%;background:${x.color}" title="${esc(x.k)}: ${x.v} · ${Math.round(x.pct)}%"></div>`).join('')}</div>`;
+    const legend = `<div class="sb-legend">${items.map(x => `<div class="sb-legend-item"><span class="sb-dot" style="background:${x.color}"></span>${esc(x.k)} — ${x.v} · ${Math.round(x.pct)}%</div>`).join('')}</div>`;
+    return `<div class="sb-chart">${bar}${legend}</div>`;
 }
 
 // Household summary line (+ optional full family/member breakdown) for record views.
@@ -2884,9 +2909,9 @@ function renderAdminOverview() {
 
     const bc={}, pc={}, oc={};
     completed.forEach(r=>{ bc[r.buildingType]=(bc[r.buildingType]||0)+1; pc[r.propertyType]=(pc[r.propertyType]||0)+1; const ok=r.ownerCategory||'Individual'; oc[ok]=(oc[ok]||0)+1; });
-    document.getElementById('adminBuildingBreakdown').innerHTML = breakdownBars(bc, 'No data');
-    document.getElementById('adminPropertyBreakdown').innerHTML = breakdownBars(pc, 'No data');
-    document.getElementById('adminOwnerBreakdown').innerHTML = breakdownBars(oc, 'No data');
+    document.getElementById('adminBuildingBreakdown').innerHTML = stackedBarChart(bc, 'No data');
+    document.getElementById('adminPropertyBreakdown').innerHTML = stackedBarChart(pc, 'No data');
+    document.getElementById('adminOwnerBreakdown').innerHTML = stackedBarChart(oc, 'No data');
 
     renderPopHouseholds('admin', completed);
 
