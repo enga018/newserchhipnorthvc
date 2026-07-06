@@ -592,6 +592,12 @@
                     <option value="NGO">NGO</option>
                     <option value="Government">Government</option>
                 </select>
+                <select id="filterBuilding" onchange="filterRecords()">
+                    <option value="">All Building Types</option>
+                    <option value="RCC">RCC</option>
+                    <option value="Semi RCC">Semi RCC</option>
+                    <option value="Assam Type">Assam Type</option>
+                </select>
                 <select id="filterStatus" onchange="filterRecords()">
                     <option value="">All Status</option>
                     <option value="complete">✅ Complete</option>
@@ -835,15 +841,6 @@
         <div id="aeAlert"></div>
         <input type="hidden" id="aeId">
         <div class="form-group">
-            <label>Property Type</label>
-            <select id="aePropertyType">
-                <option value="Residential">Residential (house, quarters)</option>
-                <option value="Commercial">Commercial (shop, bank, godown, hotel)</option>
-                <option value="Mixed Use">Mixed Use (shop + house)</option>
-                <option value="Institutional/Public">Institutional/Public (church, school, office, hall)</option>
-            </select>
-        </div>
-        <div class="form-group">
             <label>Owner Type</label>
             <select id="aeOwnerCategory" onchange="updateAdminEditFields()">
                 <option value="Individual">Individual (private person)</option>
@@ -878,8 +875,10 @@
         <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--border)">
             <label style="font-weight:600;display:block;margin-bottom:8px">Units</label>
             <div id="aeUnits"></div>
+            <button type="button" class="btn-secondary" onclick="aeAddUnit()" style="width:100%;margin-top:8px;font-size:13px;padding:10px">➕ Add Unit</button>
         </div>
-        <div style="font-size:11px;color:var(--text2);margin-bottom:10px">GPS and photo aren't editable here — use Send for Correction if those need to change.</div>
+        <div id="aePropertyType" style="font-size:13px;color:var(--text2);margin-bottom:10px;background:var(--primary-tint);border-radius:6px;padding:6px 10px;display:none"></div>
+        <div style="font-size:11px;color:var(--text2);margin-bottom:10px">GPS and photo aren't editable here — use Send for Correction if corrections needed.</div>
         <button class="btn-primary" onclick="saveAdminEdit()">💾 Save Changes</button>
     </div>
 </div>
@@ -938,7 +937,7 @@ const firebaseConfig = {
     appId: "1:610573950046:web:2b545f876953a4eb18a8cf"
 };
 const ADMIN_EMAIL = "enga018@gmail.com";
-const APP_VERSION = "v2.13.7";
+const APP_VERSION = "v2.13.8";
 
 
 firebase.initializeApp(firebaseConfig);
@@ -2841,7 +2840,6 @@ function openAdminEdit(r) {
     document.getElementById('aeAlert').innerHTML = '';
     document.getElementById('aeId').value = r.id;
     document.getElementById('aePropId').textContent = r.propertyId;
-    document.getElementById('aePropertyType').value = r.propertyType || 'Residential';
     document.getElementById('aeOwnerCategory').value = r.ownerCategory || 'Individual';
     document.getElementById('aeBuildingType').value = r.buildingType || 'RCC';
     document.getElementById('aeOwnerName').value = r.ownerName || '';
@@ -2869,20 +2867,29 @@ function renderAeUnits() {
     if (!c) return;
     if (!aeFamilies.length) {
         c.innerHTML = '<div style="color:var(--text2);font-size:13px">No units in this record.</div>';
+        document.getElementById('aePropertyType').style.display = 'none';
         return;
     }
     c.innerHTML = aeFamilies.map((f, fi) => {
         const isRes = f.type === 'Residential';
         const isComm = f.type === 'Commercial';
         const memberCount = (f.members||[]).length;
+        const header = `
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+                <span style="font-weight:600;color:var(--primary);flex:1">🏪 Unit ${fi+1}</span>
+                <select onchange="aeUpdateUnitType(${fi},this.value);renderAeUnits()" style="flex:3;font-size:12px;min-height:auto;padding:6px 8px">
+                    ${UNIT_TYPES.map(t=>`<option value="${t}" ${f.type===t?'selected':''}>${UNIT_TYPE_LABELS[t]}</option>`).join('')}
+                </select>
+                <button type="button" onclick="aeRemoveUnit(${fi});renderAeUnits()" style="background:none;border:none;color:var(--danger);font-size:18px;cursor:pointer;padding:2px 6px">✕</button>
+            </div>`;
         if (!f.occupied) {
-            return `<div style="font-size:13px;color:var(--text2);padding:4px 0">🏠 Unit ${fi+1}: ${esc(UNIT_TYPE_LABELS[f.type]||f.type)} — Vacant</div>`;
+            return `<div style="border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:6px">${header}<div style="font-size:13px;color:var(--text2)">🏠 Vacant</div></div>`;
         }
         if (isRes) {
             const head = (f.members||[])[0] || {};
             const others = (f.members||[]).slice(1);
-            return `<div style="margin-bottom:8px;padding:10px;border:1px solid var(--border);border-radius:8px">
-                <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:8px">🏪 Unit ${fi+1}: ${esc(UNIT_TYPE_LABELS[f.type]||f.type)} · ${memberCount} ${memberCount===1?'member':'members'}</div>
+            return `<div style="border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:6px">
+                ${header}
                 <div style="background:var(--primary-tint);border-radius:8px;padding:10px;margin-bottom:8px">
                     <div style="font-size:12px;font-weight:600;color:var(--primary);margin-bottom:6px">Head of Family</div>
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
@@ -2923,14 +2930,20 @@ function renderAeUnits() {
         const aeLabel = isComm ? 'Business / Shop Name' : 'Facility / Institution Name';
         const aePlaceholder = isComm ? 'e.g. Corner shop, Bank, Godown' : 'e.g. Church hall, School wing, Office';
         const aeHint = isComm ? 'Enter the business name — not a person\'s name' : 'Enter the facility name — not a person\'s name';
-        return `<div style="margin-bottom:8px">
-            <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px">🏪 Unit ${fi+1}: ${esc(UNIT_TYPE_LABELS[f.type]||f.type)}</div>
+        return `<div style="border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:6px">
+            ${header}
             <label style="font-size:12px;color:var(--text2);font-weight:400">${esc(aeLabel)}</label>
             <input type="text" value="${esc(f.label||'')}" placeholder="${esc(aePlaceholder)}" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;margin-top:4px" onchange="aeFamilies[${fi}].label=this.value">
             <div style="font-size:11px;color:var(--text2);margin-top:2px">${esc(aeHint)}</div>
         </div>`;
     }).join('');
+    document.getElementById('aePropertyType').style.display = 'block';
+    document.getElementById('aePropertyType').innerHTML = '🏠 Property Type: <b>' + esc(derivePropertyType(aeFamilies)) + '</b> (derived from units)';
 }
+
+function aeUpdateUnitType(fi, value){ aeFamilies[fi].type = value; if (value === 'Institutional/Public') aeFamilies[fi].occupied = true; }
+function aeAddUnit(){ aeFamilies.push({ type:'Residential', occupied:true, label:'', contact:'', members:[{ name:'', gender:'', age:'', relation:'Self' }] }); renderAeUnits(); }
+function aeRemoveUnit(fi){ aeFamilies.splice(fi, 1); }
 
 async function saveAdminEdit() {
     const id = document.getElementById('aeId').value;
@@ -2939,7 +2952,7 @@ async function saveAdminEdit() {
     const contact = (isInst ? document.getElementById('aeInstContact') : document.getElementById('aeContact')).value.trim();
     if (contact && !/^[0-9]{10}$/.test(contact)) { box.innerHTML = '<div class="alert alert-error">Contact number must be exactly 10 digits, or left blank.</div>'; return; }
     const data = {
-        propertyType: document.getElementById('aePropertyType').value,
+        propertyType: derivePropertyType(aeFamilies),
         ownerCategory: document.getElementById('aeOwnerCategory').value,
         buildingType: document.getElementById('aeBuildingType').value,
         isInstitution: isInst,
@@ -3184,11 +3197,13 @@ function populateWorkerFilter() {
 function getFilteredRecords() {
     const wf = document.getElementById('filterWorker').value;
     const of = document.getElementById('filterOwner').value;
+    const bf = document.getElementById('filterBuilding').value;
     const sf = document.getElementById('filterStatus').value;
     const pidSearch = document.getElementById('filterPropertyId').value.trim().toLowerCase().replace(/^nsn-/, '');
     let f = allRecords;
     if (wf) f = f.filter(r=>r.workerUid===wf);
     if (of) f = f.filter(r=>(r.ownerCategory||'Individual')===of);
+    if (bf) f = f.filter(r=>(r.buildingType||'')===bf);
     if (sf==='complete') f = f.filter(r=>!needsFollowUp(r));
     if (sf==='absent') f = f.filter(r=>isRecordAbsent(r));
     if (sf==='correction') f = f.filter(r=>r.needsCorrection===true);
