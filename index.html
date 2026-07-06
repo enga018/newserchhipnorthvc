@@ -918,7 +918,7 @@ const firebaseConfig = {
     appId: "1:610573950046:web:2b545f876953a4eb18a8cf"
 };
 const ADMIN_EMAIL = "enga018@gmail.com";
-const APP_VERSION = "v2.14.9";
+const APP_VERSION = "v2.14.10";
 
 
 firebase.initializeApp(firebaseConfig);
@@ -3121,6 +3121,7 @@ function renderWorkers() {
                 ${rangeText}
                 <button class="btn-small" style="background:var(--primary);color:white;margin-left:8px;padding:3px 8px" onclick="assignRange('${u.uid}','${u.name}',${hasRange?u.rangeStart:'null'},${hasRange?u.rangeEnd:'null'})">${hasRange?'Change':'Assign'}</button>
                 ${hasRange?`<button class="btn-small" style="background:#999;color:white;margin-left:4px;padding:3px 8px" onclick="clearRange('${u.uid}','${u.name}')">Clear</button>`:''}
+                ${hasRange ? `<button class="btn-small" style="background:#e65100;color:white;margin-left:4px;padding:3px 8px" onclick="findMissingProps('${u.uid}','${u.name.replace(/'/g,"&#39;")}',${u.rangeStart},${u.rangeEnd})">🔍 Find Missing</button>` : ''}
             </div>` : ''}
             <div class="worker-stats">
                 <div class="worker-stat"><div class="worker-stat-val">${recs.length}</div><div class="worker-stat-lbl">Properties</div></div>
@@ -3132,6 +3133,31 @@ function renderWorkers() {
             </div>
         </div>`;
     }).join('');
+}
+
+async function findMissingProps(uid, name, rangeStart, rangeEnd) {
+    showAlert('🔍 Checking for missing stickers in ' + name + '\'s range...', 'info');
+    try {
+        const snap = await db.collection('records').where('workerUid','==',uid).get();
+        const existing = new Set();
+        snap.docs.forEach(d => {
+            const pid = (d.data().propertyId || '').replace(/^NSN-/i, '').replace(/^0*/, '');
+            const num = parseInt(pid, 10);
+            if (!isNaN(num)) existing.add(num);
+        });
+        const missing = [];
+        for (let n = rangeStart; n <= rangeEnd; n++) {
+            if (!existing.has(n)) missing.push(n);
+        }
+        if (!missing.length) {
+            showAlert('✅ All ' + (rangeEnd - rangeStart + 1) + ' stickers in ' + name + '\'s range (' + rangeStart + '-' + rangeEnd + ') are accounted for.', 'success');
+            return;
+        }
+        const list = missing.map(n => 'NSN-' + String(n).padStart(4, '0')).join(', ');
+        showAlert('🔴 ' + name + ': ' + missing.length + ' missing sticker' + (missing.length===1?'':'s') + ' out of ' + (rangeEnd - rangeStart + 1) + '\n\n' + list, 'error');
+    } catch(e) {
+        showAlert('Could not check missing: ' + e.message, 'error');
+    }
 }
 
 // Supervisors don't collect data, so they get a lightweight account-management row
