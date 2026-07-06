@@ -968,7 +968,7 @@ const firebaseConfig = {
     appId: "1:610573950046:web:2b545f876953a4eb18a8cf"
 };
 const ADMIN_EMAIL = "enga018@gmail.com";
-const APP_VERSION = "v2.10.1";
+const APP_VERSION = "v2.10.2";
 
 
 firebase.initializeApp(firebaseConfig);
@@ -3031,7 +3031,10 @@ function getFilteredRecords() {
     if (sf==='complete') f = f.filter(r=>!needsFollowUp(r));
     if (sf==='absent') f = f.filter(r=>isRecordAbsent(r));
     if (sf==='correction') f = f.filter(r=>r.needsCorrection===true);
-    if (pidSearch) f = f.filter(r => (r.propertyId || '').toLowerCase().replace(/^nsn-/, '').includes(pidSearch));
+    if (pidSearch) {
+        const searchPadded = pidSearch.padStart(4, '0');
+        f = f.filter(r => (r.propertyId || '').toLowerCase().replace(/^nsn-/, '').padStart(4, '0') === searchPadded);
+    }
     return f;
 }
 
