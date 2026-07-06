@@ -318,16 +318,6 @@
                         <div id="rangeHint" style="font-size:12px;margin-top:4px"></div>
                     </div>
                     <div class="form-group">
-                        <label>Property Type <span class="required-star">*</span> <span style="font-size:11px;color:var(--text2);font-weight:400">(what the building is)</span></label>
-                        <select id="propertyType" onchange="updateHouseholdVisibility()" required>
-                            <option value="">Select type</option>
-                            <option value="Residential">Residential (house, quarters)</option>
-                            <option value="Commercial">Commercial (shop, bank, godown, hotel)</option>
-                            <option value="Mixed Use">Mixed Use (shop + house)</option>
-                            <option value="Institutional/Public">Institutional/Public (church, school, office, hall)</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
                         <label>Owner Type <span class="required-star">*</span> <span style="font-size:11px;color:var(--text2);font-weight:400">(who pays the tax)</span></label>
                         <select id="ownerCategory" onchange="updateFormFields()" required>
                             <option value="">Select owner type</option>
@@ -373,9 +363,9 @@
                     </div>
                 </div>
 
-                <!-- STEP 3: OCCUPANT -->
-                <div class="wizard-step" data-step="occupant">
-                    <div class="wizard-step-title">👤 Owner / occupant</div>
+                <!-- STEP 3: OWNER -->
+                <div class="wizard-step" data-step="owner">
+                    <div class="wizard-step-title">👤 Owner</div>
                     <!-- RESIDENTIAL FIELDS -->
                     <div id="residentialFields">
                         <div class="section-title">Owner Information <span style="font-size:12px;color:var(--text2);font-weight:400">(optional if owner absent)</span></div>
@@ -414,13 +404,13 @@
                     </div>
                 </div>
 
-                <!-- STEP 4: HOUSEHOLDS (residential / mixed use only) -->
-                <div class="wizard-step" data-step="households">
-                    <div class="wizard-step-title">👨‍👩‍👧 Households / families</div>
-                    <div class="text-muted" style="font-size:12px;margin-bottom:8px">Add each family living in this property. The first member of a family is its head. Leave empty for a vacant/empty house.</div>
+                <!-- STEP 4: UNITS -->
+                <div class="wizard-step" data-step="units">
+                    <div class="wizard-step-title">📦 Units</div>
+                    <div class="text-muted" style="font-size:12px;margin-bottom:8px">Add each unit in this property. Choose the unit type, then fill in occupant or family details.</div>
                     <div id="householdSummary" style="font-size:13px;font-weight:600;color:var(--primary);background:var(--primary-tint);border-radius:8px;padding:8px 10px;margin-bottom:10px;display:none"></div>
                     <div id="familiesContainer"></div>
-                    <button type="button" class="btn-primary" onclick="addFamily()" style="width:100%;margin-bottom:10px;padding:12px 16px;font-size:15px">➕ Add a Family</button>
+                    <button type="button" class="btn-primary" onclick="addUnit()" style="width:100%;margin-bottom:10px;padding:12px 16px;font-size:15px">➕ Add Unit</button>
                 </div>
 
                 <!-- STEP 5: REVIEW & SAVE -->
@@ -457,10 +447,6 @@
             <div class="stat-card" style="margin-bottom:10px">
                 <div class="section-title">🏗️ Building Types</div>
                 <div id="myBuildingBreakdown" style="font-size:13px;color:var(--text2);line-height:2"></div>
-            </div>
-            <div class="stat-card" style="margin-bottom:10px">
-                <div class="section-title">🏠 Property Types</div>
-                <div id="myPropertyBreakdown" style="font-size:13px;color:var(--text2);line-height:2"></div>
             </div>
             <div class="stat-card" style="margin-bottom:10px">
                 <div class="section-title">🏛️ Owner Types</div>
@@ -545,10 +531,6 @@
                 <div id="adminBuildingBreakdown" style="font-size:13px;color:var(--text2);line-height:2"></div>
             </div>
             <div class="stat-card" style="margin-bottom:12px">
-                <div class="section-title">🏠 Property Types</div>
-                <div id="adminPropertyBreakdown" style="font-size:13px;color:var(--text2);line-height:2"></div>
-            </div>
-            <div class="stat-card" style="margin-bottom:12px">
                 <div class="section-title">🏛️ Owner Types</div>
                 <div id="adminOwnerBreakdown" style="font-size:13px;color:var(--text2);line-height:2"></div>
             </div>
@@ -595,13 +577,6 @@
             </div>
             <div class="filter-bar">
                 <select id="filterWorker" onchange="filterRecords()"><option value="">All Workers</option></select>
-                <select id="filterType" onchange="filterRecords()">
-                    <option value="">All Property Types</option>
-                    <option value="Residential">Residential</option>
-                    <option value="Commercial">Commercial</option>
-                    <option value="Mixed Use">Mixed Use</option>
-                    <option value="Institutional/Public">Institutional/Public</option>
-                </select>
                 <select id="filterOwner" onchange="filterRecords()">
                     <option value="">All Owner Types</option>
                     <option value="Individual">Individual</option>
@@ -951,7 +926,7 @@ const firebaseConfig = {
     appId: "1:610573950046:web:2b545f876953a4eb18a8cf"
 };
 const ADMIN_EMAIL = "enga018@gmail.com";
-const APP_VERSION = "v2.12.0";
+const APP_VERSION = "v2.13.0";
 
 
 firebase.initializeApp(firebaseConfig);
@@ -1449,34 +1424,26 @@ function updateFormFields() {
 // The head of family is simply the first member (relation 'Head') — no separate head field.
 let householdDraft = [];
 const RELATIONS = ['Head','Spouse','Son','Daughter','Father','Mother','Brother','Sister','Grandson','Granddaughter','Other'];
-
-// Only places where people actually live get the household survey.
-const HOUSEHOLD_PROPERTY_TYPES = ['Residential','Mixed Use'];
-function propertyHasHouseholds(type){ return HOUSEHOLD_PROPERTY_TYPES.includes(type); }
-
-// Property type drives whether the Households step exists; refresh the wizard chrome.
-function updateHouseholdVisibility(){
-    if (typeof refreshWizardChrome === 'function') refreshWizardChrome();
-}
+const UNIT_TYPES = ['Residential','Commercial','Institutional/Public'];
 
 /* ---------------- Collect form wizard ---------------- */
 const WIZARD_STEPS = [
     { id:'property',   label:'Property' },
     { id:'location',   label:'Location' },
-    { id:'occupant',   label:'Occupant' },
-    { id:'households', label:'Family', conditional:() => propertyHasHouseholds(document.getElementById('propertyType').value) },
+    { id:'owner',      label:'Owner' },
+    { id:'units',      label:'Units' },
     { id:'review',     label:'Review' }
 ];
 let wizardIndex = 0;
 
-function wizardActiveSteps(){ return WIZARD_STEPS.filter(s => !s.conditional || s.conditional()); }
+function wizardActiveSteps(){ return WIZARD_STEPS; }
 
 function showWizardStep(i){
     const steps = wizardActiveSteps();
     wizardIndex = Math.max(0, Math.min(i, steps.length - 1));
     const cur = steps[wizardIndex];
     document.querySelectorAll('#propertyForm .wizard-step').forEach(el => el.classList.toggle('active', el.dataset.step === cur.id));
-    if (cur.id === 'households') renderHouseholds(); // refresh family ids against current property id
+    if (cur.id === 'units') renderUnits(); // refresh unit ids against current property id
     if (cur.id === 'review') renderReview();
     refreshWizardChrome();
     const form = document.getElementById('propertyForm');
@@ -1525,7 +1492,6 @@ function validateWizardStep(id){
         const propId = document.getElementById('propertyId').value.trim();
         if (!propId) return alertFalse('🏷️ Enter the Property ID.');
         if (!/^(NSN-)?[0-9]{1,4}$/i.test(propId)) return alertFalse('🏷️ Property ID must be up to 4 digits (e.g. 0001).');
-        if (!document.getElementById('propertyType').value) return alertFalse('🏠 Choose a Property Type.');
         if (!document.getElementById('ownerCategory').value) return alertFalse('🏛️ Choose an Owner Type.');
         if (!document.getElementById('buildingType').value) return alertFalse('🏗️ Choose a Building Type.');
     }
@@ -1537,23 +1503,24 @@ function validateWizardStep(id){
         const hasPhoto = photoEl.style.display !== 'none' && photoEl.src && photoEl.src !== window.location.href;
         if (!hasPhoto) return alertFalse('📷 Photo is required. Please take a photo first.');
     }
-    if (id === 'occupant'){
+    if (id === 'owner'){
         const isInst = INSTITUTION_CATEGORIES.includes(document.getElementById('ownerCategory').value);
         const phone = (isInst ? document.getElementById('instContact') : document.getElementById('contact')).value.trim();
         if (phone && !/^[0-9]{10}$/.test(phone)) return alertFalse('📞 Contact number must be exactly 10 digits, or left blank.');
     }
-    if (id === 'households'){
-        const type = document.getElementById('propertyType').value;
-        if (!propertyHasHouseholds(type)) return true;
-        if (!householdDraft || householdDraft.length === 0) return alertFalse('👨‍👩‍👧 Add at least one family.');
-        const memberCount = householdDraft.reduce((n,f)=>n+(f.members||[]).length,0);
-        if (memberCount === 0) return alertFalse('👨‍👩‍👧 Add at least one family member.');
+    if (id === 'units'){
+        if (!householdDraft || householdDraft.length === 0) return alertFalse('📦 Add at least one unit.');
         for (let fi=0; fi<householdDraft.length; fi++){
             const f = householdDraft[fi];
-            for (let mi=0; mi<(f.members||[]).length; mi++){
-                const m = f.members[mi];
-                if (m.age === '' || m.age == null) return alertFalse(`👨‍👩‍👧 Member ${mi+1} in family ${fi+1} is missing an age.`);
-                if (!m.gender) return alertFalse(`👨‍👩‍👧 Member ${mi+1} in family ${fi+1} is missing a gender.`);
+            if (!f.occupied) continue;
+            if (f.type === 'Residential'){
+                for (let mi=0; mi<(f.members||[]).length; mi++){
+                    const m = f.members[mi];
+                    if (m.age === '' || m.age == null) return alertFalse(`📦 Unit ${fi+1}: Member ${mi+1} is missing an age.`);
+                    if (!m.gender) return alertFalse(`📦 Unit ${fi+1}: Member ${mi+1} is missing a gender.`);
+                }
+            } else {
+                if (!(f.label||'').trim()) return alertFalse(`📦 Unit ${fi+1} is missing a name/label.`);
             }
         }
     }
@@ -1575,29 +1542,45 @@ function renderReview(){
     const lat = g('latitude'), lng = g('longitude');
     const photoEl = document.getElementById('photoPreview');
     const hasPhoto = photoEl.style.display !== 'none' && photoEl.src && photoEl.src !== window.location.href;
-    const hh = householdStats({ families: cleanHouseholds(householdDraft) });
+    const cleaned = cleanHouseholds(householdDraft);
+    const derivedType = derivePropertyType(cleaned);
+    const hh = householdStats({ families: cleaned });
     const ok = v => `<span style="color:var(--success)">✓ ${v}</span>`;
     const no = v => `<span style="color:var(--danger)">✗ ${v}</span>`;
     const row = (k,v,step) => `<div class="review-row"><span class="rk">${k}${step?` <a href="#" onclick="goWizard('${step}');return false" style="font-size:11px;color:var(--primary)">edit</a>`:''}</span><span class="rv">${v||'—'}</span></div>`;
     const pid = g('propertyId') ? 'NSN-' + g('propertyId').replace(/^NSN-/i,'').replace(/^[0]*/,'').padStart(4,'0') : '';
     let h = `<div style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px">`;
     h += row('Property ID', pid, 'property');
-    h += row('Property Type', g('propertyType'), 'property');
+    h += row('Property Type', derivedType, null);
     h += row('Owner Type', g('ownerCategory'), 'property');
     h += row('Building', g('buildingType'), 'property');
     h += row('GPS', (lat&&lng)?ok('Captured'):no('Missing'), 'location');
     h += row('Photo', hasPhoto?ok('Taken'):no('Missing'), 'location');
     if (isInst){
-        h += row('Organization', g('organizationName'), 'occupant');
-        h += row('Contact person', g('contactPerson'), 'occupant');
-        h += row('Contact', g('instContact'), 'occupant');
+        h += row('Organization', g('organizationName'), 'owner');
+        h += row('Contact person', g('contactPerson'), 'owner');
+        h += row('Contact', g('instContact'), 'owner');
     } else {
-        h += row('Owner', g('ownerName'), 'occupant');
-        h += row('Father/Husband', g('fatherHusbandName'), 'occupant');
-        h += row('Contact', g('contact'), 'occupant');
+        h += row('Owner', g('ownerName'), 'owner');
+        h += row('Father/Husband', g('fatherHusbandName'), 'owner');
+        h += row('Contact', g('contact'), 'owner');
     }
-    if (propertyHasHouseholds(g('propertyType'))){
-        h += row('Households', hh.families ? `${hh.families} ${hh.families===1?'family':'families'} · ${hh.population} people` : 'None (vacant)', 'households');
+    h += `<div class="review-row"><span class="rk">Units <a href="#" onclick="goWizard('units');return false" style="font-size:11px;color:var(--primary)">edit</a></span><span class="rv">`;
+    if (householdDraft.length === 0) {
+        h += 'No units added</span></div>';
+    } else {
+        const unitList = householdDraft.map((u,i) => {
+            let summary = `${unitDisplayId(i)} (${u.type})`;
+            if (u.occupied) {
+                const ms = (u.members||[]).length;
+                if (u.type === 'Residential') summary += ` · ${ms} ${ms===1?'member':'members'}`;
+                else summary += ` · ${u.label||'(no label)'}`;
+            } else {
+                summary += ' · Empty';
+            }
+            return summary;
+        }).join('<br>');
+        h += unitList + '</span></div>';
     }
     h += `</div>`;
     document.getElementById('wizardReview').innerHTML = h;
@@ -1610,28 +1593,31 @@ function formatPropertyId(raw){ const n = (raw||'').trim().replace(/^NSN-/i,'').
 // A family's property-scoped id: NSN-0001/1, /2, ... Prefers the family's own stored
 // familyId (stable — assigned once, kept even if an earlier family is later removed);
 // falls back to a position-derived label for older families that predate that field.
-function familyDisplayId(propertyId, i, f){ return (f && f.familyId) || (propertyId ? propertyId + '/' + (i+1) : 'Family ' + (i+1)); }
+function unitDisplayId(i){ return 'Unit ' + (i+1); }
 
 // The head member is the one tagged 'Head', else the first member.
 function familyHead(f){ const ms = (f && f.members) || []; return ms.find(m => m.relation === 'Head') || ms[0] || null; }
 function familyHeadName(f){ const h = familyHead(f); return h && h.name ? h.name : ''; }
 
-// Numbers within the current draft only ever go up, even across add/remove, so a
-// family's id can never be reassigned to a different family once given out.
-let nextFamilyNum = 1;
-
-function addFamily(){
-    const propId = formatPropertyId((document.getElementById('propertyId')||{}).value);
-    const familyId = propId ? propId + '/' + nextFamilyNum : '';
-    nextFamilyNum++;
-    householdDraft.push({ familyId, contact:'', members:[{ name:'', gender:'', age:'', relation:'Head' }] });
-    renderHouseholds();
+// Derive property type from non-empty unit types
+function derivePropertyType(units){
+    const types = new Set((units||[]).filter(u => u.occupied !== false).map(u => u.type || 'Residential'));
+    if (types.size === 0) return 'Residential';
+    if (types.size === 1) return [...types][0];
+    return 'Mixed Use';
 }
-function removeFamily(fi){ householdDraft.splice(fi,1); renderHouseholds(); }
-function addMember(fi){ householdDraft[fi].members.push({ name:'', gender:'', age:'', relation:'' }); renderHouseholds(); }
-function removeMember(fi,mi){ householdDraft[fi].members.splice(mi,1); renderHouseholds(); }
-function updateFamilyField(fi,field,value){ householdDraft[fi][field] = value; refreshHouseholdSummary(); }
-function updateMemberField(fi,mi,field,value){ householdDraft[fi].members[mi][field] = value; refreshHouseholdSummary(); }
+
+function addUnit(){
+    householdDraft.push({ type:'Residential', occupied:true, label:'', contact:'', members:[{ name:'', gender:'', age:'', relation:'Head' }] });
+    renderUnits();
+}
+function removeUnit(fi){ householdDraft.splice(fi,1); renderUnits(); }
+function addMember(fi){ householdDraft[fi].members.push({ name:'', gender:'', age:'', relation:'' }); renderUnits(); }
+function removeMember(fi,mi){ householdDraft[fi].members.splice(mi,1); renderUnits(); }
+function updateFamilyField(fi,field,value){ householdDraft[fi][field] = value; refreshUnitSummary(); }
+function updateMemberField(fi,mi,field,value){ householdDraft[fi].members[mi][field] = value; refreshUnitSummary(); }
+function updateUnitType(fi, value){ householdDraft[fi].type = value; renderUnits(); }
+function updateUnitOccupied(fi, checked){ householdDraft[fi].occupied = checked; renderUnits(); }
 
 // Backward-compat: older drafts/records stored a separate headName. Fold it in as a Head member.
 function normalizeFamilies(families){
@@ -1640,35 +1626,49 @@ function normalizeFamilies(families){
         if (f.headName && !members.some(m => m.relation === 'Head')) {
             members.unshift({ name: f.headName, gender:'', age:'', relation:'Head' });
         }
-        return { familyId: f.familyId || '', contact: f.contact || '', members };
+        return { type: f.type || 'Residential', occupied: f.occupied !== false, label: f.label || '', familyId: f.familyId || '', contact: f.contact || '', members };
     });
 }
 
-function refreshHouseholdSummary(){
+function refreshUnitSummary(){
     const el = document.getElementById('householdSummary');
     if (!el) return;
-    const s = householdStats({ families: householdDraft });
+    const resUnits = householdDraft.filter(u => u.type === 'Residential' && u.occupied);
+    const s = householdStats({ families: resUnits });
     if (!householdDraft.length) { el.style.display = 'none'; return; }
     el.style.display = 'block';
-    el.textContent = `${s.families} ${s.families===1?'family':'families'} · ${s.population} ${s.population===1?'person':'people'} · ${s.children} children · ${s.males} male / ${s.females} female`;
+    el.textContent = `${householdDraft.length} ${householdDraft.length===1?'unit':'units'} · ${resUnits.length} residential · ${s.population} ${s.population===1?'person':'people'} · ${s.children} children · ${s.males} male / ${s.females} female`;
 }
 
-function renderHouseholds(){
+function renderUnits(){
     const c = document.getElementById('familiesContainer');
     if (!c) return;
-    const pid = formatPropertyId((document.getElementById('propertyId')||{}).value);
-    c.innerHTML = householdDraft.map((f, fi) => `
+    c.innerHTML = householdDraft.map((f, fi) => {
+        const isResidential = f.type === 'Residential';
+        const isOccupied = f.occupied;
+        const label = f.label || '';
+        return `
         <div style="border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:10px;background:var(--bg)">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-                <span style="font-weight:600;color:var(--primary)">👪 ${esc(familyDisplayId(pid, fi, f))}</span>
-                <button type="button" onclick="removeFamily(${fi})" style="background:none;border:none;color:var(--danger,#cb2431);font-size:18px;cursor:pointer;padding:0 4px">✕</button>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:6px">
+                <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center">
+                    <span style="font-weight:600;color:var(--primary)">📦 ${esc(unitDisplayId(fi))}</span>
+                    <select onchange="updateUnitType(${fi},this.value)" style="padding:4px 8px;font-size:12px;min-height:0;border-radius:6px">
+                        ${UNIT_TYPES.map(t=>`<option value="${t}" ${f.type===t?'selected':''}>${t}</option>`).join('')}
+                    </select>
+                    <label style="display:flex;align-items:center;gap:4px;font-size:12px;color:var(--text2);font-weight:400;cursor:pointer">
+                        <input type="checkbox" ${!isOccupied?'checked':''} onchange="updateUnitOccupied(${fi},!this.checked)" style="width:auto"> Empty
+                    </label>
+                </div>
+                <button type="button" onclick="removeUnit(${fi})" style="background:none;border:none;color:var(--danger,#cb2431);font-size:18px;cursor:pointer;padding:0 4px">✕</button>
             </div>
+            ${isOccupied ? `
             <div class="form-group">
                 <label>Family Contact <span style="font-size:12px;color:var(--text2);font-weight:400">(optional)</span></label>
                 <input type="tel" value="${esc(f.contact)}" placeholder="10-digit mobile number" pattern="[0-9]{10}" oninput="updateFamilyField(${fi},'contact',this.value)">
             </div>
+            ${isResidential ? `
             <div style="font-size:13px;font-weight:600;color:var(--text);margin:4px 0 6px">Members <span style="font-size:11px;color:var(--text2);font-weight:400">(first member = head of family)</span></div>
-            ${f.members.map((m, mi) => `
+            ${(f.members||[]).map((m, mi) => `
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;border-top:1px dashed var(--border);padding-top:8px;margin-bottom:6px">
                         <input type="text" value="${esc(m.name)}" placeholder="${mi===0?'Head of family name':'Member name'}" oninput="updateMemberField(${fi},${mi},'name',this.value)" style="grid-column:1 / -1">
                         <select required onchange="updateMemberField(${fi},${mi},'gender',this.value)">
@@ -1687,9 +1687,16 @@ function renderHouseholds(){
                     </div>
                 `).join('')}
             <button type="button" class="btn-secondary" onclick="addMember(${fi})" style="width:100%;margin-top:4px;font-size:13px;padding:8px">➕ Add Member</button>
+            ` : `
+            <div class="form-group">
+                <label>Unit Name / Label</label>
+                <input type="text" value="${esc(label)}" placeholder="e.g. Corner shop, Community hall" oninput="updateFamilyField(${fi},'label',this.value)">
+            </div>
+            `}
+            ` : '<div style="color:var(--text2);font-size:13px;padding:8px 0">🏠 This unit is empty</div>'}
         </div>
-    `).join('');
-    refreshHouseholdSummary();
+    `}).join('');
+    refreshUnitSummary();
 }
 
 // Strip fully-empty families/members so vacant houses store a clean [].
@@ -1700,9 +1707,9 @@ function cleanHouseholds(draft){
             const members = (f.members||[])
                 .map(m => ({ name:(m.name||'').trim(), gender:m.gender||'', age:(m.age===''||m.age==null)?'':Number(m.age), relation:m.relation||'' }))
                 .filter(m => m.name || m.age !== '' || m.gender || m.relation);
-            return { familyId: f.familyId || '', headName: familyHeadName({ members }), contact:(f.contact||'').trim(), members };
+            return { type: f.type || 'Residential', occupied: f.occupied !== false, label: (f.label||'').trim(), headName: familyHeadName({ members }), contact:(f.contact||'').trim(), members };
         })
-        .filter(f => f.contact || f.members.length);
+        .filter(f => f.contact || f.members.length || f.label);
 }
 
 let editingRecordId = null;
@@ -1735,7 +1742,9 @@ async function saveRecord(e) {
     const propIdRaw = document.getElementById('propertyId').value.trim();
     if (!/^(NSN-)?[0-9]{1,4}$/i.test(propIdRaw)) return showAlert('🏷️ Property ID must be up to 4 digits (e.g. 0001).', 'error');
 
-    const type = document.getElementById('propertyType').value;
+    // Auto-derive property type from unit combination
+    const cleanedUnits = cleanHouseholds(householdDraft);
+    const type = derivePropertyType(cleanedUnits);
     const ownerCategory = document.getElementById('ownerCategory').value;
     const isInst = INSTITUTION_CATEGORIES.includes(ownerCategory);
     const ownerName = isInst ? '' : document.getElementById('ownerName').value.trim();
@@ -1758,8 +1767,12 @@ async function saveRecord(e) {
         // Residential/Commercial: missing owner name, father/husband, or phone = needs follow-up
         isAbsent = !ownerName || !fatherHusband || !contact;
     }
-    // Also mark incomplete if any family member has empty details
-    if (propertyHasHouseholds(type) && familyMembersIncomplete(householdDraft)) {
+    // Also mark incomplete if any occupied residential unit has empty member details
+    if (householdDraft.some(u => u.type === 'Residential' && u.occupied && familyMembersIncomplete([u]))) {
+        isAbsent = true;
+    }
+    // Also mark incomplete if any occupied non-residential unit has no label
+    if (householdDraft.some(u => u.type !== 'Residential' && u.occupied && !(u.label||'').trim())) {
         isAbsent = true;
     }
     const fullId = 'NSN-' + document.getElementById('propertyId').value.trim().replace(/^NSN-/i,'').replace(/^[0]*/,'').padStart(4,'0');
@@ -1820,7 +1833,7 @@ async function saveRecord(e) {
         isInstitution: isInst,
         isAbsent,
         contact: contact || '',
-        families: propertyHasHouseholds(type) ? cleanHouseholds(householdDraft) : [],
+        families: cleanedUnits,
         remarks: document.getElementById('remarks').value.trim(),
         latitude: parseFloat(lat),
         longitude: parseFloat(lng),
@@ -1924,9 +1937,6 @@ function startEditRecord(r) {
     switchTab('collect', document.querySelectorAll('#workerView .tab-btn')[0]);
     // Fill the form
     document.getElementById('propertyId').value = (r.propertyId||'').replace(/^NSN-/,'');
-    // Set property type (safety default if somehow missing)
-    const validPropTypes = ['Residential','Commercial','Mixed Use','Institutional/Public'];
-    document.getElementById('propertyType').value = validPropTypes.includes(r.propertyType) ? r.propertyType : 'Residential';
     // Set owner category (safety default if somehow missing)
     document.getElementById('ownerCategory').value = r.ownerCategory || 'Individual';
     document.getElementById('buildingType').value = r.buildingType;
@@ -1942,16 +1952,13 @@ function startEditRecord(r) {
         document.getElementById('contact').value = r.contact||'';
     }
     document.getElementById('remarks').value = r.remarks||'';
-    // Load households into the draft (deep copy so edits don't mutate the live record)
+    // Load units into the draft (deep copy so edits don't mutate the live record)
     householdDraft = normalizeFamilies(Array.isArray(r.families) ? JSON.parse(JSON.stringify(r.families)) : []);
-    // Continue numbering after the highest existing family id so a family added mid-edit
-    // can't collide with one already on this property.
-    nextFamilyNum = 1 + householdDraft.reduce((max, f) => {
-        const n = parseInt(String(f.familyId||'').split('/').pop(), 10);
-        return Number.isFinite(n) && n > max ? n : max;
-    }, 0);
-    renderHouseholds();
-    // Restore photo BEFORE jumping to review (validation needs it)
+    // If old record has no families, create one default Residential unit
+    if (householdDraft.length === 0) {
+        householdDraft = [{ type:'Residential', occupied:true, label:'', contact:'', members:[{ name:'', gender:'', age:'', relation:'Head' }] }];
+    }
+    renderUnits();
     if (r.photo) {
         pendingPhotoBlob = null; // not a new capture — keep existing Storage URL
         // Clear any leftover unstamped-photo data from an abandoned collect session —
@@ -2048,9 +2055,8 @@ function resetForm() {
     document.getElementById('residentialFields').classList.remove('hidden');
     document.getElementById('organizationName').removeAttribute('required');
     householdDraft = [];
-    nextFamilyNum = 1;
     pendingPhotoBlob = null;
-    renderHouseholds();
+    renderUnits();
     showWizardStep(0);
     clearEditLocks();
 }
@@ -2118,6 +2124,7 @@ function isRecordAbsent(r) {
 function familyMembersIncomplete(families) {
     const fams = Array.isArray(families) ? families : [];
     for (const f of fams) {
+        if (f.occupied === false) continue; // skip empty units
         const members = Array.isArray(f && f.members) ? f.members : [];
         for (const m of members) {
             if (!(m && m.name && m.name.toString().trim())) return true;
@@ -2347,12 +2354,6 @@ function renderMyRecords(records) {
     const el = document.getElementById('myBuildingBreakdown');
     if (el) el.innerHTML = stackedBarChart(bc, 'No records yet');
 
-    // Property type breakdown (completed only)
-    const pc = {};
-    completed.forEach(r => { pc[r.propertyType] = (pc[r.propertyType]||0)+1; });
-    const pel = document.getElementById('myPropertyBreakdown');
-    if (pel) pel.innerHTML = stackedBarChart(pc, 'No records yet');
-
     // Owner type breakdown (completed only)
     const oc = {};
     completed.forEach(r => { const k = r.ownerCategory||'Individual'; oc[k] = (oc[k]||0)+1; });
@@ -2439,19 +2440,23 @@ function stackedBarChart(map, emptyMsg, colors, preserveOrder){
 function householdHtml(r, full) {
     const s = householdStats(r);
     if (!s.families) {
+        const totalUnits = (r.families||[]).length;
+        if (totalUnits > 0) return '<div class="record-detail">📦 ' + totalUnits + ' unit' + (totalUnits>1?'s':'') + ' · no residential / no population</div>';
         return '<div class="record-detail">🏠 Vacant / no household recorded</div>';
     }
-    const summary = `<div class="record-detail">👨‍👩‍👧 <b>${s.families}</b> ${s.families===1?'family':'families'} · <b>${s.population}</b> ${s.population===1?'person':'people'} · ${s.children} children · ${s.males}M / ${s.females}F${s.others?' / '+s.others+'O':''}</div>`;
+    const totalUnits = (r.families||[]).length;
+    const summary = `<div class="record-detail">📦 <b>${totalUnits}</b> unit${totalUnits>1?'s':''} · 👨‍👩‍👧 <b>${s.families}</b> ${s.families===1?'family':'families'} · <b>${s.population}</b> ${s.population===1?'person':'people'} · ${s.children} children · ${s.males}M / ${s.females}F${s.others?' / '+s.others+'O':''}</div>`;
     if (!full) return summary;
     const fams = (r.families||[]).map((f,i)=>{
-        const label = esc(familyDisplayId(r.propertyId, i, f));
+        const ut = f.type || 'Residential';
+        const label = ut + (f.occupied === false ? ' (Empty)' : '');
         const head = esc(f.headName);
         const contact = f.contact ? ` · 📱 ${esc(f.contact)}` : '';
         const members = (f.members||[]).map(m=>{
             const bits = [esc(m.name)||'(no name)', m.gender||'', (m.age===''||m.age==null)?'':m.age+'y', m.relation||''].filter(Boolean);
             return `<li>${bits.join(' · ')}</li>`;
         }).join('') || '<li style="color:#999">No members listed</li>';
-        return `<div style="margin-top:6px"><b>👪 ${label}</b>${head?' · '+head:''}${contact}<ul style="margin:2px 0 0 18px;padding:0">${members}</ul></div>`;
+        return `<div style="margin-top:6px"><b>📦 ${label}</b>${head?' · '+head:''}${contact}<ul style="margin:2px 0 0 18px;padding:0">${members}</ul></div>`;
     }).join('');
     return summary + `<div style="background:var(--bg);border-radius:6px;padding:8px;margin-top:6px;font-size:12px;color:var(--text2)">${fams}</div>`;
 }
@@ -2915,10 +2920,9 @@ function renderAdminOverview() {
 
     renderScreeningCounter();
 
-    const bc={}, pc={}, oc={};
-    completed.forEach(r=>{ bc[r.buildingType]=(bc[r.buildingType]||0)+1; pc[r.propertyType]=(pc[r.propertyType]||0)+1; const ok=r.ownerCategory||'Individual'; oc[ok]=(oc[ok]||0)+1; });
+    const bc={}, oc={};
+    completed.forEach(r=>{ bc[r.buildingType]=(bc[r.buildingType]||0)+1; const ok=r.ownerCategory||'Individual'; oc[ok]=(oc[ok]||0)+1; });
     document.getElementById('adminBuildingBreakdown').innerHTML = stackedBarChart(bc, 'No data');
-    document.getElementById('adminPropertyBreakdown').innerHTML = stackedBarChart(pc, 'No data');
     document.getElementById('adminOwnerBreakdown').innerHTML = stackedBarChart(oc, 'No data');
 
     renderPopHouseholds('admin', completed);
@@ -3028,13 +3032,11 @@ function populateWorkerFilter() {
 
 function getFilteredRecords() {
     const wf = document.getElementById('filterWorker').value;
-    const tf = document.getElementById('filterType').value;
     const of = document.getElementById('filterOwner').value;
     const sf = document.getElementById('filterStatus').value;
     const pidSearch = document.getElementById('filterPropertyId').value.trim().toLowerCase().replace(/^nsn-/, '');
     let f = allRecords;
     if (wf) f = f.filter(r=>r.workerUid===wf);
-    if (tf) f = f.filter(r=>r.propertyType===tf);
     if (of) f = f.filter(r=>(r.ownerCategory||'Individual')===of);
     if (sf==='complete') f = f.filter(r=>!needsFollowUp(r));
     if (sf==='absent') f = f.filter(r=>isRecordAbsent(r));
@@ -3117,7 +3119,7 @@ async function backfillFamilyIds() {
                 if (f.familyId) return f;
                 changed = true;
                 updatedFamilies++;
-                return { ...f, familyId: familyDisplayId(data.propertyId, i) };
+                return { ...f, familyId: 'Unit ' + (i+1) };
             });
             if (!changed) continue;
             batch.update(doc.ref, { families: next });
@@ -3318,7 +3320,7 @@ function exportMembersCSV() {
                 const age = (m.age===''||m.age==null)?'':Number(m.age);
                 const isChild = age!=='' && !Number.isNaN(age) && age < 18 ? 'Yes' : (age==='' ? '' : 'No');
                 rows.push([
-                    r.propertyId, familyDisplayId(r.propertyId, fi, f), f.headName||'', f.contact||'',
+                    r.propertyId, unitDisplayId(fi), f.headName||'', f.contact||'',
                     m.name||'', m.gender||'', age, isChild, m.relation||'',
                     allUsers[r.workerUid]?.name||r.workerEmail||''
                 ]);
