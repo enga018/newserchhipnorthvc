@@ -1675,7 +1675,6 @@ function renderUnits(){
                             <option value="">Gender *</option>
                             <option value="Male" ${m.gender==='Male'?'selected':''}>Male</option>
                             <option value="Female" ${m.gender==='Female'?'selected':''}>Female</option>
-                            <option value="Other" ${m.gender==='Other'?'selected':''}>Other</option>
                         </select>
                         <input type="number" min="0" max="120" value="${esc(m.age)}" placeholder="Age *" required oninput="updateMemberField(${fi},${mi},'age',this.value)">
                         ${mi===0 ? '<input type="hidden" value="Head" name="relation">' : `
@@ -2150,8 +2149,8 @@ function householdStats(r) {
             const g = (m && m.gender || '').toLowerCase();
             if (g === 'male') males++;
             else if (g === 'female') females++;
-            else others++;
-            // blank/unknown gender is counted as 'Other' for stats alignment
+            else males++;
+            // blank/unknown gender is counted as Male for stats alignment
             const hasAge = m && m.age !== '' && m.age != null;
             const age = Number(m && m.age);
             if (hasAge && !Number.isNaN(age)) {
@@ -2445,7 +2444,7 @@ function householdHtml(r, full) {
         return '<div class="record-detail">🏠 Vacant / no household recorded</div>';
     }
     const totalUnits = (r.families||[]).length;
-    const summary = `<div class="record-detail">📦 <b>${totalUnits}</b> unit${totalUnits>1?'s':''} · 👨‍👩‍👧 <b>${s.families}</b> ${s.families===1?'family':'families'} · <b>${s.population}</b> ${s.population===1?'person':'people'} · ${s.children} children · ${s.males}M / ${s.females}F${s.others?' / '+s.others+'O':''}</div>`;
+    const summary = `<div class="record-detail">📦 <b>${totalUnits}</b> unit${totalUnits>1?'s':''} · 👨‍👩‍👧 <b>${s.families}</b> ${s.families===1?'family':'families'} · <b>${s.population}</b> ${s.population===1?'person':'people'} · ${s.children} children · ${s.males}M / ${s.females}F</div>`;
     if (!full) return summary;
     const fams = (r.families||[]).map((f,i)=>{
         const ut = f.type || 'Residential';
@@ -2506,9 +2505,9 @@ function renderPopHouseholds(prefix, records) {
     set(prefix+'Families', hh.families);
     hset(prefix+'FamilySizes', stackedBarChart(hhMap, 'No data', hhColors, true) + detailLine);
     set(prefix+'Population', hh.population);
-    hset(prefix+'PopGender', stackedBarChart({Male: hh.males, Female: hh.females, Other: hh.others}, 'No data', ['#2563eb','#db2777','#7c3aed'], true));
+    hset(prefix+'PopGender', stackedBarChart({Male: hh.males, Female: hh.females}, 'No data', ['#2563eb','#db2777'], true));
     set(prefix+'Children', hh.children);
-    hset(prefix+'ChildGender', stackedBarChart({Male: hh.childMales, Female: hh.childFemales, Other: hh.children - hh.childMales - hh.childFemales}, 'No data', ['#2563eb','#db2777','#7c3aed'], true));
+    hset(prefix+'ChildGender', stackedBarChart({Male: hh.childMales, Female: hh.childFemales}, 'No data', ['#2563eb','#db2777'], true));
 }
 
 function recordCard(r, context) {
