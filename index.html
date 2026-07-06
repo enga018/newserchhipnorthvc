@@ -297,6 +297,10 @@
         <div id="collect" class="form-section active">
             <div id="connectionBanner" class="conn-banner online"><span id="connIcon">🟢</span><span id="connText">Online — data saves instantly</span></div>
             <div id="syncBadge" class="sync-badge hidden"><span class="sync-icon">🔄</span><span id="syncText">0 pending</span></div>
+            <div id="retryBanner" class="hidden" style="background:#ffebee;border:1px solid #cb2431;border-radius:6px;padding:10px 12px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center">
+                <span style="font-size:13px;color:#cb2431"><span id="retryBannerText"></span></span>
+                <button type="button" onclick="retryFailedSave()" style="background:#cb2431;color:white;padding:4px 12px;font-size:12px;border-radius:4px">🔄 Retry</button>
+            </div>
             <div id="alertBox"></div>
             <div id="editBanner" class="hidden" style="background:#fff3cd;border:1px solid #ffc107;border-radius:6px;padding:10px 12px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center">
                 <span style="font-size:13px;color:#856404">✏️ Editing existing record</span>
@@ -914,7 +918,7 @@ const firebaseConfig = {
     appId: "1:610573950046:web:2b545f876953a4eb18a8cf"
 };
 const ADMIN_EMAIL = "enga018@gmail.com";
-const APP_VERSION = "v2.14.8";
+const APP_VERSION = "v2.14.9";
 
 
 firebase.initializeApp(firebaseConfig);
@@ -1078,6 +1082,7 @@ auth.onAuthStateChanged(async user => {
                 } catch(e) { console.error('Profile auto-heal failed:', e); }
             }
             myProfile = profile;
+            checkFailedSaves();
             document.getElementById('userNameBadge').textContent = '👤 ' + (profile?.name || user.email);
             // Live-listen for range/profile changes from admin
             db.collection('users').doc(user.uid).onSnapshot(d => {
@@ -1952,7 +1957,10 @@ async function saveRecord(e) {
                 pendingCount = Math.max(0, pendingCount - 1);
                 updateSyncBadge();
                 console.error('Background sync failed for', recordId, err);
-                showAlert('⚠️ ' + fullId + ' saved locally but failed to sync: ' + err.message, 'error');
+                const failed = JSON.parse(sessionStorage.getItem('failedSaves') || '{}');
+                failed[fullId] = data;
+                sessionStorage.setItem('failedSaves', JSON.stringify(failed));
+                showRetryBanner(fullId);
             });
             cancelEdit();
             resetForm();
@@ -1971,7 +1979,11 @@ async function saveRecord(e) {
                 pendingCount = Math.max(0, pendingCount - 1);
                 updateSyncBadge();
                 console.error('Background sync failed for', savedId, err);
-                showAlert('⚠️ ' + savedId + ' saved locally but failed to sync: ' + err.message, 'error');
+                // Store failed save so worker can retry with the original data
+                const failed = JSON.parse(sessionStorage.getItem('failedSaves') || '{}');
+                failed[savedId] = data;
+                sessionStorage.setItem('failedSaves', JSON.stringify(failed));
+                showRetryBanner(savedId);
             });
             resetForm();
             // Stay on Collect tab so worker can enter the next property immediately
@@ -1983,6 +1995,46 @@ async function saveRecord(e) {
         btn.textContent = editingRecordId ? '💾 Update Record' : '💾 Save & Sync'; btn.disabled = false;
     } finally {
         btn.textContent = '💾 Save & Sync'; btn.disabled = false;
+    }
+}
+
+function showRetryBanner(propId) {
+    const b = document.getElementById('retryBanner');
+    document.getElementById('retryBannerText').textContent = `⚠️ ${propId} failed to save — tap retry to re-submit`;
+    b.classList.remove('hidden');
+}
+
+async function retryFailedSave() {
+    const banner = document.getElementById('retryBanner');
+    const text = document.getElementById('retryBannerText');
+    const failed = JSON.parse(sessionStorage.getItem('failedSaves') || '{}');
+    const keys = Object.keys(failed);
+    if (!keys.length) { banner.classList.add('hidden'); return; }
+    text.textContent = '🔄 Retrying...';
+    let remaining = {};
+    let success = 0;
+    for (const [propId, data] of Object.entries(failed)) {
+        try {
+            await db.collection('records').add(data);
+            success++;
+        } catch(e) {
+            remaining[propId] = data;
+        }
+    }
+    if (Object.keys(remaining).length) {
+        sessionStorage.setItem('failedSaves', JSON.stringify(remaining));
+        text.textContent = `⚠️ ${success ? success + ' recovered, ' : ''}${Object.keys(remaining).length} still failed — tap to retry`;
+    } else {
+        sessionStorage.removeItem('failedSaves');
+        banner.classList.add('hidden');
+        showAlert(`✓ ${success} record${success===1?'':'s'} recovered and saved!`, 'success');
+    }
+}
+
+function checkFailedSaves() {
+    const failed = JSON.parse(sessionStorage.getItem('failedSaves') || '{}');
+    if (Object.keys(failed).length) {
+        showRetryBanner(Object.keys(failed)[0] + (Object.keys(failed).length > 1 ? ` +${Object.keys(failed).length - 1} more` : ''));
     }
 }
 
