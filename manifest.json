@@ -2,7 +2,7 @@
   "name": "Property Tax Collector",
   "short_name": "Tax Collector",
   "description": "Village Council Field Data App for property tax collection",
-  "start_url": "./index.html",
+  "start_url": "./app/",
   "display": "standalone",
   "background_color": "#f3f6fa",
   "theme_color": "#2c5282",
