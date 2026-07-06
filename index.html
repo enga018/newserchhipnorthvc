@@ -3169,6 +3169,11 @@ function renderWorkers() {
             </div>
         </div>`;
     }).join('');
+    if (isSupervisor) {
+        document.getElementById('addAccountBox').style.display = 'none';
+        document.getElementById('supervisorsSectionTitle').style.display = 'none';
+        document.getElementById('supervisorsList').style.display = 'none';
+    }
 }
 
 let _msData = null; // { listText, commaText } for copy
