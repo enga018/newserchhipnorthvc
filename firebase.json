@@ -15,5 +15,8 @@
       "FUTURE_PLANS.md",
       "README.md"
     ]
+  },
+  "firestore": {
+    "rules": "firestore.rules"
   }
 }

@@ -8,3 +8,4 @@ users.json
 users-new.json
 migrate.js
 migrate-records.js
+reset-passwords.js

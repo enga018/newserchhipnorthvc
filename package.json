@@ -5,5 +5,8 @@
   "private": true,
   "scripts": {
     "test": "node --test"
+  },
+  "dependencies": {
+    "firebase-admin": "^14.1.0"
   }
 }
