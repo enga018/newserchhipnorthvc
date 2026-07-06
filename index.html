@@ -914,7 +914,7 @@ const firebaseConfig = {
     appId: "1:610573950046:web:2b545f876953a4eb18a8cf"
 };
 const ADMIN_EMAIL = "enga018@gmail.com";
-const APP_VERSION = "v2.14.5";
+const APP_VERSION = "v2.14.6";
 
 
 firebase.initializeApp(firebaseConfig);
@@ -1617,7 +1617,18 @@ function addMember(fi){ householdDraft[fi].members.push({ name:'', gender:'', ag
 function removeMember(fi,mi){ householdDraft[fi].members.splice(mi,1); renderUnits(); }
 function updateFamilyField(fi,field,value){ householdDraft[fi][field] = value; refreshUnitSummary(); }
 function updateMemberField(fi,mi,field,value){ householdDraft[fi].members[mi][field] = value; refreshUnitSummary(); }
-function updateUnitType(fi, value){ householdDraft[fi].type = value; if (value === 'Institutional/Public') householdDraft[fi].occupied = true; if (value !== 'Residential') { householdDraft[fi].members = []; householdDraft[fi].contact = ''; } renderUnits(); }
+function updateUnitType(fi, value){
+    householdDraft[fi].type = value;
+    if (value === 'Institutional/Public') householdDraft[fi].occupied = true;
+    if (value !== 'Residential') {
+        householdDraft[fi].members = [];
+        householdDraft[fi].contact = '';
+    } else if (!householdDraft[fi].members || !householdDraft[fi].members.length) {
+        householdDraft[fi].members = [{ name:'', gender:'', age:'', relation:'Self' }];
+        householdDraft[fi].occupied = true;
+    }
+    renderUnits();
+}
 function updateUnitOccupied(fi, checked){ householdDraft[fi].occupied = checked; renderUnits(); }
 
 // Backward-compat: older drafts/records stored a separate headName. Fold it in as a Head member.
@@ -2759,6 +2770,10 @@ function openAdminEdit(r) {
     document.getElementById('aeRemarks').value = r.remarks || '';
     updateAdminEditFields();
     aeFamilies = [...(r.families || [])];
+    aeFamilies.forEach(f => {
+        if (f.occupied === undefined) f.occupied = true;
+        if (f.type && f.type !== 'Residential' && !f.members) f.members = [];
+    });
     renderAeUnits();
     document.getElementById('adminEditModal').classList.add('active');
 }
@@ -2852,7 +2867,17 @@ function renderAeUnits() {
     document.getElementById('aePropertyType').innerHTML = '🏠 Property Type: <b>' + esc(derivePropertyType(aeFamilies)) + '</b> (derived from units)';
 }
 
-function aeUpdateUnitType(fi, value){ aeFamilies[fi].type = value; if (value === 'Institutional/Public') aeFamilies[fi].occupied = true; if (value !== 'Residential') { aeFamilies[fi].members = []; aeFamilies[fi].contact = ''; } }
+function aeUpdateUnitType(fi, value){
+    aeFamilies[fi].type = value;
+    if (value === 'Institutional/Public') aeFamilies[fi].occupied = true;
+    if (value !== 'Residential') {
+        aeFamilies[fi].members = [];
+        aeFamilies[fi].contact = '';
+    } else if (!aeFamilies[fi].members || !aeFamilies[fi].members.length) {
+        aeFamilies[fi].members = [{ name:'', gender:'', age:'', relation:'Self' }];
+        aeFamilies[fi].occupied = true;
+    }
+}
 function aeAddUnit(){ aeFamilies.push({ type:'Residential', occupied:true, label:'', contact:'', members:[{ name:'', gender:'', age:'', relation:'Self' }] }); renderAeUnits(); }
 function aeRemoveUnit(fi){ aeFamilies.splice(fi, 1); }
 function aeAddMember(fi){ if (!aeFamilies[fi].members) aeFamilies[fi].members = []; aeFamilies[fi].members.push({ name:'', gender:'', age:'', relation:'' }); }
