@@ -80,6 +80,9 @@
         @keyframes wizFade{from{opacity:0;transform:translateX(6px)}to{opacity:1;transform:none}}
         .wizard-step-title{font-size:16px;font-weight:700;color:var(--text);margin-bottom:14px}
         .wizard-nav{display:flex;gap:8px;margin-top:20px}
+        .wizard-nav-fixed{position:fixed;left:0;right:0;bottom:calc(56px + env(safe-area-inset-bottom));z-index:80;background:var(--surface);border-top:1px solid var(--border);box-shadow:0 -2px 10px rgba(16,32,52,0.07);padding:8px 10px;max-width:620px;margin:0 auto}
+        .wizard-nav-fixed .wizard-nav{margin-top:0}
+        .wizard-nav-fixed .btn-clear-wiz{font-size:12px;padding:6px 12px;min-height:0;border-radius:8px;background:var(--surface-2);color:var(--text2);border:1px solid var(--border);width:100%}
         .review-row{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)}
         .review-row:last-child{border-bottom:none}
         .review-row .rk{color:var(--text2);font-size:13px}
@@ -442,13 +445,16 @@
                     </div>
                 </div>
 
-                <!-- WIZARD NAV -->
-                <div class="wizard-nav">
-                    <button type="button" id="wizBackBtn" class="btn-secondary" onclick="wizardBack()" style="flex:1">← Back</button>
-                    <button type="button" id="wizNextBtn" class="btn-primary" onclick="wizardNext()" style="flex:2">Next →</button>
-                    <button type="submit" id="submitBtn" class="btn-primary" style="flex:2;display:none">💾 Save &amp; Sync</button>
+                <!-- WIZARD NAV (fixed at bottom) -->
+                <div class="wizard-nav-fixed">
+                    <div class="wizard-nav">
+                        <button type="button" id="wizBackBtn" class="btn-secondary" onclick="wizardBack()" style="flex:1">← Back</button>
+                        <button type="button" id="wizNextBtn" class="btn-primary" onclick="wizardNext()" style="flex:2">Next →</button>
+                        <button type="submit" id="submitBtn" class="btn-primary" style="flex:2;display:none">💾 Save &amp; Sync</button>
+                    </div>
+                    <button type="button" class="btn-clear-wiz" onclick="cancelEdit();resetForm()">Clear form</button>
                 </div>
-                <button type="button" class="btn-secondary" onclick="cancelEdit();resetForm()" style="margin-top:8px;font-size:13px">Clear form</button>
+                <div style="height:120px"></div><!-- spacer so content isn't hidden behind fixed nav -->
             </form>
         </div>
 
@@ -487,15 +493,15 @@
                 </div>
                 <div id="myFamilySizes"></div>
             </div>
-            <div class="breakdown-card" style="margin-bottom:10px">
+            <div class="nest-box">
                 <div class="section-title">🏗️ Building Types</div>
                 <div id="myBuildingBreakdown"></div>
             </div>
-            <div class="breakdown-card" style="margin-bottom:10px">
+            <div class="nest-box">
                 <div class="section-title">🪪 Owner Types</div>
                 <div id="myOwnerBreakdown"></div>
             </div>
-            <div class="breakdown-card" style="margin-bottom:10px">
+            <div class="nest-box">
                 <div class="section-title">🏠 Property Types</div>
                 <div id="myPropertyBreakdown"></div>
             </div>
@@ -576,19 +582,19 @@
                 </div>
                 <div id="adminFamilySizes"></div>
             </div>
-            <div class="breakdown-card" style="margin-bottom:12px">
+            <div class="nest-box">
                 <div class="section-title">🏗️ Building Types</div>
                 <div id="adminBuildingBreakdown"></div>
             </div>
-            <div class="breakdown-card" style="margin-bottom:12px">
+            <div class="nest-box">
                 <div class="section-title">🪪 Owner Types</div>
                 <div id="adminOwnerBreakdown"></div>
             </div>
-            <div class="breakdown-card" style="margin-bottom:12px">
+            <div class="nest-box">
                 <div class="section-title">🏠 Property Types</div>
                 <div id="adminPropertyBreakdown"></div>
             </div>
-            <div class="breakdown-card" style="margin-bottom:12px" id="cardWorkerActivity">
+            <div class="nest-box" id="cardWorkerActivity">
                 <div class="section-title">👥 Worker Activity Today</div>
                 <div id="adminWorkerToday" style="font-size:13px;color:var(--text2)"></div>
             </div>
@@ -978,7 +984,7 @@ const firebaseConfig = {
     appId: "1:547385765757:web:df18cd27e9161b7d1c2614"
 };
 const ADMIN_EMAIL = "enga018@gmail.com";
-const APP_VERSION = "v2.19.0";
+const APP_VERSION = "v2.19.1";
 
 
 firebase.initializeApp(firebaseConfig);
