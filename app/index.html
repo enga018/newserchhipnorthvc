@@ -11,6 +11,39 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="NSN Survey">
+    <script>
+    // Tracks which CDN resources load/fail, so a stuck splash screen can name the
+    // exact problem (no DevTools needed) instead of a generic "check connection".
+    window.__resourceStatus = {};
+    window.__cdnResourceLabels = {
+        'firebase-app-compat.js': 'Firebase (core)',
+        'firebase-auth-compat.js': 'Firebase (login)',
+        'firebase-firestore-compat.js': 'Firebase (database)',
+        'firebase-storage-compat.js': 'Firebase (photo storage)',
+        'jszip.min.js': 'ZIP export',
+        'leaflet.min.css': 'Map styles',
+        'leaflet.min.js': 'Map',
+        'leaflet-heat.js': 'Map heatmap'
+    };
+    Object.keys(window.__cdnResourceLabels).forEach(function(f) { window.__resourceStatus[f] = 'pending'; });
+    function __trackResourceEvent(e, status) {
+        var src = e.target && (e.target.src || e.target.href);
+        if (!src) return;
+        var file = src.split('/').pop();
+        if (window.__resourceStatus.hasOwnProperty(file)) window.__resourceStatus[file] = status;
+    }
+    window.addEventListener('error', function(e) { __trackResourceEvent(e, 'error'); }, true);
+    window.addEventListener('load', function(e) { __trackResourceEvent(e, 'ok'); }, true);
+    window.getResourceLoadSummary = function() {
+        var failed = [], pending = [];
+        Object.keys(window.__resourceStatus).forEach(function(file) {
+            var label = window.__cdnResourceLabels[file] || file;
+            if (window.__resourceStatus[file] === 'error') failed.push(label);
+            else if (window.__resourceStatus[file] === 'pending') pending.push(label);
+        });
+        return { failed: failed, pending: pending };
+    };
+    </script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
@@ -284,25 +317,39 @@
     <div id="splashLoadingText" style="font-size:13px;color:#586069;margin-top:8px">Loading...</div>
     <div id="splashVersion" style="font-size:11px;color:#999;margin-top:12px"></div>
     <div id="splashRetry" class="hidden" style="margin-top:18px;text-align:center;padding:0 24px">
-        <div style="font-size:13px;color:#c0392b;margin-bottom:12px">Taking longer than usual. Please check your internet connection.</div>
+        <div id="splashErrorText" style="font-size:13px;color:#c0392b;margin-bottom:6px">Taking longer than usual. Please check your internet connection.</div>
+        <div id="splashDetailText" style="font-size:11px;color:#8a8f98;margin-bottom:12px"></div>
         <button onclick="location.reload()" style="padding:10px 22px;background:#2c5282;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">Retry</button>
     </div>
 </div>
 <script>
 // Exposed so later scripts can surface a friendly error immediately (e.g. if the
 // Firebase CDN scripts fail to load) instead of leaving the splash spinning forever.
-window.showSplashError = function(msg) {
+window.showSplashError = function(msg, detail) {
     var splash = document.getElementById('splashScreen');
     if (!splash || splash.classList.contains('hidden')) return;
     var retry = document.getElementById('splashRetry');
     var loadingText = document.getElementById('splashLoadingText');
+    var errorText = document.getElementById('splashErrorText');
+    var detailText = document.getElementById('splashDetailText');
     if (retry) retry.classList.remove('hidden');
-    if (loadingText) loadingText.textContent = msg || 'Still loading...';
+    if (loadingText) loadingText.textContent = 'Still loading...';
+    if (errorText && msg) errorText.textContent = msg;
+    if (detailText) detailText.textContent = detail || '';
 };
 // Standalone watchdog: fires even if the Firebase/Leaflet CDN <script> tags below
 // hang or fail on a slow/flaky connection, since it doesn't depend on them loading.
 setTimeout(function() {
-    window.showSplashError('Still loading...');
+    var summary = window.getResourceLoadSummary ? window.getResourceLoadSummary() : { failed: [], pending: [] };
+    if (summary.failed.length) {
+        window.showSplashError('Failed to load: ' + summary.failed.join(', ') + '.', 'Please check your internet connection and retry.');
+    } else if (summary.pending.length) {
+        window.showSplashError('Still downloading: ' + summary.pending.join(', ') + '.', 'This is taking longer than usual on this connection.');
+    } else if (window.__firebaseInitOk) {
+        window.showSplashError('Connected, but the login check is taking unusually long.', 'This may be a temporary server issue — try again.');
+    } else {
+        window.showSplashError('Taking longer than usual.', 'Please check your internet connection.');
+    }
 }, 12000);
 </script>
 
@@ -1347,9 +1394,10 @@ try {
     firebase.initializeApp(firebaseConfig);
     // Show loading while auth state checks
     auth = firebase.auth();
+    window.__firebaseInitOk = true;
 } catch (e) {
     console.error('Firebase failed to load — likely a CDN/network issue:', e);
-    window.showSplashError('Failed to load. Check your internet connection.');
+    window.showSplashError('Firebase failed to initialize.', String(e.message || e));
 }
 
 // Lock background scroll whenever any modal/overlay is open (prevents swipe bleed-through)
@@ -1473,7 +1521,7 @@ if (auth) {
         });
     } catch (e) {
         console.error('Firebase Firestore/Storage failed to initialize:', e);
-        window.showSplashError('Failed to load. Check your internet connection.');
+        window.showSplashError('Firestore/Storage failed to initialize.', String(e.message || e));
     }
 }
 let pendingPhotoBlob = null; // blob waiting for Storage upload
