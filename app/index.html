@@ -566,6 +566,7 @@
             <button type="button" class="navbtn tab-btn admin-only-tab" onclick="switchAdminTab('adminsettings',this)"><span class="navicon">⚙️</span>Settings</button>
             <button type="button" class="navbtn tab-btn admin-only-tab" onclick="switchAdminTab('map',this)"><span class="navicon">🗺️</span>Map</button>
             <button type="button" class="navbtn tab-btn admin-only-tab" onclick="switchAdminTab('offlinequeue',this)"><span class="navicon">📶</span>Offline Queue</button>
+            <button type="button" class="navbtn tab-btn admin-only-tab" onclick="switchAdminTab('performance',this)"><span class="navicon">📊</span>Performance</button>
         </nav>
 
         <!-- OVERVIEW -->
@@ -793,6 +794,97 @@
             <div class="section-title" style="margin-top:16px">Failed Saves</div>
             <div id="failedQueueList" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden">
                 <div style="padding:12px;text-align:center;color:var(--text2);font-size:13px">No failed saves</div>
+            </div>
+        </div>
+
+        <!-- PERFORMANCE -->
+        <div id="performance" class="form-section">
+            <h2>Performance Dashboard</h2>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px">
+                <div style="background:var(--surface);border-radius:8px;padding:12px;text-align:center;border-left:4px solid var(--success)">
+                    <div style="font-size:11px;color:var(--text2);text-transform:uppercase;margin-bottom:4px">Sync Health</div>
+                    <div style="font-size:20px;font-weight:600" id="perfSyncHealth">✓ Good</div>
+                    <div style="font-size:12px;color:var(--text2)" id="perfSyncRate">—</div>
+                </div>
+                <div style="background:var(--surface);border-radius:8px;padding:12px;text-align:center;border-left:4px solid var(--success)">
+                    <div style="font-size:11px;color:var(--text2);text-transform:uppercase;margin-bottom:4px">Storage Health</div>
+                    <div style="font-size:20px;font-weight:600" id="perfStorageHealth">✓ Good</div>
+                    <div style="font-size:12px;color:var(--text2)" id="perfStorageUsed">—</div>
+                </div>
+                <div style="background:var(--surface);border-radius:8px;padding:12px;text-align:center;border-left:4px solid var(--success)">
+                    <div style="font-size:11px;color:var(--text2);text-transform:uppercase;margin-bottom:4px">Offline Ready</div>
+                    <div style="font-size:20px;font-weight:600" id="perfOfflineReady">✓ Ready</div>
+                    <div style="font-size:12px;color:var(--text2)" id="perfOfflineTime">—</div>
+                </div>
+            </div>
+
+            <div class="section-title">Sync Efficiency</div>
+            <div style="background:var(--surface);border-radius:8px;padding:12px;margin-bottom:16px">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                    <div>
+                        <div style="font-size:12px;color:var(--text2);margin-bottom:4px">Success Rate</div>
+                        <div style="font-size:18px;font-weight:600" id="perfSuccessRate">—</div>
+                    </div>
+                    <div>
+                        <div style="font-size:12px;color:var(--text2);margin-bottom:4px">Avg Records Pending</div>
+                        <div style="font-size:18px;font-weight:600" id="perfAvgPending">—</div>
+                    </div>
+                    <div>
+                        <div style="font-size:12px;color:var(--text2);margin-bottom:4px">Failed Syncs Today</div>
+                        <div style="font-size:18px;font-weight:600;color:var(--danger)" id="perfFailedSyncs">—</div>
+                    </div>
+                    <div>
+                        <div style="font-size:12px;color:var(--text2);margin-bottom:4px">Last Sync</div>
+                        <div style="font-size:18px;font-weight:600" id="perfLastSync">—</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-title">Storage Usage</div>
+            <div style="background:var(--surface);border-radius:8px;padding:12px;margin-bottom:16px">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                    <div>
+                        <div style="font-size:12px;color:var(--text2);margin-bottom:4px">Total Used</div>
+                        <div style="font-size:18px;font-weight:600" id="perfTotalStorage">—</div>
+                    </div>
+                    <div>
+                        <div style="font-size:12px;color:var(--text2);margin-bottom:4px">Breakdown</div>
+                        <div style="font-size:12px" id="perfStorageBreakdown">—</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-title">Offline Analytics</div>
+            <div style="background:var(--surface);border-radius:8px;padding:12px;margin-bottom:16px">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                    <div>
+                        <div style="font-size:12px;color:var(--text2);margin-bottom:4px">Time Offline Today</div>
+                        <div style="font-size:18px;font-weight:600" id="perfOfflineHours">—</div>
+                    </div>
+                    <div>
+                        <div style="font-size:12px;color:var(--text2);margin-bottom:4px">Operations Queued</div>
+                        <div style="font-size:18px;font-weight:600" id="perfQueuedOps">—</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-title">Worker Performance</div>
+            <div style="background:var(--surface);border-radius:8px;padding:12px;margin-bottom:16px">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+                    <div>
+                        <div style="font-size:12px;color:var(--text2);margin-bottom:4px">Top Performer</div>
+                        <div style="font-size:14px;font-weight:600" id="perfTopWorker">—</div>
+                    </div>
+                    <div>
+                        <div style="font-size:12px;color:var(--text2);margin-bottom:4px">Avg Records/Worker</div>
+                        <div style="font-size:14px;font-weight:600" id="perfAvgRecords">—</div>
+                    </div>
+                </div>
+                <div style="background:var(--warning-bg);border:1px solid var(--warning);border-radius:6px;padding:8px">
+                    <div style="font-size:12px;color:var(--warning);margin-bottom:4px">Needs Correction</div>
+                    <div style="font-size:13px;font-weight:600" id="perfNeedsCorrection">—</div>
+                </div>
             </div>
         </div>
     </div>
@@ -1143,6 +1235,8 @@ function updateConnectionBanner(){
 window.addEventListener('online', updateConnectionBanner);
 window.addEventListener('offline', updateConnectionBanner);
 updateConnectionBanner();
+
+trackOfflineTime();
 
 // Pending sync counter
 let pendingCount = 0;
@@ -1979,6 +2073,169 @@ async function retryAllFailedSaves() {
     updateQueueDisplay();
     showSaveSuccess(`✓ ${successCount} record(s) saved. ${Object.keys(remaining).length} still pending.`);
 }
+
+let performanceMetrics = {
+    syncEventsToday: [],
+    offlineStartTime: null,
+    offlineHours: 0,
+    offlineMinutes: 0,
+    totalRecordsSynced: 0
+};
+
+function preparePerformanceTab() {
+    updatePerformanceMetrics();
+}
+
+function updatePerformanceMetrics() {
+    const failedSaves = JSON.parse(sessionStorage.getItem('failedSaves') || '{}');
+    const totalFailed = Object.keys(failedSaves).length;
+    const successRate = allRecords.length > 0 ? Math.round(((allRecords.length - totalFailed) / allRecords.length) * 100) : 100;
+
+    // Determine health status
+    let syncHealthStatus, syncColor;
+    if (successRate >= 95) {
+        syncHealthStatus = '✓ Good';
+        syncColor = 'var(--success)';
+    } else if (successRate >= 80) {
+        syncHealthStatus = '⚠ Acceptable';
+        syncColor = 'var(--warning)';
+    } else {
+        syncHealthStatus = '✗ Poor';
+        syncColor = 'var(--danger)';
+    }
+
+    let storageUsed = estimateStorageUsage();
+    let storageHealth, storageColor;
+    if (storageUsed < 50) {
+        storageHealth = '✓ Good';
+        storageColor = 'var(--success)';
+    } else if (storageUsed < 80) {
+        storageHealth = '⚠ Acceptable';
+        storageColor = 'var(--warning)';
+    } else {
+        storageHealth = '✗ Critical';
+        storageColor = 'var(--danger)';
+    }
+
+    let offlineReady, offlineColor;
+    const pendingIds = JSON.parse(localStorage.getItem('pendingRecords') || '[]');
+    if (pendingIds.length === 0) {
+        offlineReady = '✓ Ready';
+        offlineColor = 'var(--success)';
+    } else {
+        offlineReady = '⚠ Pending';
+        offlineColor = 'var(--warning)';
+    }
+
+    // Update UI
+    const syncEl = document.getElementById('perfSyncHealth');
+    if (syncEl) {
+        syncEl.textContent = syncHealthStatus;
+        syncEl.parentElement.style.borderLeftColor = syncColor;
+    }
+    const storageEl = document.getElementById('perfStorageHealth');
+    if (storageEl) {
+        storageEl.textContent = storageHealth;
+        storageEl.parentElement.style.borderLeftColor = storageColor;
+    }
+    const offlineEl = document.getElementById('perfOfflineReady');
+    if (offlineEl) {
+        offlineEl.textContent = offlineReady;
+        offlineEl.parentElement.style.borderLeftColor = offlineColor;
+    }
+
+    // Sync metrics
+    document.getElementById('perfSuccessRate').textContent = successRate + '%';
+    document.getElementById('perfAvgPending').textContent = pendingIds.length;
+    document.getElementById('perfFailedSyncs').textContent = totalFailed;
+    document.getElementById('perfLastSync').textContent = typeof lastSyncTimestamp !== 'undefined' ? formatLastSync(lastSyncTimestamp) : 'Never';
+
+    // Storage metrics
+    document.getElementById('perfTotalStorage').textContent = storageUsed.toFixed(1) + ' MB';
+    const breakdown = getStorageBreakdown();
+    document.getElementById('perfStorageBreakdown').innerHTML = breakdown;
+
+    // Offline metrics
+    document.getElementById('perfOfflineHours').textContent = performanceMetrics.offlineHours + 'h ' + performanceMetrics.offlineMinutes + 'm';
+    document.getElementById('perfQueuedOps').textContent = pendingIds.length + ' record' + (pendingIds.length !== 1 ? 's' : '');
+
+    // Worker performance
+    const workerStats = calculateWorkerStats();
+    if (workerStats.topWorker) {
+        document.getElementById('perfTopWorker').textContent = workerStats.topWorker.name + ' (' + workerStats.topWorker.count + ')';
+    } else {
+        document.getElementById('perfTopWorker').textContent = '—';
+    }
+    document.getElementById('perfAvgRecords').textContent = workerStats.avgPerWorker.toFixed(1);
+
+    const needsCorrection = allRecords.filter(r => r.status === 'needs-correction').length;
+    document.getElementById('perfNeedsCorrection').textContent = needsCorrection + ' record' + (needsCorrection !== 1 ? 's' : '');
+
+    // Rate metrics
+    document.getElementById('perfSyncRate').textContent = totalFailed + ' failed';
+    document.getElementById('perfStorageUsed').textContent = storageUsed.toFixed(1) + ' MB';
+    document.getElementById('perfOfflineTime').textContent = performanceMetrics.offlineHours + 'h';
+}
+
+function estimateStorageUsage() {
+    let totalBytes = 0;
+
+    const pending = localStorage.getItem('pendingRecords') || '';
+    totalBytes += pending.length * 2;
+
+    const failed = sessionStorage.getItem('failedSaves') || '';
+    totalBytes += failed.length * 2;
+
+    const photoCount = allRecords.filter(r => r.photoUrl).length;
+    totalBytes += photoCount * 100 * 1024;
+
+    return totalBytes / (1024 * 1024);
+}
+
+function getStorageBreakdown() {
+    const pending = (localStorage.getItem('pendingRecords') || '').length * 2 / 1024;
+    const failed = (sessionStorage.getItem('failedSaves') || '').length * 2 / 1024;
+    const photoCount = allRecords.filter(r => r.photoUrl).length;
+    const photoMB = (photoCount * 100).toFixed(1);
+
+    return `Photos: ${photoMB}MB, Records: ${(pending + failed).toFixed(1)}KB`;
+}
+
+function calculateWorkerStats() {
+    const workerRecordCounts = {};
+    let totalRecords = 0;
+
+    allRecords.forEach(r => {
+        const worker = r.workerEmail || r.workerName || 'Unknown';
+        workerRecordCounts[worker] = (workerRecordCounts[worker] || 0) + 1;
+        totalRecords++;
+    });
+
+    const topWorker = Object.entries(workerRecordCounts).sort((a, b) => b[1] - a[1])[0];
+    const workerCount = Object.keys(workerRecordCounts).length;
+    const avgPerWorker = workerCount > 0 ? totalRecords / workerCount : 0;
+
+    return {
+        topWorker: topWorker ? { name: topWorker[0], count: topWorker[1] } : null,
+        avgPerWorker: avgPerWorker,
+        totalRecords: totalRecords,
+        workerCount: workerCount
+    };
+}
+
+function trackOfflineTime() {
+    if (!navigator.onLine && !performanceMetrics.offlineStartTime) {
+        performanceMetrics.offlineStartTime = Date.now();
+    } else if (navigator.onLine && performanceMetrics.offlineStartTime) {
+        const offlineMs = Date.now() - performanceMetrics.offlineStartTime;
+        performanceMetrics.offlineHours = Math.floor(offlineMs / 3600000);
+        performanceMetrics.offlineMinutes = Math.floor((offlineMs % 3600000) / 60000);
+        performanceMetrics.offlineStartTime = null;
+    }
+}
+
+window.addEventListener('online', trackOfflineTime);
+window.addEventListener('offline', trackOfflineTime);
 
 function renderReview(){
     const g = id => (document.getElementById(id).value || '').trim();
@@ -4208,6 +4465,7 @@ function switchAdminTab(tabId, btn) {
     if (tabId === 'workers') { prepareWorkersTab(); renderWorkers(); }
     if (tabId === 'map') { prepareMapTab(); }
     if (tabId === 'offlinequeue') { prepareOfflineQueueTab(); }
+    if (tabId === 'performance') { preparePerformanceTab(); }
 }
 
 function prepareRecordsTab() {
