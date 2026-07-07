@@ -16,6 +16,9 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-heat/1.0.4/leaflet-heat.js"></script>
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
         :root{
@@ -561,6 +564,7 @@
             <button type="button" class="navbtn tab-btn" onclick="switchAdminTab('allrecords',this)"><span class="navicon">📁</span>Records</button>
             <button type="button" class="navbtn tab-btn" onclick="switchAdminTab('workers',this)"><span class="navicon">👥</span>Workers</button>
             <button type="button" class="navbtn tab-btn admin-only-tab" onclick="switchAdminTab('adminsettings',this)"><span class="navicon">⚙️</span>Settings</button>
+            <button type="button" class="navbtn tab-btn admin-only-tab" onclick="switchAdminTab('map',this)"><span class="navicon">🗺️</span>Map</button>
         </nav>
 
         <!-- OVERVIEW -->
@@ -737,6 +741,21 @@
                 </div>
                 <button class="btn-danger" onclick="resetEverything()" style="width:100%">🗑️ Delete All Records & Workers</button>
             </div>
+        </div>
+
+        <!-- MAP -->
+        <div id="map" class="form-section">
+            <h2>Survey Coverage Heat Map</h2>
+            <div style="margin-bottom:16px">
+                <label>Filter by status:</label>
+                <select id="mapStatusFilter" onchange="updateHeatMap()">
+                    <option value="all">All Records</option>
+                    <option value="complete">Complete Only</option>
+                    <option value="incomplete">Incomplete Only</option>
+                </select>
+            </div>
+            <div id="mapContainer" style="width:100%;height:500px;border:1px solid #ddd;border-radius:8px;margin-bottom:16px"></div>
+            <div id="mapStats" style="font-size:13px;color:#666">Loading map...</div>
         </div>
     </div>
     <div style="text-align:center;padding:16px 0 8px;font-size:11px;color:#999" id="versionFooter"></div>
@@ -1716,6 +1735,80 @@ function dismissPropertyCheck() {
 async function viewExistingProperty(recordId) {
     const rec = allRecords.find(r => r.id === recordId);
     if (rec) showDetail(rec);
+}
+
+let mapInstance = null;
+let heatLayer = null;
+
+function prepareMapTab() {
+    setTimeout(() => {
+        if (!mapInstance) {
+            initializeMap();
+        } else {
+            mapInstance.invalidateSize();
+            updateHeatMap();
+        }
+    }, 100);
+}
+
+function initializeMap() {
+    const container = document.getElementById('mapContainer');
+    if (!container) return;
+
+    const centerLat = allRecords.length > 0
+        ? allRecords.filter(r => r.latitude && r.longitude).reduce((sum, r) => sum + r.latitude, 0) /
+          allRecords.filter(r => r.latitude && r.longitude).length
+        : 20.5937;
+    const centerLng = allRecords.length > 0
+        ? allRecords.filter(r => r.latitude && r.longitude).reduce((sum, r) => sum + r.longitude, 0) /
+          allRecords.filter(r => r.latitude && r.longitude).length
+        : 78.9629;
+
+    mapInstance = L.map('mapContainer').setView([centerLat, centerLng], 12);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors',
+        maxZoom: 19
+    }).addTo(mapInstance);
+
+    updateHeatMap();
+}
+
+function updateHeatMap() {
+    if (!mapInstance) return;
+
+    if (heatLayer) {
+        mapInstance.removeLayer(heatLayer);
+    }
+
+    const statusFilter = document.getElementById('mapStatusFilter').value;
+
+    const points = allRecords
+        .filter(r => {
+            if (!r.latitude || !r.longitude) return false;
+            if (statusFilter === 'complete') return r.status === 'complete';
+            if (statusFilter === 'incomplete') return r.status !== 'complete';
+            return true;
+        })
+        .map(r => [r.latitude, r.longitude, 1]);
+
+    if (points.length > 0) {
+        heatLayer = L.heatLayer(points, {
+            radius: 25,
+            blur: 15,
+            maxZoom: 1,
+            gradient: {0.0: 'green', 0.5: 'yellow', 1.0: 'red'}
+        }).addTo(mapInstance);
+
+        document.getElementById('mapStats').innerHTML = `
+            Showing <strong>${points.length}</strong> survey point(s)
+            (${statusFilter === 'all' ? 'all records' : statusFilter + ' records'})
+        `;
+    } else {
+        document.getElementById('mapStats').innerHTML = `
+            No records found for selected filter (${statusFilter}).
+        `;
+    }
 }
 
 function renderReview(){
@@ -3944,6 +4037,7 @@ function switchAdminTab(tabId, btn) {
     if (btn) btn.classList.add('active');
     if (tabId === 'allrecords') { prepareRecordsTab(); renderAllRecords(getFilteredRecords()); }
     if (tabId === 'workers') { prepareWorkersTab(); renderWorkers(); }
+    if (tabId === 'map') { prepareMapTab(); }
 }
 
 function prepareRecordsTab() {
