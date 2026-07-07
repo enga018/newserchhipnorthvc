@@ -349,8 +349,10 @@
                     <div class="wizard-step-title">🏠 Property details</div>
                     <div class="form-group">
                         <label>Property ID <span class="required-star">*</span></label>
-                        <div style="display:flex;align-items:center;gap:0"><span style="background:var(--primary-tint);border:1.5px solid var(--border);border-right:none;padding:13px 12px;border-radius:var(--radius) 0 0 var(--radius);font-size:14px;font-weight:600;color:var(--primary);white-space:nowrap">NSN-</span><input type="text" id="propertyId" placeholder="0001" pattern="(NSN-)?[0-9]{1,4}" maxlength="8" required style="border-radius:0 var(--radius) var(--radius) 0;border-left:none"></div><div class="text-muted" style="font-size:12px;margin-top:5px">Enter 4-digit number from sticker (e.g. 0001). NSN- is added automatically.</div>
-                        <div id="rangeHint" style="font-size:12px;margin-top:4px"></div>
+                        <div style="display:flex;align-items:center;gap:0"><span style="background:var(--primary-tint);border:1.5px solid var(--border);border-right:none;padding:13px 12px;border-radius:var(--radius) 0 0 var(--radius);font-size:14px;font-weight:600;color:var(--primary);white-space:nowrap">NSN-</span><input type="text" id="propertyId" placeholder="0001" pattern="(NSN-)?[0-9]{1,4}" maxlength="8" required style="border-radius:0 var(--radius) var(--radius) 0;border-left:none" oninput="document.getElementById('propertyCheckResult').classList.add('hidden')" onblur="(async () => { const result = await checkPropertyExists(this.value); showPropertyCheckResult(result); })()"></div><div class="text-muted" style="font-size:12px;margin-top:5px">Enter 4-digit number from sticker (e.g. 0001). NSN- is added automatically.</div>
+                        <button type="button" class="btn-secondary" style="width:100%;margin-top:8px;padding:10px;font-size:13px" onclick="(async () => { const result = await checkPropertyExists(document.getElementById('propertyId').value); showPropertyCheckResult(result); })()">🔍 Check Property</button>
+                        <div id="propertyCheckResult" class="hidden" style="margin-top:8px"></div>
+                        <div id="rangeHint" style="font-size:12px;margin-top:8px"></div>
                     </div>
                     <div class="form-group">
                         <label>Owner Type <span class="required-star">*</span> <span style="font-size:11px;color:var(--text2);font-weight:400">(who pays the tax)</span></label>
@@ -1673,6 +1675,47 @@ function wizardSubmit(e){
     if (steps[wizardIndex] && steps[wizardIndex].id === 'review') return saveRecord(e);
     e.preventDefault();
     wizardNext();
+}
+
+// Property existence check (advisory duplicate detection)
+async function checkPropertyExists(propId) {
+    if (!propId) return null;
+    const fullId = 'NSN-' + propId.trim().replace(/^NSN-/i,'').replace(/^[0]*/,'').padStart(4,'0');
+    try {
+        const snap = await withTimeout(db.collection('records').where('propertyId','==',fullId).get(), 5000);
+        if (snap.docs.length > 0) {
+            const existingRecord = snap.docs[0].data();
+            return { exists: true, id: snap.docs[0].id, workerName: existingRecord.workerName || existingRecord.workerEmail || 'Unknown', timestamp: existingRecord.localTimestamp || existingRecord.timestamp };
+        }
+        return { exists: false };
+    } catch(err) {
+        console.warn('Property check failed:', err.message);
+        return null;
+    }
+}
+
+function showPropertyCheckResult(result) {
+    if (!result) return;
+    const propId = (document.getElementById('propertyId').value || '').trim();
+    if (!propId) return;
+    const resultBox = document.getElementById('propertyCheckResult');
+    if (!result.exists) {
+        resultBox.innerHTML = `<div style="background:#e6ffed;color:#22863a;border:1px solid #34d399;border-radius:8px;padding:12px">✅ Property is new — ready to survey</div>`;
+        resultBox.classList.remove('hidden');
+    } else {
+        const date = result.timestamp ? new Date(result.timestamp).toLocaleDateString() : 'unknown date';
+        resultBox.innerHTML = `<div style="background:#fff3cd;color:#856404;border:1px solid #ffc107;border-radius:8px;padding:12px"><div style="font-weight:600;margin-bottom:8px">⚠️ Property already surveyed</div><div style="font-size:13px;margin-bottom:8px"><div>👤 <b>${esc(result.workerName)}</b></div><div>📅 <b>${date}</b></div></div><button type="button" class="btn-primary" style="margin-right:8px;padding:6px 12px;font-size:13px" onclick="viewExistingProperty('${result.id}')">👁 View Record</button><button type="button" class="btn-secondary" style="padding:6px 12px;font-size:13px" onclick="dismissPropertyCheck()">➕ Continue Anyway</button></div>`;
+        resultBox.classList.remove('hidden');
+    }
+}
+
+function dismissPropertyCheck() {
+    document.getElementById('propertyCheckResult').classList.add('hidden');
+}
+
+async function viewExistingProperty(recordId) {
+    const rec = allRecords.find(r => r.id === recordId);
+    if (rec) showDetail(rec);
 }
 
 function renderReview(){
