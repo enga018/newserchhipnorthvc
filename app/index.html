@@ -44,12 +44,12 @@
         .auth-tab.active{background:var(--primary);color:white}
 
         /* HEADER */
-        .header{position:sticky;top:6px;z-index:60;background:var(--primary);color:white;padding:14px 18px;border-radius:var(--radius-lg);margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;box-shadow:var(--shadow-md)}
-        .header-left h1{font-size:17px;font-weight:600}
-        .header-left p{font-size:11px;opacity:0.9;margin-top:2px}
-        .header-right{display:flex;flex-direction:column;align-items:flex-end;gap:5px}
-        .user-badge{background:rgba(255,255,255,0.2);padding:3px 10px;border-radius:20px;font-size:11px}
-        .btn-logout{background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:white;padding:3px 10px;border-radius:4px;font-size:11px;cursor:pointer}
+        .header{position:sticky;top:6px;z-index:60;background:var(--primary);color:white;padding:10px 16px;border-radius:var(--radius-lg);margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;box-shadow:var(--shadow-md);gap:12px}
+        .header-left h1{font-size:16px;font-weight:600}
+        .header-left p{font-size:11px;opacity:0.9;margin-top:1px}
+        .header-right{display:flex;flex-direction:row;align-items:center;gap:6px}
+        .user-badge{background:rgba(255,255,255,0.2);padding:2px 10px;border-radius:20px;font-size:11px}
+        .btn-logout{background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:white;padding:2px 10px;border-radius:4px;font-size:11px;cursor:pointer}
 
         /* TABS */
         .tabs{display:flex;gap:0;margin-bottom:16px;background:var(--surface);border-radius:var(--radius-lg);padding:4px;border:1px solid var(--border);box-shadow:var(--shadow)}
@@ -82,7 +82,7 @@
         .wizard-nav{display:flex;gap:8px;margin-top:20px}
         .wizard-nav-fixed{position:fixed;left:0;right:0;bottom:calc(56px + env(safe-area-inset-bottom));z-index:80;background:var(--surface);border-top:1px solid var(--border);box-shadow:0 -2px 10px rgba(16,32,52,0.07);padding:8px 10px;max-width:620px;margin:0 auto}
         .wizard-nav-fixed .wizard-nav{margin-top:0}
-        .wizard-nav-fixed .btn-clear-wiz{font-size:12px;padding:6px 12px;min-height:0;border-radius:8px;background:var(--surface-2);color:var(--text2);border:1px solid var(--border);width:100%}
+        .wizard-nav-fixed .btn-clear-wiz{font-size:12px;padding:6px 12px;min-height:0;border-radius:8px;background:var(--surface-2);color:var(--text2);border:1px solid var(--border);width:100%;margin-top:8px}
         .review-row{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)}
         .review-row:last-child{border-bottom:none}
         .review-row .rk{color:var(--text2);font-size:13px}
@@ -183,8 +183,8 @@
         .gender-card-pct{font-size:11px;color:var(--text2);margin-top:2px}
 
         /* ADMIN */
-        .admin-header{position:sticky;top:6px;z-index:60;background:var(--primary-dark);color:white;padding:14px 18px;border-radius:var(--radius-lg);margin-bottom:16px;box-shadow:var(--shadow-md)}
-        .admin-badge{background:rgba(255,215,0,0.3);border:1px solid rgba(255,215,0,0.5);padding:2px 10px;border-radius:10px;font-size:11px;font-weight:600;color:#ffd700;display:inline-block;margin-bottom:6px}
+        .admin-header{position:sticky;top:6px;z-index:60;background:var(--primary-dark);color:white;padding:10px 16px;border-radius:var(--radius-lg);margin-bottom:14px;box-shadow:var(--shadow-md)}
+        .admin-badge{background:rgba(255,215,0,0.3);border:1px solid rgba(255,215,0,0.5);padding:2px 10px;border-radius:10px;font-size:11px;font-weight:600;color:#ffd700;display:inline-block}
         .worker-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:10px}
         .worker-name{font-weight:600;font-size:15px;color:var(--primary)}
         .worker-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-top:8px}
@@ -529,13 +529,13 @@
     <!-- ADMIN VIEW -->
     <div id="adminView" class="hidden">
         <div class="admin-header">
-            <div style="display:flex;justify-content:space-between;align-items:start">
-                <div>
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
+                <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
                     <div class="admin-badge" id="adminRoleBadge">👑 ADMIN</div>
-                    <h1 style="font-size:17px;font-weight:600;margin-top:4px">🏘️ Admin Dashboard</h1>
-                    <p id="adminVcName" style="font-size:11px;opacity:0.9;margin-top:2px"></p>
+                    <h1 style="font-size:15px;font-weight:600;margin:0">🏘️ Admin Dashboard</h1>
+                    <p id="adminVcName" style="font-size:11px;opacity:0.9;margin:0"></p>
                 </div>
-                <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+                <div style="display:flex;align-items:center;gap:6px">
                     <span class="user-badge" id="adminNameBadge" onclick="openAdminProfile()" style="cursor:pointer">⚙️ Profile</span>
                     <button class="btn-logout" onclick="logoutUser()">Logout</button>
                 </div>
@@ -984,7 +984,7 @@ const firebaseConfig = {
     appId: "1:547385765757:web:df18cd27e9161b7d1c2614"
 };
 const ADMIN_EMAIL = "enga018@gmail.com";
-const APP_VERSION = "v2.19.1";
+const APP_VERSION = "v2.19.2";
 
 
 firebase.initializeApp(firebaseConfig);
