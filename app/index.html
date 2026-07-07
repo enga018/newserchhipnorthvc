@@ -396,11 +396,11 @@
                         <div class="section-title">Owner Information <span style="font-size:12px;color:var(--text2);font-weight:400">(optional if owner absent)</span></div>
                         <div class="form-group">
                             <label>Owner Name</label>
-                            <input type="text" id="ownerName" placeholder="Full name of property owner">
+                            <input type="text" id="ownerName" placeholder="Full name of property owner" oninput="this.value = formatNameInput(this.value)">
                         </div>
                         <div class="form-group">
                             <label>Father/Husband Name</label>
-                            <input type="text" id="fatherHusbandName" placeholder="Father's or Husband's name">
+                            <input type="text" id="fatherHusbandName" placeholder="Father's or Husband's name" oninput="this.value = formatNameInput(this.value)">
                         </div>
                         <div class="form-group">
                             <label>Contact Number</label>
@@ -412,11 +412,11 @@
                         <div class="section-title">Institution Information</div>
                         <div class="form-group">
                             <label>Organization/Institution Name <span style="font-size:12px;color:var(--text2);font-weight:400">(optional)</span></label>
-                            <input type="text" id="organizationName" placeholder="e.g., ABC School, St. John's Church">
+                            <input type="text" id="organizationName" placeholder="e.g., ABC School, St. John's Church" oninput="this.value = formatNameInput(this.value)">
                         </div>
                         <div class="form-group">
                             <label>Contact Person <span style="font-size:12px;color:var(--text2);font-weight:400">(optional)</span></label>
-                            <input type="text" id="contactPerson" placeholder="Name of contact person">
+                            <input type="text" id="contactPerson" placeholder="Name of contact person" oninput="this.value = formatNameInput(this.value)">
                         </div>
                         <div class="form-group">
                             <label>Designation <span style="font-size:12px;color:var(--text2);font-weight:400">(optional)</span></label>
@@ -1681,6 +1681,19 @@ function unitDisplayId(i){ return 'Unit ' + (i+1); }
 function familyHead(f){ const ms = (f && f.members) || []; return ms.find(m => m.relation === 'Self' || m.relation === 'Head') || ms[0] || null; }
 function familyHeadName(f){ const h = familyHead(f); return h && h.name ? h.name : ''; }
 
+// Format name input: remove special characters (keep only letters, spaces, apostrophes, hyphens) and capitalize first letter of each word
+function formatNameInput(value) {
+  if (!value) return '';
+  let cleaned = value.replace(/[^a-zA-Z\s'-]/g, '');
+  return cleaned.replace(/\b\w/g, char => char.toUpperCase());
+}
+
+// Validate name input: check if it contains only allowed characters
+function validateNameInput(value) {
+  if (!value) return true;
+  return /^[a-zA-Z\s'-]+$/.test(value);
+}
+
 // Derive property type from unit types (considers vacant units too so an all-vacant
 // property reflects the actual unit type rather than defaulting to Residential).
 function derivePropertyType(units){
@@ -1787,7 +1800,7 @@ function renderUnits(){
             <div style="background:var(--primary-tint);border-radius:8px;padding:10px;margin-bottom:8px">
                 <div style="font-size:13px;font-weight:600;color:var(--primary);margin-bottom:8px">Head of Family</div>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
-                    <input type="text" value="${esc(head.name||'')}" placeholder="Name" oninput="updateMemberField(${fi},0,'name',this.value)" style="grid-column:1 / -1">
+                    <input type="text" value="${esc(head.name||'')}" placeholder="Name" oninput="this.value = formatNameInput(this.value); updateMemberField(${fi},0,'name',this.value)" style="grid-column:1 / -1">
                     <select required onchange="updateMemberField(${fi},0,'gender',this.value)">
                         <option value="">Gender *</option>
                         <option value="Male" ${head.gender==='Male'?'selected':''}>Male</option>
@@ -1810,7 +1823,7 @@ function renderUnits(){
                 const idx = mi + 1;
                 return `
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;border-top:1px dashed var(--border);padding-top:8px;margin-bottom:6px">
-                        <input type="text" value="${esc(m.name||'')}" placeholder="Member ${mi+1}" oninput="updateMemberField(${fi},${idx},'name',this.value)" style="grid-column:1 / -1">
+                        <input type="text" value="${esc(m.name||'')}" placeholder="Member ${mi+1}" oninput="this.value = formatNameInput(this.value); updateMemberField(${fi},${idx},'name',this.value)" style="grid-column:1 / -1">
                         <select required onchange="updateMemberField(${fi},${idx},'gender',this.value)">
                             <option value="">Gender *</option>
                             <option value="Male" ${m.gender==='Male'?'selected':''}>Male</option>
@@ -1893,6 +1906,28 @@ async function saveRecord(e) {
     const ownerName = isInst ? '' : document.getElementById('ownerName').value.trim();
     const contact = isInst ? document.getElementById('instContact').value.trim() : document.getElementById('contact').value.trim();
     if (contact && !/^[0-9]{10}$/.test(contact)) return showAlert('📞 Contact number must be exactly 10 digits, or left blank.', 'error');
+
+    // Validate all name fields for special characters
+    const ownerNameInput = isInst ? '' : document.getElementById('ownerName').value.trim();
+    if (ownerNameInput && !validateNameInput(ownerNameInput)) return showAlert('❌ Owner name contains invalid characters. Use only letters, spaces, hyphens, and apostrophes.', 'error');
+
+    const fatherHusbandInput = isInst ? '' : document.getElementById('fatherHusbandName').value.trim();
+    if (fatherHusbandInput && !validateNameInput(fatherHusbandInput)) return showAlert('❌ Father/Husband name contains invalid characters. Use only letters, spaces, hyphens, and apostrophes.', 'error');
+
+    const orgNameInput = isInst ? document.getElementById('organizationName').value.trim() : '';
+    if (orgNameInput && !validateNameInput(orgNameInput)) return showAlert('❌ Organization name contains invalid characters. Use only letters, spaces, hyphens, and apostrophes.', 'error');
+
+    const contactPersonInput = isInst ? document.getElementById('contactPerson').value.trim() : '';
+    if (contactPersonInput && !validateNameInput(contactPersonInput)) return showAlert('❌ Contact person name contains invalid characters. Use only letters, spaces, hyphens, and apostrophes.', 'error');
+
+    // Validate all family member names
+    for (let unit of householdDraft) {
+      for (let member of unit.members) {
+        if (member.name && !validateNameInput(member.name)) {
+          return showAlert('❌ Family member name contains invalid characters. Use only letters, spaces, hyphens, and apostrophes.', 'error');
+        }
+      }
+    }
 
     // Collect institution sub-fields
     const orgName = isInst ? document.getElementById('organizationName').value.trim() : '';
@@ -2976,7 +3011,7 @@ function renderAeUnits() {
                 <div style="background:var(--primary-tint);border-radius:8px;padding:10px;margin-bottom:8px">
                     <div style="font-size:12px;font-weight:600;color:var(--primary);margin-bottom:6px">Head of Family</div>
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
-                        <input type="text" value="${esc(head.name||'')}" placeholder="Name" onchange="aeFamilies[${fi}].members[0].name=this.value" style="grid-column:1 / -1;padding:8px 10px;font-size:13px;border:1px solid var(--border);border-radius:6px">
+                        <input type="text" value="${esc(head.name||'')}" placeholder="Name" onchange="this.value = formatNameInput(this.value); aeFamilies[${fi}].members[0].name=this.value" style="grid-column:1 / -1;padding:8px 10px;font-size:13px;border:1px solid var(--border);border-radius:6px">
                         <select onchange="aeFamilies[${fi}].members[0].gender=this.value" style="padding:8px 10px;font-size:13px;min-height:auto;border:1px solid var(--border);border-radius:6px">
                             <option value="">Gender</option>
                             <option value="Male" ${head.gender==='Male'?'selected':''}>Male</option>
@@ -2994,7 +3029,7 @@ function renderAeUnits() {
                 ${others.map((m, mi) => {
                     const idx = mi + 1;
                     return `<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;border-top:1px dashed var(--border);padding-top:8px;margin-bottom:6px">
-                        <input type="text" value="${esc(m.name||'')}" placeholder="Member ${mi+1}" onchange="aeFamilies[${fi}].members[${idx}].name=this.value" style="grid-column:1 / -1;padding:8px 10px;font-size:13px;border:1px solid var(--border);border-radius:6px">
+                        <input type="text" value="${esc(m.name||'')}" placeholder="Member ${mi+1}" onchange="this.value = formatNameInput(this.value); aeFamilies[${fi}].members[${idx}].name=this.value" style="grid-column:1 / -1;padding:8px 10px;font-size:13px;border:1px solid var(--border);border-radius:6px">
                         <select onchange="aeFamilies[${fi}].members[${idx}].gender=this.value" style="padding:8px 10px;font-size:13px;min-height:auto;border:1px solid var(--border);border-radius:6px">
                             <option value="">Gender</option>
                             <option value="Male" ${m.gender==='Male'?'selected':''}>Male</option>
