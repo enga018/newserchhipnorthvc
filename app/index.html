@@ -25,6 +25,14 @@
         'leaflet.min.js': 'Map',
         'leaflet-heat.js': 'Map heatmap'
     };
+    // Only these are required to boot the app; the rest are used by optional features
+    // (map/heatmap/ZIP export) and must never block the loading screen.
+    window.__essentialResources = {
+        'firebase-app-compat.js': true,
+        'firebase-auth-compat.js': true,
+        'firebase-firestore-compat.js': true,
+        'firebase-storage-compat.js': true
+    };
     Object.keys(window.__cdnResourceLabels).forEach(function(f) { window.__resourceStatus[f] = 'pending'; });
     function __trackResourceEvent(e, status) {
         var src = e.target && (e.target.src || e.target.href);
@@ -35,13 +43,17 @@
     window.addEventListener('error', function(e) { __trackResourceEvent(e, 'error'); }, true);
     window.addEventListener('load', function(e) { __trackResourceEvent(e, 'ok'); }, true);
     window.getResourceLoadSummary = function() {
-        var failed = [], pending = [];
+        var essentialFailed = [], essentialPending = [], optionalFailed = [], optionalPending = [];
         Object.keys(window.__resourceStatus).forEach(function(file) {
             var label = window.__cdnResourceLabels[file] || file;
-            if (window.__resourceStatus[file] === 'error') failed.push(label);
-            else if (window.__resourceStatus[file] === 'pending') pending.push(label);
+            var essential = window.__essentialResources[file];
+            if (window.__resourceStatus[file] === 'error') (essential ? essentialFailed : optionalFailed).push(label);
+            else if (window.__resourceStatus[file] === 'pending') (essential ? essentialPending : optionalPending).push(label);
         });
-        return { failed: failed, pending: pending };
+        return {
+            essentialFailed: essentialFailed, essentialPending: essentialPending,
+            optionalFailed: optionalFailed, optionalPending: optionalPending
+        };
     };
     </script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
@@ -51,7 +63,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-heat/1.0.4/leaflet-heat.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.heat/0.2.0/leaflet-heat.js"></script>
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
         :root{
@@ -339,16 +351,22 @@ window.showSplashError = function(msg, detail) {
 };
 // Standalone watchdog: fires even if the Firebase/Leaflet CDN <script> tags below
 // hang or fail on a slow/flaky connection, since it doesn't depend on them loading.
+// Optional resources (map/heatmap/ZIP export) can fail without blocking the app, so
+// they are never treated as the headline reason for a stuck loading screen.
 setTimeout(function() {
-    var summary = window.getResourceLoadSummary ? window.getResourceLoadSummary() : { failed: [], pending: [] };
-    if (summary.failed.length) {
-        window.showSplashError('Failed to load: ' + summary.failed.join(', ') + '.', 'Please check your internet connection and retry.');
-    } else if (summary.pending.length) {
-        window.showSplashError('Still downloading: ' + summary.pending.join(', ') + '.', 'This is taking longer than usual on this connection.');
-    } else if (window.__firebaseInitOk) {
-        window.showSplashError('Connected, but the login check is taking unusually long.', 'This may be a temporary server issue — try again.');
+    if (document.getElementById('splashScreen').classList.contains('hidden')) return;
+    var s = window.getResourceLoadSummary
+        ? window.getResourceLoadSummary()
+        : { essentialFailed: [], essentialPending: [], optionalFailed: [], optionalPending: [] };
+    var footnote = s.optionalFailed.length ? ' (' + s.optionalFailed.join(', ') + ' also unavailable.)' : '';
+    if (s.essentialFailed.length) {
+        window.showSplashError('Failed to load: ' + s.essentialFailed.join(', ') + '.', 'Please check your internet connection and retry.' + footnote);
+    } else if (s.essentialPending.length) {
+        window.showSplashError('Still downloading: ' + s.essentialPending.join(', ') + '.', 'This is taking longer than usual on this connection.');
+    } else if (!window.__authFired) {
+        window.showSplashError("Can't reach the login server.", 'The app loaded but your login could not be verified. Check your connection or firewall, then retry.' + footnote);
     } else {
-        window.showSplashError('Taking longer than usual.', 'Please check your internet connection.');
+        window.showSplashError('Loading your profile is taking longer than usual.', 'This may be a temporary server issue — please retry.' + footnote);
     }
 }, 12000);
 </script>
@@ -1549,7 +1567,7 @@ let myRecordsUnsubscribe = null;
 // ========== AUTH ==========
 if (auth) {
 auth.onAuthStateChanged(async user => {
-
+    window.__authFired = true;
     if (user) {
         currentUser = user;
         isAdmin = user.email === ADMIN_EMAIL;
@@ -1631,8 +1649,20 @@ auth.onAuthStateChanged(async user => {
 }
 
 async function getUserProfile(uid) {
-    try { const d = await db.collection('users').doc(uid).get(); return d.exists ? d.data() : null; }
-    catch(e) { return null; }
+    const ref = db.collection('users').doc(uid);
+    // Firestore's default get() tries the server first; on a flaky connection (connected
+    // to WiFi but unable to actually reach Google's servers — very common in the field) it
+    // can hang for a long time before falling back to cache. Because this is awaited before
+    // the splash screen is hidden, that hang freezes the app on the loading screen. Bound the
+    // wait, then fall back to the local (IndexedDB) cache so the app always gets past startup.
+    try {
+        const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('profile-fetch-timeout')), 6000));
+        const d = await Promise.race([ref.get(), timeout]);
+        return d.exists ? d.data() : null;
+    } catch(e) {
+        try { const cached = await ref.get({ source: 'cache' }); return cached.exists ? cached.data() : null; }
+        catch(e2) { return null; }
+    }
 }
 
 function switchAuthTab(tab, btn) {
@@ -2173,7 +2203,7 @@ function updateHeatMap() {
         })
         .map(r => [r.latitude, r.longitude, 1]);
 
-    if (points.length > 0) {
+    if (points.length > 0 && typeof L.heatLayer === 'function') {
         heatLayer = L.heatLayer(points, {
             radius: 25,
             blur: 15,
@@ -2184,6 +2214,12 @@ function updateHeatMap() {
         document.getElementById('mapStats').innerHTML = `
             Showing <strong>${points.length}</strong> survey point(s)
             (${statusFilter === 'all' ? 'all records' : statusFilter + ' records'})
+        `;
+    } else if (points.length > 0) {
+        // Points exist but the heatmap plugin didn't load (offline/blocked CDN).
+        document.getElementById('mapStats').innerHTML = `
+            <strong>${points.length}</strong> survey point(s) found, but the heatmap layer
+            couldn't load. Reconnect and reload to view it.
         `;
     } else {
         document.getElementById('mapStats').innerHTML = `

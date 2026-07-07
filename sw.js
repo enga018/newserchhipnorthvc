@@ -16,7 +16,7 @@ const urlsToCache = [
   'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js',
   'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css',
   'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js',
-  'https://cdnjs.cloudflare.com/ajax/libs/leaflet-heat/1.0.4/leaflet-heat.js'
+  'https://cdnjs.cloudflare.com/ajax/libs/leaflet.heat/0.2.0/leaflet-heat.js'
 ];
 // Vendor/app-shell files rarely change — served cache-first so a slow or flaky
 // connection (common for field workers) doesn't stall the app on every load.
@@ -25,8 +25,14 @@ const cacheFirstUrls = new Set(urlsToCache.filter(u => u.startsWith('http')));
 self.addEventListener('install', event => {
   self.skipWaiting();
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(urlsToCache))
+    // Cache resources individually rather than cache.addAll(), which rejects the whole
+    // install (breaking ALL offline caching) if any single URL fails to fetch. A missing
+    // optional asset should never prevent the rest of the app shell from being cached.
+    caches.open(CACHE_NAME).then(cache =>
+      Promise.all(urlsToCache.map(url =>
+        cache.add(url).catch(err => console.warn('SW: failed to cache', url, err))
+      ))
+    )
   );
 });
 
