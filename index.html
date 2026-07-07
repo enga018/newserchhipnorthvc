@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NSN VC Field Survey</title>
+    <title>Newserchhip North VC</title>
     <meta name="description" content="Village Council Field Data App for property tax collection">
     <meta name="theme-color" content="#2c5282">
     <link rel="icon" type="image/png" href="./icons/icon-96.png">
@@ -15,92 +15,46 @@
         }
         .hero{
             background:linear-gradient(135deg,#2c5282,#1e3a5f);
-            color:white;padding:60px 20px 50px;text-align:center
+            color:white;padding:50px 20px 40px;text-align:center
         }
-        .hero h1{font-size:28px;font-weight:700;margin-bottom:8px}
-        .hero p{font-size:15px;opacity:0.85;max-width:500px;margin:0 auto}
+        .hero h1{font-size:26px;font-weight:700;margin-bottom:6px}
+        .hero p{font-size:14px;opacity:0.8}
         .hero .cta{
-            display:inline-block;margin-top:20px;padding:14px 32px;
+            display:inline-block;margin-top:16px;padding:12px 28px;
             background:white;color:#2c5282;border-radius:12px;
-            font-weight:700;font-size:15px;text-decoration:none;
+            font-weight:700;font-size:14px;text-decoration:none;
             box-shadow:0 4px 14px rgba(0,0,0,0.15);transition:transform 0.15s
         }
         .hero .cta:hover{transform:translateY(-2px)}
-        .container{max-width:700px;margin:0 auto;padding:40px 20px 60px}
-        .section{margin-bottom:36px}
-        .section h2{font-size:20px;color:#2c5282;margin-bottom:12px}
-        .section p,.section li{font-size:14px;color:#5b6675}
-        .features{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-        .feature{
-            background:white;border:1px solid #e2e7ee;border-radius:12px;
-            padding:16px;box-shadow:0 1px 2px rgba(16,32,52,0.06)
-        }
-        .feature .icon{font-size:24px;margin-bottom:6px}
-        .feature h3{font-size:14px;color:#16202e;margin-bottom:4px}
-        .feature p{font-size:12px}
-        .footer{
-            text-align:center;padding:24px 20px;
-            font-size:12px;color:#999;border-top:1px solid #e2e7ee;
-            margin-top:20px
-        }
+        .stats{max-width:420px;margin:0 auto;padding:40px 20px}
+        .stats h2{font-size:22px;font-weight:700;text-align:center;color:#1e3a5f;margin-bottom:24px}
+        .stat-row{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;background:white;border:1px solid #e2e7ee;border-radius:10px;margin-bottom:8px;box-shadow:0 1px 2px rgba(16,32,52,0.06)}
+        .stat-row .label{font-size:14px;font-weight:600;color:#2c5282}
+        .stat-row .value{font-size:20px;font-weight:700;color:#16202e}
+        .stat-row.total{background:#2c5282;border-color:#2c5282}
+        .stat-row.total .label{color:rgba(255,255,255,0.85)}
+        .stat-row.total .value{color:white}
+        .note{text-align:center;font-size:12px;color:#999;margin-top:30px;font-style:italic}
+        .footer{text-align:center;padding:20px;font-size:12px;color:#999;border-top:1px solid #e2e7ee}
         .footer a{color:#2c5282;text-decoration:none;font-weight:600}
-        @media(max-width:480px){.features{grid-template-columns:1fr}}
     </style>
 </head>
 <body>
 
 <div class="hero">
     <h1>Newserchhip North VC</h1>
-    <p>Village Council Field Data App for property tax collection and census</p>
+    <p>Village Council Field Data App</p>
     <a class="cta" href="./app/">Open the App</a>
 </div>
 
-<div class="container">
-    <div class="section">
-        <h2>What is this?</h2>
-        <p>This is the official data collection tool for the Newserchhip North Village Council. Field workers use it to record property details, capture GPS locations and photos, and log household information — all stored securely and accessible to administrators for reporting and export.</p>
-    </div>
-
-    <div class="section">
-        <h2>Features</h2>
-        <div class="features">
-            <div class="feature">
-                <div class="icon">GPS photo capture & timestamp</div>
-                <h3>GPS + Photo Capture</h3>
-                <p>Every property gets a GPS-stamped photo taken on-site</p>
-            </div>
-            <div class="feature">
-                <div class="icon">Offline</div>
-                <h3>Works Offline</h3>
-                <p>Collect data in the field with no signal — syncs when back online</p>
-            </div>
-            <div class="feature">
-                <div class="icon">Ranges</div>
-                <h3>Sticker Ranges</h3>
-                <p>Assign numbered sticker ranges to field workers for organised coverage</p>
-            </div>
-            <div class="feature">
-                <div class="icon">Households & census</div>
-                <h3>Household Census</h3>
-                <p>Record family members, ages, and genders for population statistics</p>
-            </div>
-            <div class="feature">
-                <div class="icon">CSV & ZIP export</div>
-                <h3>Export & Reports</h3>
-                <p>Export property records as CSV, members as CSV, or photos as ZIP</p>
-            </div>
-            <div class="feature">
-                <div class="icon">Installable</div>
-                <h3>Install as App</h3>
-                <p>Install the PWA on any phone or tablet for a native app experience</p>
-            </div>
-        </div>
-    </div>
-
-    <div class="section">
-        <h2>Access</h2>
-        <p>Only registered field workers and supervisors can use the data collection app. If you are a field worker, your supervisor will provide your login credentials. To request access or report an issue, contact the Village Council administrator.</p>
-    </div>
+<div class="stats">
+    <h2>NEW SERCHHIP NORTH VILLAGE COUNCIL</h2>
+    <div class="stat-row"><span class="label">POPULATION</span><span class="value">712</span></div>
+    <div class="stat-row"><span class="label">MALE</span><span class="value">333</span></div>
+    <div class="stat-row"><span class="label">FEMALE</span><span class="value">379</span></div>
+    <div class="stat-row"><span class="label">HOUSEHOLD</span><span class="value">171</span></div>
+    <div class="stat-row total"><span class="label">TOTAL</span><span class="value">1595</span></div>
+    <div class="note">This is not a serious web</div>
 </div>
 
 <div class="footer">
