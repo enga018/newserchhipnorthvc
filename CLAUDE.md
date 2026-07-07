@@ -13,3 +13,20 @@ The app version lives in `index.html` as `const APP_VERSION = "vMAJOR.MINOR.PATC
 - MINOR would exceed 20 (large change, or cascading from a PATCH overflow): MINOR → 1, PATCH → 1, MAJOR += 1.
 
 Examples: 1.20.20 + small change → 2.1.1. 1.20.0 + large change → 2.1.1 (MINOR was already at the cap).
+
+# Post-commit hook for automatic version bumping
+
+A git post-commit hook automates version bumping. To install it:
+
+```bash
+./hooks/install-hooks.sh
+```
+
+The hook:
+- Runs on commits to `main`, `master`, or branches starting with `claude/`
+- Analyzes the diff to determine if the change is "small" or "large":
+  - **Small**: single file or < 100 lines changed → PATCH += 1
+  - **Large**: multiple files or ≥ 100 lines changed → MINOR += 1, PATCH = 0
+- Automatically creates a follow-up version bump commit
+- Skips on commits with "version bump" in the message (to avoid double-bumping)
+- Updates both `app/index.html` and `manifest.json`

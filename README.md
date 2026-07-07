@@ -30,6 +30,16 @@ All data is saved on your phone automatically.
 
 Export all collected data as CSV from the Summary tab.
 
+## Development
+
+After cloning the repository, install git hooks for automatic version bumping:
+
+```bash
+./hooks/install-hooks.sh
+```
+
+This sets up a post-commit hook that automatically bumps the version in `app/index.html` based on commit scope (see `CLAUDE.md` for versioning policy).
+
 ---
 
 **Created for Village Council Property Tax Collection**
