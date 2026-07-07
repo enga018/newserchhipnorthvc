@@ -167,6 +167,17 @@ test("householdStats: blank/unknown age counts as neither child nor adult", () =
   assert.deepEqual(s.familySizes, [2]);
 });
 
+test("householdStats: occupied residential unit with zero members doesn't count as a household", () => {
+  const r = { families: [
+    { type: "Residential", occupied: true, members: [] },
+    { type: "Residential", occupied: true, members: [{ name: "A", gender: "Male", age: 25 }] },
+  ]};
+  const s = householdStats(r);
+  assert.equal(s.families, 1);
+  assert.equal(s.population, 1);
+  assert.deepEqual(s.familySizes, [1]);
+});
+
 /* ---------------- correctionState ---------------- */
 
 test("correctionState: clean record is none", () => {

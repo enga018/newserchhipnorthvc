@@ -954,7 +954,7 @@ const firebaseConfig = {
     appId: "1:547385765757:web:df18cd27e9161b7d1c2614"
 };
 const ADMIN_EMAIL = "enga018@gmail.com";
-const APP_VERSION = "v2.17.3";
+const APP_VERSION = "v2.17.4";
 
 
 firebase.initializeApp(firebaseConfig);
@@ -2296,11 +2296,14 @@ function householdStats(r) {
     // Children are auto-derived (age < 18); blank/unknown age counts as neither child nor adult.
     const fams = Array.isArray(r.families) ? r.families : [];
     const resFams = fams.filter(f => (!f.type || f.type === 'Residential') && f.occupied !== false);
+    // A household only counts once it has at least one member recorded — an occupied
+    // unit with nobody entered yet isn't a household, it's just occupied-but-empty.
+    const households = resFams.filter(f => Array.isArray(f.members) && f.members.length > 0);
     let population = 0, males = 0, females = 0, children = 0, adults = 0;
     let childMales = 0, childFemales = 0, adultMales = 0, adultFemales = 0;
-    const familySizes = resFams.map(f => (Array.isArray(f && f.members) ? f.members : []).length);
-    for (const f of resFams) {
-        const members = Array.isArray(f && f.members) ? f.members : [];
+    const familySizes = households.map(f => f.members.length);
+    for (const f of households) {
+        const members = f.members;
         for (const m of members) {
             population++;
             const g = (m && m.gender || '').toLowerCase();
@@ -2315,7 +2318,7 @@ function householdStats(r) {
             }
         }
     }
-    return { families: resFams.length, population, males, females, children, adults, childMales, childFemales, adultMales, adultFemales, familySizes };
+    return { families: households.length, population, males, females, children, adults, childMales, childFemales, adultMales, adultFemales, familySizes };
 }
 function correctionState(r) {
     // none -> pending (worker must fix) -> fixed (awaiting admin) -> verified
@@ -2607,13 +2610,17 @@ function householdHtml(r, full) {
     const hasInst = fams.some(f => f.type === 'Institutional/Public');
     const commCount = fams.filter(f => f.type === 'Commercial' && f.occupied !== false).length;
     const instCount = fams.filter(f => f.type === 'Institutional/Public' && f.occupied !== false).length;
+    // Occupied residential units regardless of whether any member was ever entered —
+    // separate from s.families, which only counts units that actually have data.
+    const resOccupiedCount = fams.filter(f => (!f.type || f.type === 'Residential') && f.occupied !== false).length;
     if (!totalUnits) return '<div class="record-detail">🏠 Vacant / no household recorded</div>';
     const unitParts = ['🏪 <b>' + totalUnits + '</b> unit' + (totalUnits>1?'s':'')];
     if (hasRes) {
-        if (s.families > 0) {
-            unitParts.push('👨‍👩‍👧 <b>' + s.families + '</b> ' + (s.families===1?'family':'families') + ' · <b>' + s.population + '</b> ' + (s.population===1?'person':'people') + ' · ' + s.children + ' children · ' + s.males + 'M / ' + s.females + 'F');
-        } else {
+        if (resOccupiedCount === 0) {
             unitParts.push('0 residential');
+        } else {
+            if (resOccupiedCount !== s.families) unitParts.push('<b>' + resOccupiedCount + '</b> residential');
+            unitParts.push('👨‍👩‍👧 <b>' + s.families + '</b> ' + (s.families===1?'family':'families') + ' · <b>' + s.population + '</b> ' + (s.population===1?'person':'people') + ' · ' + s.children + ' children · ' + s.males + 'M / ' + s.females + 'F');
         }
     }
     if (hasComm) unitParts.push('<b>' + commCount + '</b> commercial');
