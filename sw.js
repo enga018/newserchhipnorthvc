@@ -13,8 +13,14 @@ const urlsToCache = [
   'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js',
   'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js',
   'https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js',
-  'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js'
+  'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js',
+  'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css',
+  'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js',
+  'https://cdnjs.cloudflare.com/ajax/libs/leaflet-heat/1.0.4/leaflet-heat.js'
 ];
+// Vendor/app-shell files rarely change — served cache-first so a slow or flaky
+// connection (common for field workers) doesn't stall the app on every load.
+const cacheFirstUrls = new Set(urlsToCache.filter(u => u.startsWith('http')));
 
 self.addEventListener('install', event => {
   self.skipWaiting();
@@ -25,6 +31,21 @@ self.addEventListener('install', event => {
 });
 
 self.addEventListener('fetch', event => {
+  if (cacheFirstUrls.has(event.request.url)) {
+    event.respondWith(
+      caches.match(event.request).then(cached => {
+        if (cached) return cached;
+        return fetch(event.request).then(response => {
+          if (response && response.status === 200) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+          }
+          return response;
+        });
+      })
+    );
+    return;
+  }
   event.respondWith(
     fetch(event.request).then(response => {
       if (response && response.status === 200) {

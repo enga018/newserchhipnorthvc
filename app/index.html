@@ -281,9 +281,30 @@
 <div id="splashScreen" style="position:fixed;inset:0;background:#f5f7fa;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:2000">
     <div style="font-size:48px">🏘️</div>
     <div style="font-size:16px;color:#2c5282;font-weight:600;margin-top:12px">NSN VC Field Survey</div>
-    <div style="font-size:13px;color:#586069;margin-top:8px">Loading...</div>
+    <div id="splashLoadingText" style="font-size:13px;color:#586069;margin-top:8px">Loading...</div>
     <div id="splashVersion" style="font-size:11px;color:#999;margin-top:12px"></div>
+    <div id="splashRetry" class="hidden" style="margin-top:18px;text-align:center;padding:0 24px">
+        <div style="font-size:13px;color:#c0392b;margin-bottom:12px">Taking longer than usual. Please check your internet connection.</div>
+        <button onclick="location.reload()" style="padding:10px 22px;background:#2c5282;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">Retry</button>
+    </div>
 </div>
+<script>
+// Exposed so later scripts can surface a friendly error immediately (e.g. if the
+// Firebase CDN scripts fail to load) instead of leaving the splash spinning forever.
+window.showSplashError = function(msg) {
+    var splash = document.getElementById('splashScreen');
+    if (!splash || splash.classList.contains('hidden')) return;
+    var retry = document.getElementById('splashRetry');
+    var loadingText = document.getElementById('splashLoadingText');
+    if (retry) retry.classList.remove('hidden');
+    if (loadingText) loadingText.textContent = msg || 'Still loading...';
+};
+// Standalone watchdog: fires even if the Firebase/Leaflet CDN <script> tags below
+// hang or fail on a slow/flaky connection, since it doesn't depend on them loading.
+setTimeout(function() {
+    window.showSplashError('Still loading...');
+}, 12000);
+</script>
 
 <div id="authScreen" class="auth-screen hidden">
     <div class="auth-box">
@@ -1321,11 +1342,15 @@ function unsubscribeAll() {
     };
 }
 
-firebase.initializeApp(firebaseConfig);
-
-// Show loading while auth state checks
-
-const auth = firebase.auth();
+let auth;
+try {
+    firebase.initializeApp(firebaseConfig);
+    // Show loading while auth state checks
+    auth = firebase.auth();
+} catch (e) {
+    console.error('Firebase failed to load — likely a CDN/network issue:', e);
+    window.showSplashError('Failed to load. Check your internet connection.');
+}
 
 // Lock background scroll whenever any modal/overlay is open (prevents swipe bleed-through)
 (function setupModalScrollLock() {
@@ -1436,13 +1461,21 @@ function markRecordSynced(recordId) {
     updateSyncBadge();
 }
 
-const db = firebase.firestore();
-const storage = firebase.storage();
-// Queue writes/reads locally (IndexedDB) so workers can keep collecting data with
-// no signal — pending writes sync automatically once the connection returns.
-db.enablePersistence({ synchronizeTabs: true }).catch(err => {
-    console.warn('Offline persistence unavailable:', err.code);
-});
+let db, storage;
+if (auth) {
+    try {
+        db = firebase.firestore();
+        storage = firebase.storage();
+        // Queue writes/reads locally (IndexedDB) so workers can keep collecting data with
+        // no signal — pending writes sync automatically once the connection returns.
+        db.enablePersistence({ synchronizeTabs: true }).catch(err => {
+            console.warn('Offline persistence unavailable:', err.code);
+        });
+    } catch (e) {
+        console.error('Firebase Firestore/Storage failed to initialize:', e);
+        window.showSplashError('Failed to load. Check your internet connection.');
+    }
+}
 let pendingPhotoBlob = null; // blob waiting for Storage upload
 // Unstamped (oriented + resized, but no banner yet) copy of the just-captured photo, kept
 // so the GPS line in the stamp can be redrawn if location is captured after the photo —
@@ -1466,8 +1499,9 @@ let myRecordsShown = 10;
 let myRecordsUnsubscribe = null;
 
 // ========== AUTH ==========
+if (auth) {
 auth.onAuthStateChanged(async user => {
-    
+
     if (user) {
         currentUser = user;
         isAdmin = user.email === ADMIN_EMAIL;
@@ -1546,6 +1580,7 @@ auth.onAuthStateChanged(async user => {
         document.getElementById('adminView').classList.add('hidden');
     }
 });
+}
 
 async function getUserProfile(uid) {
     try { const d = await db.collection('users').doc(uid).get(); return d.exists ? d.data() : null; }
