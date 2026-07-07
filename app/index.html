@@ -161,6 +161,16 @@
         .bd-track{background:var(--bg);border-radius:6px;height:8px;overflow:hidden}
         .bd-fill{background:var(--primary);height:100%;border-radius:6px;transition:width 0.4s}
 
+        /* PROGRESS BAR */
+        .progress-bar{width:100%;height:8px;background:var(--border);border-radius:4px;overflow:hidden;margin:8px 0}
+        .progress-fill{height:100%;background:var(--primary);transition:width 0.3s ease}
+
+        /* WEEKLY CHART */
+        #weeklyChart{display:flex;gap:4px;height:40px;align-items:flex-end}
+        .chart-bar{flex:1;background:var(--primary);border-radius:3px;position:relative;transition:background 0.2s}
+        .chart-bar:hover{background:var(--primary-dark)}
+        .chart-bar-label{font-size:10px;text-align:center;margin-top:4px;color:var(--text2)}
+
         /* BAR LIST (blue shades only) */
         .bar-list{display:flex;flex-direction:column;gap:10px}
         .bar-row{display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--surface-2);border-radius:var(--radius);border:1px solid var(--border);transition:background 0.2s}
@@ -560,6 +570,23 @@
             <div class="stats-grid">
                 <div class="stat-card"><div class="stat-value" id="adminTodayTotal">0</div><div class="stat-label">Today Total</div></div>
                 <div class="stat-card warning"><div class="stat-value" id="adminTodayIncomplete">0</div><div class="stat-label">Today Incomplete</div></div>
+            </div>
+            <div class="stat-card" style="margin-bottom:14px">
+                <div class="stat-label">📊 Completion Rate</div>
+                <div class="progress-bar"><div class="progress-fill" id="progressBar" style="width:0%"></div></div>
+                <div class="stat-value" id="completionRate">0%</div>
+            </div>
+            <div class="stat-card warning" style="margin-bottom:14px" id="correctionsCard">
+                <div class="stat-label">⚠️ Pending Corrections</div>
+                <div id="correctionsList" style="font-size:13px;color:var(--text);margin-top:8px;text-align:left"></div>
+            </div>
+            <div class="stat-card" style="margin-bottom:14px">
+                <div class="section-title" style="margin-bottom:8px">📈 This Week's Activity</div>
+                <div id="weeklyChart"></div>
+            </div>
+            <div class="stat-card" style="margin-bottom:14px">
+                <div class="section-title" style="margin-bottom:8px">🏘️ Properties by Type</div>
+                <div id="propertyTypeList" style="font-size:12px;text-align:left"></div>
             </div>
             <div class="nest-box">
                 <div class="section-title">👨‍👩‍👧‍👦 Population</div>
@@ -1073,6 +1100,33 @@ function updateSyncBadge(){
     }
 }
 
+// Track pending records for offline queue indicator
+function initializePendingCount() {
+    const pendingRecords = JSON.parse(localStorage.getItem('pendingRecords') || '[]');
+    pendingCount = pendingRecords.length;
+    updateSyncBadge();
+}
+
+function markRecordPending(recordId) {
+    if (!recordId) return;
+    const pending = JSON.parse(localStorage.getItem('pendingRecords') || '[]');
+    if (!pending.includes(recordId)) {
+        pending.push(recordId);
+        localStorage.setItem('pendingRecords', JSON.stringify(pending));
+    }
+    pendingCount = pending.length;
+    updateSyncBadge();
+}
+
+function markRecordSynced(recordId) {
+    if (!recordId) return;
+    const pending = JSON.parse(localStorage.getItem('pendingRecords') || '[]');
+    const updated = pending.filter(id => id !== recordId);
+    localStorage.setItem('pendingRecords', JSON.stringify(updated));
+    pendingCount = updated.length;
+    updateSyncBadge();
+}
+
 const db = firebase.firestore();
 const storage = firebase.storage();
 // Queue writes/reads locally (IndexedDB) so workers can keep collecting data with
@@ -1086,6 +1140,9 @@ let pendingPhotoBlob = null; // blob waiting for Storage upload
 // otherwise a photo taken before GPS permanently reads "GPS not captured".
 let unstampedPhotoDataUrl = null;
 let photoCaptureDateText = null;
+
+// Initialize pending queue count for offline indicator
+initializePendingCount();
 
 let currentUser = null;
 let isAdmin = false;
@@ -2064,14 +2121,10 @@ async function saveRecord(e) {
                 data.correctionAllowDetails = firebase.firestore.FieldValue.delete();
             }
             const recordId = editingRecordId;
-            pendingCount++;
-            updateSyncBadge();
+            markRecordPending(recordId);
             db.collection('records').doc(recordId).update(data).then(() => {
-                pendingCount = Math.max(0, pendingCount - 1);
-                updateSyncBadge();
+                markRecordSynced(recordId);
             }).catch(err => {
-                pendingCount = Math.max(0, pendingCount - 1);
-                updateSyncBadge();
                 console.error('Background sync failed for', recordId, err);
                 const failed = JSON.parse(sessionStorage.getItem('failedSaves') || '{}');
                 failed[fullId] = data;
@@ -2086,14 +2139,10 @@ async function saveRecord(e) {
         } else {
             data.timestamp = firebase.firestore.FieldValue.serverTimestamp();
             const savedId = data.propertyId;
-            pendingCount++;
-            updateSyncBadge();
+            markRecordPending(savedId);
             db.collection('records').add(data).then(() => {
-                pendingCount = Math.max(0, pendingCount - 1);
-                updateSyncBadge();
+                markRecordSynced(savedId);
             }).catch(err => {
-                pendingCount = Math.max(0, pendingCount - 1);
-                updateSyncBadge();
                 console.error('Background sync failed for', savedId, err);
                 // Store failed save so worker can retry with the original data
                 const failed = JSON.parse(sessionStorage.getItem('failedSaves') || '{}');
@@ -3187,6 +3236,67 @@ function renderAdminOverview() {
     document.getElementById('adminTodayTotal').textContent = todayRecords.length;
     document.getElementById('adminTodayIncomplete').textContent = todayIncomplete;
 
+    // Completion rate
+    const completionRate = allRecords.length > 0 ? Math.round((completed.length / allRecords.length) * 100) : 0;
+    document.getElementById('completionRate').textContent = completionRate + '%';
+    document.getElementById('progressBar').style.width = completionRate + '%';
+
+    // Pending corrections by worker
+    const correctionsByWorker = {};
+    allRecords.forEach(r => {
+        if (r.correctionStatus === 'pending') {
+            const workerName = allUsers[r.workerUid]?.name || r.workerEmail || 'Unknown';
+            correctionsByWorker[workerName] = (correctionsByWorker[workerName] || 0) + 1;
+        }
+    });
+    const totalPending = Object.values(correctionsByWorker).reduce((a,b) => a+b, 0);
+    const correctionsList = Object.entries(correctionsByWorker).map(([name, count]) =>
+        `<div style="padding:4px 0;border-bottom:1px solid var(--border)">👤 ${name}: <b>${count}</b> pending</div>`
+    ).join('');
+    document.getElementById('correctionsList').innerHTML = correctionsList || '<div style="padding:8px 0;color:var(--text2)">No pending corrections</div>';
+    document.getElementById('correctionsCard').classList.toggle('warning', totalPending > 0);
+
+    // This week's activity
+    const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    const thisWeek = {};
+    allRecords.forEach(r => {
+        if (r.localTimestamp) {
+            const date = new Date(r.localTimestamp);
+            const dayKey = days[date.getDay()];
+            thisWeek[dayKey] = (thisWeek[dayKey] || 0) + 1;
+        }
+    });
+    const maxDay = Math.max(...Object.values(thisWeek), 1);
+    const weeklyHtml = days.map(day => {
+        const count = thisWeek[day] || 0;
+        const height = maxDay > 0 ? (count / maxDay) * 100 : 0;
+        return `<div style="flex:1;display:flex;flex-direction:column;align-items:center">
+            <div class="chart-bar" style="height:${height}%" title="${day}: ${count}"></div>
+            <div class="chart-bar-label">${day.slice(0,1)}</div>
+        </div>`;
+    }).join('');
+    document.getElementById('weeklyChart').innerHTML = weeklyHtml;
+
+    // Property type breakdown
+    const propertyTypes = {};
+    completed.forEach(r => {
+        const type = r.propertyType || 'Unknown';
+        if (!propertyTypes[type]) {
+            propertyTypes[type] = { count: 0, households: 0, population: 0 };
+        }
+        propertyTypes[type].count++;
+        const stats = householdStats(r);
+        propertyTypes[type].households += stats.families;
+        propertyTypes[type].population += stats.population;
+    });
+    const propertyTypeHtml = Object.entries(propertyTypes).map(([type, data]) =>
+        `<div style="padding:6px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between">
+            <span>${type}</span>
+            <span><b>${data.count}</b> properties • <b>${data.households}</b> households • <b>${data.population}</b> people</span>
+        </div>`
+    ).join('') || '<div style="padding:8px 0;color:var(--text2)">No completed records</div>';
+    document.getElementById('propertyTypeList').innerHTML = propertyTypeHtml;
+
     const bc={}, pc={}, oc={};
     completed.forEach(r=>{ bc[r.buildingType]=(bc[r.buildingType]||0)+1; pc[r.propertyType]=(pc[r.propertyType]||0)+1; const ok=r.ownerCategory||'Individual'; oc[ok]=(oc[ok]||0)+1; });
     document.getElementById('adminBuildingBreakdown').innerHTML = barList(bc, 'No data');
@@ -3265,6 +3375,7 @@ function renderWorkers() {
                 <div class="worker-stat"><div class="worker-stat-val" style="color:var(--success)">${completeCount}</div><div class="worker-stat-lbl">Complete</div></div>
                 <div class="worker-stat"><div class="worker-stat-val" style="color:var(--warning)">${absentCount}</div><div class="worker-stat-lbl">Incomplete</div></div>
                 <div class="worker-stat"><div class="worker-stat-val">${todayCount}</div><div class="worker-stat-lbl">Today</div></div>
+                <div class="worker-stat"><div class="worker-stat-val" style="color:var(--primary)">${recs.length > 0 ? Math.round((completeCount / recs.length) * 100) : 0}%</div><div class="worker-stat-lbl">Done</div></div>
                 <div class="worker-stat"><div class="worker-stat-val">${hh.families}</div><div class="worker-stat-lbl">Households</div></div>
                 <div class="worker-stat"><div class="worker-stat-val">${hh.population}</div><div class="worker-stat-lbl">Persons</div></div>
             </div>
