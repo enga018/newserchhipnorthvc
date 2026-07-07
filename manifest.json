@@ -1,6 +1,6 @@
 {
-  "name": "Property Tax Collector",
-  "short_name": "Tax Collector",
+  "name": "NSN VC Field Survey",
+  "short_name": "NSN Survey",
   "description": "Village Council Field Data App for property tax collection",
   "start_url": "./app/",
   "display": "standalone",

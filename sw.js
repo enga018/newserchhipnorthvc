@@ -1,7 +1,7 @@
 // Cache name auto-derived from app version passed via SW registration URL (sw.js?v=x.y.z)
 const params = new URLSearchParams(self.location.search);
 const appVersion = params.get('v') || 'unknown';
-const CACHE_NAME = 'property-tax-' + appVersion;
+const CACHE_NAME = 'nsn-vc-survey-' + appVersion;
 const urlsToCache = [
   './app/',
   './app/index.html',

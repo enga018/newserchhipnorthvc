@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Property Tax Collector</title>
+    <title>NSN VC Field Survey</title>
     <meta name="description" content="Village Council Field Data App for property tax collection">
     <meta name="theme-color" content="#2c5282">
     <link rel="manifest" href="../manifest.json">
     <link rel="icon" type="image/png" href="../icons/icon-96.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Tax Collector">
+    <meta name="apple-mobile-web-app-title" content="NSN Survey">
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
@@ -230,7 +230,7 @@
 <!-- Startup splash -->
 <div id="splashScreen" style="position:fixed;inset:0;background:#f5f7fa;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:2000">
     <div style="font-size:48px">🏘️</div>
-    <div style="font-size:16px;color:#2c5282;font-weight:600;margin-top:12px">Property Tax Collector</div>
+    <div style="font-size:16px;color:#2c5282;font-weight:600;margin-top:12px">NSN VC Field Survey</div>
     <div style="font-size:13px;color:#586069;margin-top:8px">Loading...</div>
 </div>
 
@@ -238,7 +238,7 @@
     <div class="auth-box">
         <div class="auth-logo">
             <div style="font-size:42px">🏘️</div>
-            <h1>Property Tax Collector</h1>
+            <h1>NSN VC Field Survey</h1>
             <p>Village Council Field Data App</p>
             <p id="authVersion" style="font-size:11px;color:#999;margin-top:6px"></p>
         </div>
@@ -279,7 +279,7 @@
     <div id="workerView" class="hidden">
         <div class="header">
             <div class="header-left">
-                <h1>🏘️ Property Tax Collector</h1>
+                <h1>🏘️ NSN VC Field Survey</h1>
                 <p id="vcNameDisplay">Loading...</p>
             </div>
             <div class="header-right">
@@ -457,7 +457,7 @@
                 <div id="myPropertyBreakdown" style="font-size:13px;color:var(--text2);line-height:2"></div>
             </div>
             <div class="stat-card" style="margin-bottom:10px">
-                <div class="section-title">🏛️ Owner Types</div>
+                <div class="section-title">🪪 Owner Types</div>
                 <div id="myOwnerBreakdown" style="font-size:13px;color:var(--text2);line-height:2"></div>
             </div>
             <div class="stat-card" style="margin-bottom:10px">
@@ -542,7 +542,7 @@
                 <div id="adminPropertyBreakdown" style="font-size:13px;color:var(--text2);line-height:2"></div>
             </div>
             <div class="stat-card" style="margin-bottom:12px">
-                <div class="section-title">🏛️ Owner Types</div>
+                <div class="section-title">🪪 Owner Types</div>
                 <div id="adminOwnerBreakdown" style="font-size:13px;color:var(--text2);line-height:2"></div>
             </div>
             <div class="stat-card" style="margin-bottom:12px">
@@ -954,7 +954,7 @@ const firebaseConfig = {
     appId: "1:547385765757:web:df18cd27e9161b7d1c2614"
 };
 const ADMIN_EMAIL = "enga018@gmail.com";
-const APP_VERSION = "v2.17.4";
+const APP_VERSION = "v2.18.0";
 
 
 firebase.initializeApp(firebaseConfig);
@@ -993,7 +993,7 @@ const auth = firebase.auth();
     const av = document.getElementById('authVersion');
     const vf = document.getElementById('versionFooter');
     if (av) av.textContent = APP_VERSION;
-    if (vf) vf.textContent = 'Property Tax Collector ' + APP_VERSION;
+    if (vf) vf.textContent = 'NSN VC Field Survey ' + APP_VERSION;
 })();
 
 // Register Service Worker for PWA
@@ -1547,7 +1547,7 @@ function validateWizardStep(id){
         const propId = document.getElementById('propertyId').value.trim();
         if (!propId) return alertFalse('🏷️ Enter the Property ID.');
         if (!/^(NSN-)?[0-9]{1,4}$/i.test(propId)) return alertFalse('🏷️ Property ID must be up to 4 digits (e.g. 0001).');
-        if (!document.getElementById('ownerCategory').value) return alertFalse('🏛️ Choose an Owner Type.');
+        if (!document.getElementById('ownerCategory').value) return alertFalse('🪪 Choose an Owner Type.');
         if (!document.getElementById('buildingType').value) return alertFalse('🏗️ Choose a Building Type.');
     }
     if (id === 'location'){
@@ -2614,21 +2614,22 @@ function householdHtml(r, full) {
     // separate from s.families, which only counts units that actually have data.
     const resOccupiedCount = fams.filter(f => (!f.type || f.type === 'Residential') && f.occupied !== false).length;
     if (!totalUnits) return '<div class="record-detail">🏠 Vacant / no household recorded</div>';
-    const unitParts = ['🏪 <b>' + totalUnits + '</b> unit' + (totalUnits>1?'s':'')];
+    const unitParts = ['🏘️ <b>' + totalUnits + '</b> unit' + (totalUnits>1?'s':'')];
     if (hasRes) {
         if (resOccupiedCount === 0) {
-            unitParts.push('0 residential');
+            unitParts.push('🏠 0 residential');
         } else {
-            if (resOccupiedCount !== s.families) unitParts.push('<b>' + resOccupiedCount + '</b> residential');
+            if (resOccupiedCount !== s.families) unitParts.push('🏠 <b>' + resOccupiedCount + '</b> residential');
             unitParts.push('👨‍👩‍👧 <b>' + s.families + '</b> ' + (s.families===1?'family':'families') + ' · <b>' + s.population + '</b> ' + (s.population===1?'person':'people') + ' · ' + s.children + ' children · ' + s.males + 'M / ' + s.females + 'F');
         }
     }
-    if (hasComm) unitParts.push('<b>' + commCount + '</b> commercial');
-    if (hasInst) unitParts.push('<b>' + instCount + '</b> institutional/public');
+    if (hasComm) unitParts.push('🏪 <b>' + commCount + '</b> commercial');
+    if (hasInst) unitParts.push('🏛️ <b>' + instCount + '</b> institutional/public');
     const summary = '<div class="record-detail">' + unitParts.join(' · ') + '</div>';
     if (!full) return summary;
     const famsDetail = fams.map((f,i)=>{
         const ut = f.type || 'Residential';
+        const unitIcon = ut === 'Commercial' ? '🏪' : ut === 'Institutional/Public' ? '🏛️' : '🏠';
         const label = ut + (f.occupied === false ? ' (Vacant)' : '');
         const isRes = ut === 'Residential';
         const head = isRes ? esc(f.headName) : '';
@@ -2644,7 +2645,7 @@ function householdHtml(r, full) {
         } else {
             members = '<li style="color:#999">Vacant</li>';
         }
-        return `<div style="margin-top:6px"><b>🏪 ${label}</b>${head ? ' · ' + head : ''}${contact}<ul style="margin:2px 0 0 18px;padding:0">${members}</ul></div>`;
+        return `<div style="margin-top:6px"><b>${unitIcon} ${label}</b>${head ? ' · ' + head : ''}${contact}<ul style="margin:2px 0 0 18px;padding:0">${members}</ul></div>`;
     }).join('');
     return summary + `<div style="background:var(--bg);border-radius:6px;padding:8px;margin-top:6px;font-size:12px;color:var(--text2)">${famsDetail}</div>`;
 }
@@ -2741,7 +2742,7 @@ function recordCard(r, context) {
             ${r.organizationName ? `<div class="record-detail"><b>Org:</b> ${esc(r.organizationName)}</div>` : ''}
             ${r.ownerName ? `<div class="record-detail"><b>${esc(r.ownerType||'Owner')}:</b> ${esc(r.ownerName)}</div>` : ''}
             ${r.contact ? `<div class="record-detail">📱 ${esc(r.contact)}</div>` : ''}
-            <div class="record-detail">🏠 ${esc(r.propertyType)} &nbsp;|&nbsp; 🏗️ ${esc(r.buildingType)}${r.ownerCategory && r.ownerCategory!=='Individual' ? ' &nbsp;|&nbsp; 🏛️ '+esc(r.ownerCategory) : ''}</div>
+            <div class="record-detail">🏠 ${esc(r.propertyType)} &nbsp;|&nbsp; 🏗️ ${esc(r.buildingType)}${r.ownerCategory && r.ownerCategory!=='Individual' ? ' &nbsp;|&nbsp; 🪪 '+esc(r.ownerCategory) : ''}</div>
             ${householdHtml(r, false)}
             <div style="margin-top:5px">
                 ${r.photo ? '<span class="badge badge-photo">📷 Photo</span> ' : ''}
@@ -2769,7 +2770,7 @@ function recordCard(r, context) {
         ${r.organizationName ? `<div class="record-detail"><b>Org:</b> ${esc(r.organizationName)}</div>` : ''}
         ${r.ownerName ? `<div class="record-detail"><b>${esc(r.ownerType||'Owner')}:</b> ${esc(r.ownerName)}</div>` : ''}
         ${r.contact ? `<div class="record-detail">📱 ${esc(r.contact)}</div>` : ''}
-        <div class="record-detail">🏠 ${esc(r.propertyType)} &nbsp;|&nbsp; 🏗️ ${esc(r.buildingType)}${r.ownerCategory && r.ownerCategory!=='Individual' ? ' &nbsp;|&nbsp; 🏛️ '+esc(r.ownerCategory) : ''}</div>
+        <div class="record-detail">🏠 ${esc(r.propertyType)} &nbsp;|&nbsp; 🏗️ ${esc(r.buildingType)}${r.ownerCategory && r.ownerCategory!=='Individual' ? ' &nbsp;|&nbsp; 🪪 '+esc(r.ownerCategory) : ''}</div>
         ${householdHtml(r, false)}
         <div style="margin-top:5px">
             ${r.photo ? '<span class="badge badge-photo">📷 Photo</span> ' : ''}

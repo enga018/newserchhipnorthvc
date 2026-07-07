@@ -1,7 +1,7 @@
 {
-  "name": "property-tax-collector",
+  "name": "nsn-vc-field-survey",
   "version": "1.0.0",
-  "description": "Property Tax Collector survey app",
+  "description": "NSN VC Field Survey app",
   "private": true,
   "scripts": {
     "test": "node --test"
