@@ -156,13 +156,28 @@
         .bd-track{background:var(--bg);border-radius:6px;height:8px;overflow:hidden}
         .bd-fill{background:var(--primary);height:100%;border-radius:6px;transition:width 0.4s}
 
-        /* STACKED BAR CHART */
-        .sb-chart{margin-top:8px}
-        .sb-track{display:flex;height:14px;border-radius:7px;overflow:hidden;background:var(--bg);box-shadow:inset 0 1px 2px rgba(0,0,0,0.06)}
-        .sb-segment{height:100%;transition:width 0.4s ease;min-width:2px}
-        .sb-legend{display:flex;flex-wrap:wrap;gap:6px 12px;margin-top:10px;font-size:12px;color:var(--text)}
-        .sb-legend-item{display:flex;align-items:center;gap:5px}
-        .sb-dot{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+        /* BAR LIST (blue shades only) */
+        .bar-list{display:flex;flex-direction:column;gap:10px}
+        .bar-row{display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--surface-2);border-radius:var(--radius);border:1px solid var(--border);transition:background 0.2s}
+        .bar-row:hover{background:#fff}
+        .bar-row .bar-label{font-size:13px;color:var(--text);flex:0 0 105px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500}
+        .bar-row .bar-count{font-size:15px;font-weight:700;color:var(--primary);min-width:32px;text-align:right}
+        .bar-row .bar-track{flex:1;height:8px;background:var(--bg);border-radius:4px;overflow:hidden;min-width:40px}
+        .bar-row .bar-fill{height:100%;border-radius:4px;transition:width 0.5s cubic-bezier(0.4,0,0.2,1)}
+        .bar-row .bar-pct{font-size:11px;color:var(--text2);min-width:36px;text-align:right;font-weight:500}
+
+        /* NESTED BOX (population/children/households) */
+        .nest-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;box-shadow:var(--shadow);margin-bottom:12px}
+        .nest-hero{display:flex;flex-direction:column;align-items:center;gap:2px;margin-bottom:12px}
+        .nest-hero-label{font-size:12px;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;font-weight:600}
+        .nest-hero-num{font-size:32px;font-weight:800;color:var(--primary);line-height:1}
+        .gender-split{display:flex;gap:8px}
+        .gender-card{flex:1;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;text-align:center}
+        .gender-card.m{border-top:3px solid var(--primary)}
+        .gender-card.f{border-top:3px solid var(--primary-lighter)}
+        .gender-card-label{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px}
+        .gender-card-value{font-size:22px;font-weight:700;color:var(--text);line-height:1}
+        .gender-card-pct{font-size:11px;color:var(--text2);margin-top:2px}
 
         /* ADMIN */
         .admin-header{position:sticky;top:6px;z-index:60;background:var(--primary-dark);color:white;padding:14px 18px;border-radius:var(--radius-lg);margin-bottom:16px;box-shadow:var(--shadow-md)}
@@ -448,37 +463,41 @@
                 <div class="stat-card"><div class="stat-value" id="myTodayTotal">0</div><div class="stat-label">Today Total</div></div>
                 <div class="stat-card warning"><div class="stat-value" id="myTodayIncomplete">0</div><div class="stat-label">Today Incomplete</div></div>
             </div>
-            <div class="stat-card" style="margin-bottom:10px">
-                <div class="section-title">🏗️ Building Types</div>
-                <div id="myBuildingBreakdown" style="font-size:13px;color:var(--text2);line-height:2"></div>
-            </div>
-            <div class="stat-card" style="margin-bottom:10px">
-                <div class="section-title">🏠 Property Types</div>
-                <div id="myPropertyBreakdown" style="font-size:13px;color:var(--text2);line-height:2"></div>
-            </div>
-            <div class="stat-card" style="margin-bottom:10px">
-                <div class="section-title">🪪 Owner Types</div>
-                <div id="myOwnerBreakdown" style="font-size:13px;color:var(--text2);line-height:2"></div>
-            </div>
-            <div class="stat-card" style="margin-bottom:10px">
-                <div class="section-title">👨‍👩‍👧‍👦 Population &amp; Households</div>
-                <div class="stats-grid" style="margin-bottom:0">
-                    <div class="stat-card" style="grid-column:span 2;padding-bottom:14px">
-                        <div class="stat-value" id="myFamilies">0</div>
-                        <div class="stat-label">Households</div>
-                        <div id="myFamilySizes" style="margin-top:8px"></div>
-                    </div>
-                    <div class="stat-card" style="grid-column:span 2;padding-bottom:14px">
-                        <div class="stat-value" id="myPopulation">0</div>
-                        <div class="stat-label">Population</div>
-                        <div id="myPopGender" style="margin-top:8px"></div>
-                    </div>
-                    <div class="stat-card" style="grid-column:span 2;padding-bottom:14px">
-                        <div class="stat-value" id="myChildren">0</div>
-                        <div class="stat-label">Children</div>
-                        <div id="myChildGender" style="margin-top:8px"></div>
-                    </div>
+            <div class="nest-box">
+                <div class="section-title">🏠 Households</div>
+                <div class="nest-hero">
+                    <span class="nest-hero-label">Total No. of Household</span>
+                    <span class="nest-hero-num" id="myFamilies">0</span>
                 </div>
+                <div id="myFamilySizes"></div>
+            </div>
+            <div class="nest-box">
+                <div class="section-title">👨‍👩‍👧‍👦 Population</div>
+                <div class="nest-hero">
+                    <span class="nest-hero-label">Total Population</span>
+                    <span class="nest-hero-num" id="myPopulation">0</span>
+                </div>
+                <div id="myPopGender"></div>
+            </div>
+            <div class="nest-box">
+                <div class="section-title">🧒 Children</div>
+                <div class="nest-hero">
+                    <span class="nest-hero-label">No of Children</span>
+                    <span class="nest-hero-num" id="myChildren">0</span>
+                </div>
+                <div id="myChildGender"></div>
+            </div>
+            <div class="breakdown-card" style="margin-bottom:10px">
+                <div class="section-title">🏗️ Building Types</div>
+                <div id="myBuildingBreakdown"></div>
+            </div>
+            <div class="breakdown-card" style="margin-bottom:10px">
+                <div class="section-title">🪪 Owner Types</div>
+                <div id="myOwnerBreakdown"></div>
+            </div>
+            <div class="breakdown-card" style="margin-bottom:10px">
+                <div class="section-title">🏠 Property Types</div>
+                <div id="myPropertyBreakdown"></div>
             </div>
             <div class="info-box" style="margin-top:4px">
                 💡 Records still needing details are in the <b>Follow Up</b> tab. Your <b>Complete</b> count is your finished work.
@@ -533,39 +552,43 @@
                 <div class="stat-card"><div class="stat-value" id="adminTodayTotal">0</div><div class="stat-label">Today Total</div></div>
                 <div class="stat-card warning"><div class="stat-value" id="adminTodayIncomplete">0</div><div class="stat-label">Today Incomplete</div></div>
             </div>
-            <div class="stat-card" style="margin-bottom:12px">
-                <div class="section-title">🏗️ Building Types</div>
-                <div id="adminBuildingBreakdown" style="font-size:13px;color:var(--text2);line-height:2"></div>
-            </div>
-            <div class="stat-card" style="margin-bottom:12px">
-                <div class="section-title">🏠 Property Types</div>
-                <div id="adminPropertyBreakdown" style="font-size:13px;color:var(--text2);line-height:2"></div>
-            </div>
-            <div class="stat-card" style="margin-bottom:12px">
-                <div class="section-title">🪪 Owner Types</div>
-                <div id="adminOwnerBreakdown" style="font-size:13px;color:var(--text2);line-height:2"></div>
-            </div>
-            <div class="stat-card" style="margin-bottom:12px">
-                <div class="section-title">👨‍👩‍👧‍👦 Population &amp; Households</div>
-                <div class="stats-grid" style="margin-bottom:0">
-                    <div class="stat-card" style="grid-column:span 2;padding-bottom:14px">
-                        <div class="stat-value" id="adminFamilies">0</div>
-                        <div class="stat-label">Households</div>
-                        <div id="adminFamilySizes" style="margin-top:8px"></div>
-                    </div>
-                    <div class="stat-card" style="grid-column:span 2;padding-bottom:14px">
-                        <div class="stat-value" id="adminPopulation">0</div>
-                        <div class="stat-label">Population</div>
-                        <div id="adminPopGender" style="margin-top:8px"></div>
-                    </div>
-                    <div class="stat-card" style="grid-column:span 2;padding-bottom:14px">
-                        <div class="stat-value" id="adminChildren">0</div>
-                        <div class="stat-label">Children</div>
-                        <div id="adminChildGender" style="margin-top:8px"></div>
-                    </div>
+            <div class="nest-box">
+                <div class="section-title">🏠 Households</div>
+                <div class="nest-hero">
+                    <span class="nest-hero-label">Total No. of Household</span>
+                    <span class="nest-hero-num" id="adminFamilies">0</span>
                 </div>
+                <div id="adminFamilySizes"></div>
             </div>
-            <div class="stat-card" style="margin-bottom:12px" id="cardWorkerActivity">
+            <div class="nest-box">
+                <div class="section-title">👨‍👩‍👧‍👦 Population</div>
+                <div class="nest-hero">
+                    <span class="nest-hero-label">Total Population</span>
+                    <span class="nest-hero-num" id="adminPopulation">0</span>
+                </div>
+                <div id="adminPopGender"></div>
+            </div>
+            <div class="nest-box">
+                <div class="section-title">🧒 Children</div>
+                <div class="nest-hero">
+                    <span class="nest-hero-label">No of Children</span>
+                    <span class="nest-hero-num" id="adminChildren">0</span>
+                </div>
+                <div id="adminChildGender"></div>
+            </div>
+            <div class="breakdown-card" style="margin-bottom:12px">
+                <div class="section-title">🏗️ Building Types</div>
+                <div id="adminBuildingBreakdown"></div>
+            </div>
+            <div class="breakdown-card" style="margin-bottom:12px">
+                <div class="section-title">🪪 Owner Types</div>
+                <div id="adminOwnerBreakdown"></div>
+            </div>
+            <div class="breakdown-card" style="margin-bottom:12px">
+                <div class="section-title">🏠 Property Types</div>
+                <div id="adminPropertyBreakdown"></div>
+            </div>
+            <div class="breakdown-card" style="margin-bottom:12px" id="cardWorkerActivity">
                 <div class="section-title">👥 Worker Activity Today</div>
                 <div id="adminWorkerToday" style="font-size:13px;color:var(--text2)"></div>
             </div>
@@ -955,7 +978,7 @@ const firebaseConfig = {
     appId: "1:547385765757:web:df18cd27e9161b7d1c2614"
 };
 const ADMIN_EMAIL = "enga018@gmail.com";
-const APP_VERSION = "v2.18.1";
+const APP_VERSION = "v2.19.0";
 
 
 firebase.initializeApp(firebaseConfig);
@@ -2511,19 +2534,19 @@ function renderMyRecords(records) {
     const bc = {};
     completed.forEach(r => { bc[r.buildingType] = (bc[r.buildingType]||0)+1; });
     const el = document.getElementById('myBuildingBreakdown');
-    if (el) el.innerHTML = stackedBarChart(bc, 'No records yet');
+    if (el) el.innerHTML = barList(bc, 'No records yet');
 
     // Property type breakdown (completed only)
     const pc = {};
     completed.forEach(r => { pc[r.propertyType] = (pc[r.propertyType]||0)+1; });
     const pel = document.getElementById('myPropertyBreakdown');
-    if (pel) pel.innerHTML = stackedBarChart(pc, 'No records yet');
+    if (pel) pel.innerHTML = barList(pc, 'No records yet');
 
     // Owner type breakdown (completed only)
     const oc = {};
     completed.forEach(r => { const k = r.ownerCategory||'Individual'; oc[k] = (oc[k]||0)+1; });
     const oel = document.getElementById('myOwnerBreakdown');
-    if (oel) oel.innerHTML = stackedBarChart(oc, 'No records yet');
+    if (oel) oel.innerHTML = barList(oc, 'No records yet');
 
     // Population & households for this worker's completed records
     renderPopHouseholds('my', completed);
@@ -2581,24 +2604,31 @@ function breakdownBars(map, emptyMsg){
     }).join('');
 }
 
-const SB_COLORS = ['#2563eb','#16a34a','#ca8a04','#dc2626','#7c3aed','#0891b2','#ea580c','#4b5563'];
+const BAR_SHADES = ['var(--primary)','var(--primary-light)','var(--primary-lighter)','#94a3b8'];
 
-// Render a {label: count} map as a single stacked bar chart with legend.
-// colors: optional array to override the default palette.
+// Render a {label: count} map as blue-shaded bar list (sorted high to low).
 // preserveOrder: if true, keep insertion order instead of sorting by count.
-function stackedBarChart(map, emptyMsg, colors, preserveOrder){
+function barList(map, emptyMsg, preserveOrder){
     const entries = Object.entries(map || {});
     if (!entries.length) return `<div style="color:var(--text2)">${emptyMsg || 'No data'}</div>`;
     const total = entries.reduce((a,[,v]) => a + v, 0) || 1;
-    const palette = colors || SB_COLORS;
     const ordered = preserveOrder ? entries : entries.sort((a,b) => b[1]-a[1]);
-    const items = ordered.map(([k,v], i) => {
-        const pct = v / total * 100;
-        return { k, v, pct, color: palette[i % palette.length] };
-    });
-    const bar = `<div class="sb-track">${items.map(x => `<div class="sb-segment" style="width:${x.pct.toFixed(2)}%;background:${x.color}" title="${esc(x.k)}: ${x.v} · ${Math.round(x.pct)}%"></div>`).join('')}</div>`;
-    const legend = `<div class="sb-legend">${items.map(x => `<div class="sb-legend-item"><span class="sb-dot" style="background:${x.color}"></span>${esc(x.k)} — ${x.v} · ${Math.round(x.pct)}%</div>`).join('')}</div>`;
-    return `<div class="sb-chart">${bar}${legend}</div>`;
+    return `<div class="bar-list">${ordered.map(([k,v], i) => {
+        const pct = (v / total * 100).toFixed(2);
+        const color = BAR_SHADES[Math.min(i, BAR_SHADES.length-1)];
+        return `<div class="bar-row"><span class="bar-label">${esc(k)}</span><span class="bar-count">${v}</span><div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${color}"></div></div><span class="bar-pct">${Math.round(pct)}%</span></div>`;
+    }).join('')}</div>`;
+}
+
+// Render a gender split (two side-by-side cards)
+function genderSplit(male, female, emptyMsg){
+    const total = (male||0) + (female||0) || 1;
+    if (!total || (male===0 && female===0)) return `<div style="color:var(--text2);text-align:center;padding:8px">${emptyMsg||'No data'}</div>`;
+    const mPct = Math.round(male/total*100), fPct = Math.round(female/total*100);
+    return `<div class="gender-split">
+        <div class="gender-card m"><div class="gender-card-label">Male</div><div class="gender-card-value">${male||0}</div><div class="gender-card-pct">${mPct}%</div></div>
+        <div class="gender-card f"><div class="gender-card-label">Female</div><div class="gender-card-value">${female||0}</div><div class="gender-card-pct">${fPct}%</div></div>
+    </div>`;
 }
 
 // Household summary line (+ optional full family/member breakdown) for record views.
@@ -2682,23 +2712,18 @@ function renderPopHouseholds(prefix, records) {
     const hhMap = {};
     categories.forEach(cat => {
         const total = Object.keys(freq).map(Number).filter(n => n >= cat.min && n <= cat.max).reduce((sum,n)=>sum+freq[n],0);
-        if (total) hhMap[cat.label] = total;
+        if (total) hhMap[cat.label + ' (' + cat.min + (cat.max===Infinity?'+':'-'+cat.max) + ')'] = total;
     });
-    const hhColors = ['#16a34a','#ca8a04','#dc2626','#7c3aed'];
 
     const set = (id,v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
     const hset = (id,v) => { const e = document.getElementById(id); if (e) e.innerHTML = v; };
-    const detailSizes = Object.keys(freq).map(Number).sort((a,b)=>a-b);
-    const detailLine = detailSizes.length
-        ? `<div style="font-size:11px;color:var(--text2);margin-top:6px;text-align:center">Members: ${detailSizes.map(n=>`${n}: <b>${freq[n]}</b>`).join(' <span style="color:#cbd5e1">|</span> ')}</div>`
-        : '';
 
     set(prefix+'Families', hh.families);
-    hset(prefix+'FamilySizes', stackedBarChart(hhMap, 'No data', hhColors, true) + detailLine);
+    hset(prefix+'FamilySizes', barList(hhMap, 'No data', true));
     set(prefix+'Population', hh.population);
-    hset(prefix+'PopGender', stackedBarChart({Male: hh.males, Female: hh.females}, 'No data', ['#2563eb','#db2777'], true));
+    hset(prefix+'PopGender', genderSplit(hh.males, hh.females, 'No data'));
     set(prefix+'Children', hh.children);
-    hset(prefix+'ChildGender', stackedBarChart({Male: hh.childMales, Female: hh.childFemales}, 'No data', ['#2563eb','#db2777'], true));
+    hset(prefix+'ChildGender', genderSplit(hh.childMales, hh.childFemales, 'No data'));
 }
 
 function recordCard(r, context) {
@@ -3118,9 +3143,9 @@ function renderAdminOverview() {
 
     const bc={}, pc={}, oc={};
     completed.forEach(r=>{ bc[r.buildingType]=(bc[r.buildingType]||0)+1; pc[r.propertyType]=(pc[r.propertyType]||0)+1; const ok=r.ownerCategory||'Individual'; oc[ok]=(oc[ok]||0)+1; });
-    document.getElementById('adminBuildingBreakdown').innerHTML = stackedBarChart(bc, 'No data');
-    document.getElementById('adminPropertyBreakdown').innerHTML = stackedBarChart(pc, 'No data');
-    document.getElementById('adminOwnerBreakdown').innerHTML = stackedBarChart(oc, 'No data');
+    document.getElementById('adminBuildingBreakdown').innerHTML = barList(bc, 'No data');
+    document.getElementById('adminPropertyBreakdown').innerHTML = barList(pc, 'No data');
+    document.getElementById('adminOwnerBreakdown').innerHTML = barList(oc, 'No data');
 
     renderPopHouseholds('admin', completed);
 

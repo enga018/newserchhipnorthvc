@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Preview</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+    --primary:#2c5282;--primary-dark:#1e3a5f;--primary-light:#3a6ea5;--primary-lighter:#5b8fc7;
+    --primary-tint:#eaf1f9;--primary-tint2:#d6e4f7;
+    --warning:#b76e00;--warning-bg:#fbf0db;
+    --bg:#f3f6fa;--surface:#fff;--surface-2:#f8fafc;--text:#16202e;
+    --text2:#5b6675;--border:#e2e7ee;
+    --radius:12px;--radius-lg:16px;
+    --shadow:0 1px 2px rgba(16,32,52,0.06),0 1px 3px rgba(16,32,52,0.05);
+    --shadow-md:0 4px 14px rgba(16,32,52,0.10)
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);line-height:1.5}
+.container{max-width:620px;margin:0 auto;padding:20px 10px 60px}
+
+/* HEADER */
+.header{background:var(--primary);color:white;padding:14px 18px;border-radius:var(--radius-lg);margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;box-shadow:var(--shadow-md)}
+.header h1{font-size:17px;font-weight:600}
+.header p{font-size:11px;opacity:0.9;margin-top:2px}
+
+/* STATS */
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;text-align:center;box-shadow:var(--shadow)}
+.stat-value{font-size:26px;font-weight:700;color:var(--primary);line-height:1}
+.stat-label{font-size:11px;color:var(--text2);margin-top:4px;text-transform:uppercase;letter-spacing:0.5px}
+.stat-card.warning .stat-value{color:var(--warning)}
+
+/* SECTION TITLE */
+.section-title{font-size:13px;font-weight:700;letter-spacing:0.3px;margin-bottom:10px;color:var(--text)}
+
+/* ====== BAR LIST (blue shades only) ====== */
+.bar-list{display:flex;flex-direction:column;gap:10px}
+.bar-row{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:8px 10px;
+    background:var(--surface-2);
+    border-radius:var(--radius);
+    border:1px solid var(--border);
+    transition:background 0.2s;
+}
+.bar-row:hover{background:#fff;}
+.bar-row .bar-label{
+    font-size:13px;
+    color:var(--text);
+    flex:0 0 105px;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    font-weight:500;
+}
+.bar-row .bar-count{
+    font-size:15px;
+    font-weight:700;
+    color:var(--primary);
+    min-width:32px;
+    text-align:right;
+}
+.bar-row .bar-track{
+    flex:1;
+    height:8px;
+    background:var(--bg);
+    border-radius:4px;
+    overflow:hidden;
+    min-width:40px;
+}
+.bar-row .bar-fill{
+    height:100%;
+    border-radius:4px;
+    transition:width 0.5s cubic-bezier(0.4,0,0.2,1);
+}
+.bar-row .bar-pct{
+    font-size:11px;
+    color:var(--text2);
+    min-width:36px;
+    text-align:right;
+    font-weight:500;
+}
+
+/* ====== NESTED BOX ====== */
+.nest-box{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:var(--radius-lg);
+    padding:16px;
+    box-shadow:var(--shadow);
+    margin-bottom:12px;
+}
+
+/* ====== HERO (label before number) ====== */
+.nest-hero{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:2px;
+    margin-bottom:12px;
+}
+.nest-hero-label{
+    font-size:12px;
+    color:var(--text2);
+    text-transform:uppercase;
+    letter-spacing:0.5px;
+    font-weight:600;
+}
+.nest-hero-num{
+    font-size:32px;
+    font-weight:800;
+    color:var(--primary);
+    line-height:1;
+}
+
+/* Gender split */
+.gender-split{
+    display:flex;
+    gap:8px;
+}
+.gender-card{
+    flex:1;
+    background:var(--surface-2);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:12px 14px;
+    text-align:center;
+}
+.gender-card.m{border-top:3px solid var(--primary);}
+.gender-card.f{border-top:3px solid var(--primary-lighter);}
+.gender-card-label{
+    font-size:11px;
+    color:var(--text2);
+    text-transform:uppercase;
+    letter-spacing:0.5px;
+    margin-bottom:4px;
+}
+.gender-card-value{
+    font-size:22px;
+    font-weight:700;
+    color:var(--text);
+    line-height:1;
+}
+.gender-card-pct{
+    font-size:11px;
+    color:var(--text2);
+    margin-top:2px;
+}
+
+/* Breakdown card wrapper */
+.breakdown-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;box-shadow:var(--shadow);margin-bottom:12px}
+
+/* Divider between sections */
+.divider{margin:20px 0;border:none;border-top:1px solid var(--border)}
+.label-tag{display:inline-block;background:var(--primary-tint);color:var(--primary);padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;margin-bottom:12px}
+</style>
+</head>
+<body>
+
+<div class="container">
+
+    <div style="text-align:center;margin-bottom:24px">
+        <h2 style="font-size:20px;color:var(--primary);margin-bottom:4px">Dashboard Preview</h2>
+        <p style="font-size:13px;color:var(--text2)">Blue-only bars · Label before number · Admin only</p>
+    </div>
+
+    <!-- ============ ADMIN OVERVIEW ============ -->
+    <span class="label-tag">Admin View — Overview</span>
+
+    <div class="header" style="background:var(--primary-dark)">
+        <div>
+            <h1>🏘️ Admin Dashboard</h1>
+            <p>Newserchhip North Village Council</p>
+        </div>
+        <div style="text-align:right">
+            <span style="background:rgba(255,255,255,0.2);padding:3px 10px;border-radius:20px;font-size:11px">⚙️ Enga H</span>
+        </div>
+    </div>
+
+    <div class="section-title">Overview</div>
+
+    <div class="stats-grid">
+        <div class="stat-card"><div class="stat-value">147</div><div class="stat-label">Total Records</div></div>
+        <div class="stat-card warning"><div class="stat-value">12</div><div class="stat-label">Incomplete</div></div>
+    </div>
+    <div class="stats-grid">
+        <div class="stat-card"><div class="stat-value">23</div><div class="stat-label">Today Total</div></div>
+        <div class="stat-card warning"><div class="stat-value">4</div><div class="stat-label">Today Incomplete</div></div>
+    </div>
+
+    <!-- 1. Households -->
+    <div class="nest-box">
+        <div class="section-title">🏠 Households</div>
+        <div class="nest-hero">
+            <span class="nest-hero-label">Total No. of Household</span>
+            <span class="nest-hero-num">112</span>
+        </div>
+        <div class="bar-list">
+            <div class="bar-row">
+                <span class="bar-label">Small (1-3)</span>
+                <span class="bar-count">50</span>
+                <div class="bar-track"><div class="bar-fill" style="width:45%;background:var(--primary)"></div></div>
+                <span class="bar-pct">45%</span>
+            </div>
+            <div class="bar-row">
+                <span class="bar-label">Medium (4-6)</span>
+                <span class="bar-count">40</span>
+                <div class="bar-track"><div class="bar-fill" style="width:36%;background:var(--primary-light)"></div></div>
+                <span class="bar-pct">36%</span>
+            </div>
+            <div class="bar-row">
+                <span class="bar-label">Large (7-9)</span>
+                <span class="bar-count">15</span>
+                <div class="bar-track"><div class="bar-fill" style="width:13%;background:var(--primary-lighter)"></div></div>
+                <span class="bar-pct">13%</span>
+            </div>
+            <div class="bar-row">
+                <span class="bar-label">Very Large (10+)</span>
+                <span class="bar-count">7</span>
+                <div class="bar-track"><div class="bar-fill" style="width:6%;background:#94a3b8"></div></div>
+                <span class="bar-pct">6%</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. Population -->
+    <div class="nest-box">
+        <div class="section-title">👨‍👩‍👧‍👦 Population</div>
+        <div class="nest-hero">
+            <span class="nest-hero-label">Total Population</span>
+            <span class="nest-hero-num">412</span>
+        </div>
+        <div class="gender-split">
+            <div class="gender-card m">
+                <div class="gender-card-label">Male</div>
+                <div class="gender-card-value">215</div>
+                <div class="gender-card-pct">52%</div>
+            </div>
+            <div class="gender-card f">
+                <div class="gender-card-label">Female</div>
+                <div class="gender-card-value">197</div>
+                <div class="gender-card-pct">48%</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. Children -->
+    <div class="nest-box">
+        <div class="section-title">🧒 Children</div>
+        <div class="nest-hero">
+            <span class="nest-hero-label">No of Children</span>
+            <span class="nest-hero-num" style="color:var(--primary)">138</span>
+        </div>
+        <div class="gender-split">
+            <div class="gender-card m">
+                <div class="gender-card-label">Male</div>
+                <div class="gender-card-value">72</div>
+                <div class="gender-card-pct">52%</div>
+            </div>
+            <div class="gender-card f">
+                <div class="gender-card-label">Female</div>
+                <div class="gender-card-value">66</div>
+                <div class="gender-card-pct">48%</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. Building Types -->
+    <div class="breakdown-card">
+        <div class="section-title">🏗️ Building Types</div>
+        <div class="bar-list">
+            <div class="bar-row">
+                <span class="bar-label">RCC</span>
+                <span class="bar-count">95</span>
+                <div class="bar-track"><div class="bar-fill" style="width:65%;background:var(--primary)"></div></div>
+                <span class="bar-pct">65%</span>
+            </div>
+            <div class="bar-row">
+                <span class="bar-label">Semi RCC</span>
+                <span class="bar-count">32</span>
+                <div class="bar-track"><div class="bar-fill" style="width:22%;background:var(--primary-light)"></div></div>
+                <span class="bar-pct">22%</span>
+            </div>
+            <div class="bar-row">
+                <span class="bar-label">Assam Type</span>
+                <span class="bar-count">20</span>
+                <div class="bar-track"><div class="bar-fill" style="width:13%;background:var(--primary-lighter)"></div></div>
+                <span class="bar-pct">13%</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 5. Owner Types -->
+    <div class="breakdown-card">
+        <div class="section-title">🪪 Owner Types</div>
+        <div class="bar-list">
+            <div class="bar-row">
+                <span class="bar-label">Individual</span>
+                <span class="bar-count">125</span>
+                <div class="bar-track"><div class="bar-fill" style="width:85%;background:var(--primary)"></div></div>
+                <span class="bar-pct">85%</span>
+            </div>
+            <div class="bar-row">
+                <span class="bar-label">Religious</span>
+                <span class="bar-count">10</span>
+                <div class="bar-track"><div class="bar-fill" style="width:7%;background:var(--primary-light)"></div></div>
+                <span class="bar-pct">7%</span>
+            </div>
+            <div class="bar-row">
+                <span class="bar-label">NGO</span>
+                <span class="bar-count">7</span>
+                <div class="bar-track"><div class="bar-fill" style="width:5%;background:var(--primary-lighter)"></div></div>
+                <span class="bar-pct">5%</span>
+            </div>
+            <div class="bar-row">
+                <span class="bar-label">Government</span>
+                <span class="bar-count">5</span>
+                <div class="bar-track"><div class="bar-fill" style="width:3%;background:#94a3b8"></div></div>
+                <span class="bar-pct">3%</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 6. Property Types -->
+    <div class="breakdown-card">
+        <div class="section-title">🏠 Property Types</div>
+        <div class="bar-list">
+            <div class="bar-row">
+                <span class="bar-label">Residential</span>
+                <span class="bar-count">120</span>
+                <div class="bar-track"><div class="bar-fill" style="width:82%;background:var(--primary)"></div></div>
+                <span class="bar-pct">82%</span>
+            </div>
+            <div class="bar-row">
+                <span class="bar-label">Commercial</span>
+                <span class="bar-count">15</span>
+                <div class="bar-track"><div class="bar-fill" style="width:10%;background:var(--primary-light)"></div></div>
+                <span class="bar-pct">10%</span>
+            </div>
+            <div class="bar-row">
+                <span class="bar-label">Institutional</span>
+                <span class="bar-count">8</span>
+                <div class="bar-track"><div class="bar-fill" style="width:5%;background:var(--primary-lighter)"></div></div>
+                <span class="bar-pct">5%</span>
+            </div>
+            <div class="bar-row">
+                <span class="bar-label">Mixed Use</span>
+                <span class="bar-count">4</span>
+                <div class="bar-track"><div class="bar-fill" style="width:3%;background:#94a3b8"></div></div>
+                <span class="bar-pct">3%</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Worker Activity Today (unchanged) -->
+    <div class="breakdown-card">
+        <div class="section-title">👥 Worker Activity Today</div>
+        <div id="adminWorkerToday" style="font-size:13px;color:var(--text2)">
+            <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border)">
+                <span>👤 Hriati</span>
+                <span><b>8</b> <span style="color:var(--warning);font-size:12px">(2 incomplete)</span></span>
+            </div>
+            <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border)">
+                <span>👤 Rema</span>
+                <span><b>6</b></span>
+            </div>
+            <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border)">
+                <span>👤 Suzanne</span>
+                <span><b>5</b> <span style="color:var(--warning);font-size:12px">(1 incomplete)</span></span>
+            </div>
+            <div style="display:flex;justify-content:space-between;padding:5px 0">
+                <span>👤 Manunfeli</span>
+                <span><b>4</b></span>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+</body>
+</html>
