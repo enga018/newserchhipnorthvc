@@ -1,0 +1,127 @@
+#!/bin/bash
+
+# Post-commit hook for automatic version bumping
+# Bumps version in app/index.html based on commit size/scope
+
+set -e
+
+# Function to extract version numbers from version string
+parse_version() {
+    local version=$1
+    # Remove 'v' prefix if present
+    version=${version#v}
+    # Split by dots
+    IFS='.' read -r major minor patch <<< "$version"
+    echo "$major $minor $patch"
+}
+
+# Function to create new version string
+make_version() {
+    local major=$1 minor=$2 patch=$3
+    echo "v${major}.${minor}.${patch}"
+}
+
+# Function to increment version according to policy
+bump_version() {
+    local current_version=$1
+    local is_large_change=$2
+
+    read major minor patch <<< "$(parse_version "$current_version")"
+
+    if [ "$is_large_change" = "true" ]; then
+        # Large change: MINOR += 1, PATCH = 0
+        ((minor++))
+        patch=0
+    else
+        # Small change: PATCH += 1
+        ((patch++))
+    fi
+
+    # Handle caps: MINOR and PATCH each cap at 20
+    if [ "$patch" -gt 20 ]; then
+        # PATCH overflow: PATCH → 1, MINOR += 1
+        patch=1
+        ((minor++))
+    fi
+
+    if [ "$minor" -gt 20 ]; then
+        # MINOR overflow: MINOR → 1, PATCH → 1, MAJOR += 1
+        minor=1
+        patch=1
+        ((major++))
+    fi
+
+    make_version "$major" "$minor" "$patch"
+}
+
+# Only process commits on main and branches starting with "claude/"
+current_branch=$(git rev-parse --abbrev-ref HEAD)
+if [[ "$current_branch" != "main" && "$current_branch" != "master" && ! "$current_branch" =~ ^claude/ ]]; then
+    exit 0
+fi
+
+# Skip if this is a version bump commit (has "version bump" in the message)
+commit_msg=$(git log -1 --pretty=%B)
+if [[ "$commit_msg" == *"version bump"* ]]; then
+    exit 0
+fi
+
+# Get the app/index.html file
+index_file="app/index.html"
+if [ ! -f "$index_file" ]; then
+    exit 0
+fi
+
+# Extract current version
+current_version=$(grep -oP 'const APP_VERSION = "\K[^"]+' "$index_file")
+if [ -z "$current_version" ]; then
+    exit 0
+fi
+
+# Calculate diff size (number of lines changed)
+# Compare HEAD with HEAD~1 to get the current commit's diff
+diff_lines=$(git diff HEAD~1 HEAD --stat | tail -1 | grep -oP '\d+(?= insertions?\()?|^\s*\d+' | head -1)
+if [ -z "$diff_lines" ]; then
+    diff_lines=0
+fi
+
+# Count number of files changed
+files_changed=$(git diff --name-only HEAD~1 HEAD | wc -l)
+
+# Determine if this is a large change
+# Large change: multiple files or substantial diff (>100 lines)
+is_large="false"
+if [ "$files_changed" -gt 1 ] || [ "$diff_lines" -gt 100 ]; then
+    is_large="true"
+fi
+
+# Get new version
+new_version=$(bump_version "$current_version" "$is_large")
+
+# Only proceed if version actually changed
+if [ "$new_version" = "$current_version" ]; then
+    exit 0
+fi
+
+# Update version in all relevant files
+sed -i "s/const APP_VERSION = \"[^\"]*\";/const APP_VERSION = \"$new_version\";/" "$index_file"
+
+# Update version in manifest.json if it exists
+if grep -q '"version"' manifest.json 2>/dev/null; then
+    # Extract version numbers for manifest
+    new_ver_no_v=${new_version#v}
+    sed -i "s/\"version\": \"[^\"]*\"/\"version\": \"$new_ver_no_v\"/" manifest.json
+fi
+
+# Stage the changes
+git add "$index_file" manifest.json 2>/dev/null || true
+
+# Create version bump commit
+git commit --no-verify -m "version bump: $current_version → $new_version
+
+Automated version bump based on commit size.
+Files changed: $files_changed
+Lines changed: $diff_lines
+Change scope: $([ "$is_large" = "true" ] && echo "large" || echo "small")"
+
+exit 0
