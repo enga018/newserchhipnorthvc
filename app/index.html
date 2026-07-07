@@ -598,6 +598,7 @@
                     <option value="absent">🔴 Incomplete</option>
                     <option value="correction">🟡 Needs Correction</option>
                     <option value="verify">🔵 Needs Verification</option>
+                    <option value="verified">✓ Verified</option>
                 </select>
             </div>
             <div id="exportButtonsWrap">
@@ -3293,6 +3294,7 @@ function getFilteredRecords() {
     if (sf==='absent') f = f.filter(r=>isRecordAbsent(r));
     if (sf==='correction') f = f.filter(r=>r.needsCorrection===true);
     if (sf==='verify') f = f.filter(r=>correctionState(r)==='fixed');
+    if (sf==='verified') f = f.filter(r=>correctionState(r)==='verified');
     if (pidSearch) {
         const searchPadded = pidSearch.padStart(4, '0');
         f = f.filter(r => (r.propertyId || '').toLowerCase().replace(/^nsn-/, '').padStart(4, '0') === searchPadded);
