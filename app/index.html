@@ -947,7 +947,7 @@ const firebaseConfig = {
     appId: "1:547385765757:web:df18cd27e9161b7d1c2614"
 };
 const ADMIN_EMAIL = "enga018@gmail.com";
-const APP_VERSION = "v2.17.0";
+const APP_VERSION = "v2.17.1";
 
 
 firebase.initializeApp(firebaseConfig);
@@ -2288,7 +2288,7 @@ function householdStats(r) {
     // Roll a property's families/members into headline counts.
     // Children are auto-derived (age < 18); blank/unknown age counts as neither child nor adult.
     const fams = Array.isArray(r.families) ? r.families : [];
-    const resFams = fams.filter(f => !f.type || f.type === 'Residential');
+    const resFams = fams.filter(f => (!f.type || f.type === 'Residential') && f.occupied !== false);
     let population = 0, males = 0, females = 0, children = 0, adults = 0;
     let childMales = 0, childFemales = 0, adultMales = 0, adultFemales = 0;
     const familySizes = resFams.map(f => (Array.isArray(f && f.members) ? f.members : []).length);
@@ -2594,8 +2594,8 @@ function stackedBarChart(map, emptyMsg, colors, preserveOrder){
 function householdHtml(r, full) {
     const s = householdStats(r);
     const totalUnits = (r.families||[]).length;
-    const commCount = (r.families||[]).filter(f => f.type === 'Commercial').length;
-    const instCount = (r.families||[]).filter(f => f.type === 'Institutional/Public').length;
+    const commCount = (r.families||[]).filter(f => f.type === 'Commercial' && f.occupied !== false).length;
+    const instCount = (r.families||[]).filter(f => f.type === 'Institutional/Public' && f.occupied !== false).length;
     if (!s.families) {
         if (!totalUnits) return '<div class="record-detail">🏠 Vacant / no household recorded</div>';
         const parts = ['🏪 ' + totalUnits + ' unit' + (totalUnits>1?'s':'')];
