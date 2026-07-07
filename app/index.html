@@ -3442,6 +3442,9 @@ async function flagMissingMemberData() {
             const families = Array.isArray(data.families) ? data.families : [];
             let missing = false;
             for (const f of families) {
+                // Skip non-residential units and vacant residential units
+                if (f.type && f.type !== 'Residential') continue; // non-residential has no members
+                if (f.occupied === false) continue; // vacant residential shouldn't be flagged
                 const members = Array.isArray(f && f.members) ? f.members : [];
                 for (const m of members) {
                     if (m.age === '' || m.age == null || !m.gender) {
