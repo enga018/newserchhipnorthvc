@@ -660,6 +660,13 @@
                 <button class="btn-primary" onclick="normalizeHeadToSelf()">🔄 Normalize "Head" → "Self"</button>
                 <div id="normalizeHeadAlert" style="margin-top:8px"></div>
             </div>
+            <div style="background:var(--bg);border-radius:8px;padding:12px;margin-bottom:12px">
+                <div style="font-size:13px;color:var(--text2);margin-bottom:10px">
+                    Some older records were saved before properties were broken into <b>units</b> and have none recorded at all. This one-time action marks those as <b>Needs Correction</b> so workers add at least one unit. Safe to run more than once — only records with zero units are flagged.
+                </div>
+                <button class="btn-primary" onclick="flagRecordsWithNoUnits()">🏪 Flag Records with No Units</button>
+                <div id="flagNoUnitsAlert" style="margin-top:8px"></div>
+            </div>
             <div class="section-title" style="color:var(--warning)">⚠️ Danger Zone</div>
             <div style="background:#ffebee;border:1px solid #ea4c89;border-radius:8px;padding:12px">
                 <div style="font-size:13px;color:#cb2431;margin-bottom:10px">
@@ -947,7 +954,7 @@ const firebaseConfig = {
     appId: "1:547385765757:web:df18cd27e9161b7d1c2614"
 };
 const ADMIN_EMAIL = "enga018@gmail.com";
-const APP_VERSION = "v2.17.1";
+const APP_VERSION = "v2.17.2";
 
 
 firebase.initializeApp(firebaseConfig);
@@ -2593,24 +2600,25 @@ function stackedBarChart(map, emptyMsg, colors, preserveOrder){
 // Household summary line (+ optional full family/member breakdown) for record views.
 function householdHtml(r, full) {
     const s = householdStats(r);
-    const totalUnits = (r.families||[]).length;
-    const commCount = (r.families||[]).filter(f => f.type === 'Commercial' && f.occupied !== false).length;
-    const instCount = (r.families||[]).filter(f => f.type === 'Institutional/Public' && f.occupied !== false).length;
-    if (!s.families) {
-        if (!totalUnits) return '<div class="record-detail">🏠 Vacant / no household recorded</div>';
-        const parts = ['🏪 ' + totalUnits + ' unit' + (totalUnits>1?'s':'')];
-        if (commCount) parts.push(commCount + ' commercial');
-        if (instCount) parts.push(instCount + ' institutional/public');
-        parts.push('no residential / no population');
-        return '<div class="record-detail">' + parts.join(' · ') + '</div>';
+    const fams = r.families || [];
+    const totalUnits = fams.length;
+    const hasRes = fams.some(f => !f.type || f.type === 'Residential');
+    const hasComm = fams.some(f => f.type === 'Commercial');
+    const hasInst = fams.some(f => f.type === 'Institutional/Public');
+    const commCount = fams.filter(f => f.type === 'Commercial' && f.occupied !== false).length;
+    const instCount = fams.filter(f => f.type === 'Institutional/Public' && f.occupied !== false).length;
+    const anyOccupied = s.families > 0 || commCount > 0 || instCount > 0;
+    if (!totalUnits) return '<div class="record-detail">🏠 Vacant / no household recorded</div>';
+    if (!anyOccupied) {
+        return '<div class="record-detail">🏪 ' + totalUnits + ' unit' + (totalUnits>1?'s':'') + '</div>';
     }
     const unitParts = ['🏪 <b>' + totalUnits + '</b> unit' + (totalUnits>1?'s':'')];
-    if (commCount) unitParts.push('<b>' + commCount + '</b> commercial');
-    if (instCount) unitParts.push('<b>' + instCount + '</b> institutional/public');
-    unitParts.push('👨‍👩‍👧 <b>' + s.families + '</b> ' + (s.families===1?'family':'families') + ' · <b>' + s.population + '</b> ' + (s.population===1?'person':'people') + ' · ' + s.children + ' children · ' + s.males + 'M / ' + s.females + 'F');
+    if (hasComm) unitParts.push('<b>' + commCount + '</b> commercial');
+    if (hasInst) unitParts.push('<b>' + instCount + '</b> institutional/public');
+    if (hasRes) unitParts.push('👨‍👩‍👧 <b>' + s.families + '</b> ' + (s.families===1?'family':'families') + ' · <b>' + s.population + '</b> ' + (s.population===1?'person':'people') + ' · ' + s.children + ' children · ' + s.males + 'M / ' + s.females + 'F');
     const summary = '<div class="record-detail">' + unitParts.join(' · ') + '</div>';
     if (!full) return summary;
-    const fams = (r.families||[]).map((f,i)=>{
+    const famsDetail = fams.map((f,i)=>{
         const ut = f.type || 'Residential';
         const label = ut + (f.occupied === false ? ' (Vacant)' : '');
         const isRes = ut === 'Residential';
@@ -2629,7 +2637,7 @@ function householdHtml(r, full) {
         }
         return `<div style="margin-top:6px"><b>🏪 ${label}</b>${head ? ' · ' + head : ''}${contact}<ul style="margin:2px 0 0 18px;padding:0">${members}</ul></div>`;
     }).join('');
-    return summary + `<div style="background:var(--bg);border-radius:6px;padding:8px;margin-top:6px;font-size:12px;color:var(--text2)">${fams}</div>`;
+    return summary + `<div style="background:var(--bg);border-radius:6px;padding:8px;margin-top:6px;font-size:12px;color:var(--text2)">${famsDetail}</div>`;
 }
 
 // Render population & households dashboard for a set of records into elements
@@ -3416,6 +3424,47 @@ async function flagMissingMemberData() {
         box.innerHTML = flaggedRecords
             ? `<div class="alert alert-success">✓ Flagged ${flaggedRecords} record${flaggedRecords===1?'':'s'} with missing member data.</div>`
             : '<div class="alert alert-success">✓ Nothing to flag — all members have age and gender.</div>';
+    } catch(e) { box.innerHTML = `<div class="alert alert-error">${e.message}</div>`; }
+}
+
+// One-time flag: scan all records and mark any saved before the "units" concept
+// existed (empty/missing families array) as Needs Correction. Idempotent — skips
+// records already flagged and records that already have at least one unit.
+async function flagRecordsWithNoUnits() {
+    const box = document.getElementById('flagNoUnitsAlert');
+    box.innerHTML = '<div class="alert alert-info">🔍 Scanning records…</div>';
+    try {
+        const snap = await db.collection('records').get();
+        let flaggedRecords = 0;
+        let batch = db.batch();
+        let opsInBatch = 0;
+        const now = new Date().toISOString();
+        const note = 'No units recorded — please add at least one unit';
+        for (const doc of snap.docs) {
+            const data = doc.data();
+            if (data.needsCorrection === true) continue; // already flagged
+            const families = Array.isArray(data.families) ? data.families : [];
+            if (families.length > 0) continue; // has at least one unit
+            const history = Array.isArray(data.corrections) ? data.corrections.slice() : [];
+            history.push({ note, flaggedAt: now, flaggedBy: (currentUser && currentUser.email) || '', status: 'pending' });
+            batch.update(doc.ref, {
+                needsCorrection: true,
+                correctionStatus: 'pending',
+                adminFlagNote: note,
+                adminFlaggedAt: now,
+                correctionAllowGps: false,
+                correctionAllowPhoto: false,
+                correctionAllowDetails: true,
+                corrections: history
+            });
+            flaggedRecords++;
+            opsInBatch++;
+            if (opsInBatch >= 400) { await batch.commit(); batch = db.batch(); opsInBatch = 0; }
+        }
+        if (opsInBatch > 0) await batch.commit();
+        box.innerHTML = flaggedRecords
+            ? `<div class="alert alert-success">✓ Flagged ${flaggedRecords} record${flaggedRecords===1?'':'s'} with no units.</div>`
+            : '<div class="alert alert-success">✓ Nothing to flag — every record has at least one unit.</div>';
     } catch(e) { box.innerHTML = `<div class="alert alert-error">${e.message}</div>`; }
 }
 
