@@ -32,6 +32,17 @@
             --shadow:0 1px 2px rgba(16,32,52,0.06),0 1px 3px rgba(16,32,52,0.05);
             --shadow-md:0 4px 14px rgba(16,32,52,0.10)
         }
+        html[data-theme="dark"]{
+            --primary:#5b8fc7;--primary-dark:#3a6ea5;--primary-light:#7ca5d4;--primary-lighter:#8eb5df;--primary-tint:#1e3a5f;
+            --success:#4caf50;--success-bg:#1b5e20;
+            --warning:#ffb74d;--warning-bg:#6d4c00;
+            --danger:#ef5350;--danger-bg:#6d3636;
+            --bg:#0f1419;--surface:#1a1f26;--surface-2:#252b35;--text:#e0e0e0;
+            --text2:#a0a0a0;--border:#3a4452;--focus:#64b5f6;--orange:#ffb74d;
+            --shadow:0 1px 2px rgba(0,0,0,0.4),0 1px 3px rgba(0,0,0,0.3);
+            --shadow-md:0 4px 14px rgba(0,0,0,0.5)
+        }
+        @media (prefers-color-scheme:dark){html:not([data-theme]){color-scheme:dark}}
         body.modal-open{overflow:hidden;position:fixed;width:100%;height:100%}
         body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);line-height:1.5}
         .container{max-width:620px;margin:0 auto;padding:10px 10px 88px;min-height:100vh}
@@ -214,10 +225,10 @@
 
         /* ALERTS */
         .alert{padding:10px 14px;border-radius:6px;margin-bottom:12px;font-size:13px}
-        .alert-success{background:#e6ffed;color:#22863a;border:1px solid #28a745}
-        .alert-error{background:#ffebee;color:#cb2431;border:1px solid #ea4c89}
-        .alert-info{background:#e7f5ff;color:#0c3c72;border:1px solid #74c0fc}
-        .alert-warning{background:#fff3cd;color:#856404;border:1px solid #ffc107}
+        .alert-success{background:var(--success-bg);color:var(--success);border:1px solid var(--success)}
+        .alert-error{background:var(--danger-bg);color:var(--danger);border:1px solid var(--danger)}
+        .alert-info{background:var(--primary-tint);color:var(--primary-dark);border:1px solid var(--primary-light)}
+        .alert-warning{background:var(--warning-bg);color:var(--warning);border:1px solid var(--warning)}
 
         /* MODAL */
         .modal{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.55);z-index:1000;align-items:flex-end;justify-content:center;padding:0;backdrop-filter:blur(2px)}
@@ -255,6 +266,9 @@
         .sync-badge{display:inline-flex;align-items:center;gap:4px;background:var(--primary-tint);color:var(--primary);padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600;margin-bottom:8px}
         .sync-badge.syncing{animation:pulse 1.5s infinite}
         @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
+        .btn-theme-toggle{background:rgba(255,255,255,0.15);border:none;color:white;padding:6px 8px;border-radius:6px;font-size:14px;cursor:pointer;transition:background 0.15s;display:flex;align-items:center;justify-content:center}
+        .btn-theme-toggle:hover{background:rgba(255,255,255,0.25)}
+        .btn-theme-toggle:active{background:rgba(255,255,255,0.1)}
     </style>
 </head>
 <body>
@@ -317,6 +331,7 @@
                 <p id="vcNameDisplay">Loading...</p>
             </div>
             <div class="header-right">
+                <button class="btn-theme-toggle" id="themeToggle" title="Toggle dark mode" onclick="toggleTheme()"><span id="themeIcon">🌙</span></button>
                 <span class="user-badge" id="userNameBadge" onclick="openWorkerProfile()" style="cursor:pointer">👤</span>
                 <button class="btn-logout" onclick="logoutUser()">Logout</button>
             </div>
@@ -331,14 +346,14 @@
         <div id="collect" class="form-section active">
             <div id="connectionBanner" class="conn-banner online"><span id="connIcon">🟢</span><span id="connText">Online — data saves instantly</span></div>
             <div id="syncBadge" class="sync-badge hidden"><span class="sync-icon">🔄</span><span id="syncText">0 pending</span></div>
-            <div id="retryBanner" class="hidden" style="background:#ffebee;border:1px solid #cb2431;border-radius:6px;padding:10px 12px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center">
-                <span style="font-size:13px;color:#cb2431"><span id="retryBannerText"></span></span>
-                <button type="button" onclick="retryFailedSave()" style="background:#cb2431;color:white;padding:4px 12px;font-size:12px;border-radius:4px">🔄 Retry</button>
+            <div id="retryBanner" class="hidden" style="background:var(--danger-bg);border:1px solid var(--danger);border-radius:6px;padding:10px 12px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center">
+                <span style="font-size:13px;color:var(--danger)"><span id="retryBannerText"></span></span>
+                <button type="button" onclick="retryFailedSave()" style="background:var(--danger);color:white;padding:4px 12px;font-size:12px;border-radius:4px">🔄 Retry</button>
             </div>
             <div id="alertBox"></div>
-            <div id="editBanner" class="hidden" style="background:#fff3cd;border:1px solid #ffc107;border-radius:6px;padding:10px 12px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center">
-                <span style="font-size:13px;color:#856404">✏️ Editing existing record</span>
-                <button type="button" onclick="cancelEdit();resetForm()" style="background:#856404;color:white;padding:4px 12px;font-size:12px;border-radius:4px">Cancel Edit</button>
+            <div id="editBanner" class="hidden" style="background:var(--warning-bg);border:1px solid var(--warning);border-radius:6px;padding:10px 12px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center">
+                <span style="font-size:13px;color:var(--warning)">✏️ Editing existing record</span>
+                <button type="button" onclick="cancelEdit();resetForm()" style="background:var(--warning);color:white;padding:4px 12px;font-size:12px;border-radius:4px">Cancel Edit</button>
             </div>
             <!-- novalidate: required/pattern fields (Property ID, phone) live in wizard steps that
                  go display:none once you move on. Browsers silently refuse to submit a form with an
@@ -1167,6 +1182,59 @@ const firebaseConfig = {
 const ADMIN_EMAIL = "enga018@gmail.com";
 const APP_VERSION = "v2.19.15";
 
+// Dark mode theme management
+const THEME_STORAGE_KEY = 'appTheme';
+const DARK_THEME = 'dark';
+const LIGHT_THEME = 'light';
+
+function getSystemThemePreference() {
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        return DARK_THEME;
+    }
+    return LIGHT_THEME;
+}
+
+function initializeTheme() {
+    let savedTheme = localStorage.getItem(THEME_STORAGE_KEY);
+    if (!savedTheme) {
+        savedTheme = getSystemThemePreference();
+    }
+    applyTheme(savedTheme);
+}
+
+function applyTheme(theme) {
+    if (theme === DARK_THEME) {
+        document.documentElement.setAttribute('data-theme', DARK_THEME);
+        const icon = document.getElementById('themeIcon');
+        if (icon) icon.textContent = '☀️';
+    } else {
+        document.documentElement.removeAttribute('data-theme');
+        const icon = document.getElementById('themeIcon');
+        if (icon) icon.textContent = '🌙';
+    }
+    localStorage.setItem(THEME_STORAGE_KEY, theme);
+    const themeColorMeta = document.querySelector('meta[name="theme-color"]');
+    if (themeColorMeta) {
+        themeColorMeta.setAttribute('content', theme === DARK_THEME ? '#3a6ea5' : '#2c5282');
+    }
+}
+
+function toggleTheme() {
+    const currentTheme = document.documentElement.getAttribute('data-theme') || LIGHT_THEME;
+    const newTheme = currentTheme === DARK_THEME ? LIGHT_THEME : DARK_THEME;
+    applyTheme(newTheme);
+}
+
+if (window.matchMedia) {
+    window.matchMedia('(prefers-color-scheme: dark)').addListener((e) => {
+        if (!localStorage.getItem(THEME_STORAGE_KEY)) {
+            applyTheme(e.matches ? DARK_THEME : LIGHT_THEME);
+        }
+    });
+}
+
+// Initialize theme on page load
+initializeTheme();
 
 firebase.initializeApp(firebaseConfig);
 
