@@ -1224,7 +1224,8 @@ function applyTheme(theme) {
 }
 
 function updateMapTilesForTheme(theme) {
-    if (!mapInstance || !mapInstance._layers) return;
+    // Guard: only run if map is initialized and Leaflet is loaded
+    if (!mapInstance || !mapInstance._layers || typeof L === 'undefined') return;
     const isDarkMode = theme === DARK_THEME;
     const tileUrl = isDarkMode
         ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
@@ -1258,8 +1259,12 @@ if (window.matchMedia) {
     });
 }
 
-// Initialize theme on page load
-initializeTheme();
+// Initialize theme on page load (wrapped in DOMContentLoaded to ensure DOM is ready)
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeTheme);
+} else {
+    initializeTheme();
+}
 
 // ========== HELPER FUNCTIONS (Tier 1 Optimization) ==========
 
