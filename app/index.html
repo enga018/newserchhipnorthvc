@@ -252,6 +252,7 @@
     <div style="font-size:48px">🏘️</div>
     <div style="font-size:16px;color:#2c5282;font-weight:600;margin-top:12px">NSN VC Field Survey</div>
     <div style="font-size:13px;color:#586069;margin-top:8px">Loading...</div>
+    <div id="splashVersion" style="font-size:11px;color:#999;margin-top:12px"></div>
 </div>
 
 <div id="authScreen" class="auth-screen hidden">
@@ -1026,6 +1027,8 @@ const auth = firebase.auth();
     const vf = document.getElementById('versionFooter');
     if (av) av.innerHTML = APP_VERSION + ' | Made with ❤️ by <a href="https://enga.in" target="_blank" style="color:#2c5282;text-decoration:none;font-weight:600">Enga</a>';
     if (vf) vf.innerHTML = 'NSN VC Field Survey ' + APP_VERSION + ' | Made with ❤️ by <a href="https://enga.in" target="_blank" style="color:#2c5282;text-decoration:none;font-weight:600">Enga</a>';
+    const sv = document.getElementById('splashVersion');
+    if (sv) sv.innerHTML = APP_VERSION + ' | Made with ❤️ by <a href="https://enga.in" target="_blank" style="color:#2c5282;text-decoration:none;font-weight:600">Enga</a>';
 })();
 
 // Register Service Worker for PWA
