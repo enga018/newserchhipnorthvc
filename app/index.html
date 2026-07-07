@@ -261,7 +261,6 @@
             <h1>NSN VC Field Survey</h1>
             <p>Village Council Field Data App</p>
             <p id="authVersion" style="font-size:11px;color:#999;margin-top:6px"></p>
-            <p style="font-size:11px;color:#999;margin-top:2px">Made with ❤️ by <a href="https://enga.in" target="_blank" style="color:#2c5282;text-decoration:none;font-weight:600">Enga</a></p>
         </div>
         <div id="authAlert"></div>
         <div class="auth-tabs">
@@ -711,7 +710,6 @@
         </div>
     </div>
     <div style="text-align:center;padding:16px 0 8px;font-size:11px;color:#999" id="versionFooter"></div>
-    <div style="text-align:center;padding:0 0 16px;font-size:11px;color:#999">Made with ❤️ by <a href="https://enga.in" target="_blank" style="color:#2c5282;text-decoration:none;font-weight:600">Enga</a></div>
 </div>
 
 <!-- Save Success Popup -->
@@ -1026,8 +1024,8 @@ const auth = firebase.auth();
 (function(){
     const av = document.getElementById('authVersion');
     const vf = document.getElementById('versionFooter');
-    if (av) av.textContent = APP_VERSION;
-    if (vf) vf.textContent = 'NSN VC Field Survey ' + APP_VERSION;
+    if (av) av.innerHTML = APP_VERSION + ' | Made with ❤️ by <a href="https://enga.in" target="_blank" style="color:#2c5282;text-decoration:none;font-weight:600">Enga</a>';
+    if (vf) vf.innerHTML = 'NSN VC Field Survey ' + APP_VERSION + ' | Made with ❤️ by <a href="https://enga.in" target="_blank" style="color:#2c5282;text-decoration:none;font-weight:600">Enga</a>';
 })();
 
 // Register Service Worker for PWA
