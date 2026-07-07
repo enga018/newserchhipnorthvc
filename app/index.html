@@ -1217,6 +1217,28 @@ function applyTheme(theme) {
     if (themeColorMeta) {
         themeColorMeta.setAttribute('content', theme === DARK_THEME ? '#3a6ea5' : '#2c5282');
     }
+    updateMapTilesForTheme(theme);
+}
+
+function updateMapTilesForTheme(theme) {
+    if (!mapInstance || !mapInstance._layers) return;
+    const isDarkMode = theme === DARK_THEME;
+    const tileUrl = isDarkMode
+        ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+        : 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+    const attribution = isDarkMode
+        ? '© CartoDB © OpenStreetMap'
+        : '© OpenStreetMap contributors';
+    for (const layerId in mapInstance._layers) {
+        const layer = mapInstance._layers[layerId];
+        if (layer instanceof L.TileLayer && !layer._url.includes('heatLayer')) {
+            mapInstance.removeLayer(layer);
+        }
+    }
+    L.tileLayer(tileUrl, {
+        attribution: attribution,
+        maxZoom: 19
+    }).addTo(mapInstance);
 }
 
 function toggleTheme() {
@@ -1967,8 +1989,16 @@ function initializeMap() {
 
     mapInstance = L.map('mapContainer').setView([centerLat, centerLng], 12);
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors',
+    const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
+    const tileUrl = isDarkMode
+        ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+        : 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+    const attribution = isDarkMode
+        ? '© CartoDB © OpenStreetMap'
+        : '© OpenStreetMap contributors';
+
+    L.tileLayer(tileUrl, {
+        attribution: attribution,
         maxZoom: 19
     }).addTo(mapInstance);
 
