@@ -12,7 +12,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="NSN Survey">
     <script>
-    // Tracks which CDN resources load/fail, so a stuck splash screen can name the
+    // Tracks which vendor library loads/fails, so a stuck splash screen can name the
     // exact problem (no DevTools needed) instead of a generic "check connection".
     window.__resourceStatus = {};
     window.__cdnResourceLabels = {
@@ -34,21 +34,34 @@
         'firebase-storage-compat.js': true
     };
     Object.keys(window.__cdnResourceLabels).forEach(function(f) { window.__resourceStatus[f] = 'pending'; });
-    function __trackResourceEvent(e, status) {
+    // A <script>/<link> onerror reliably marks a failed load. Success is detected by probing
+    // the library's global (script 'load' events don't fire reliably via capture at window),
+    // so a file counts as loaded once its global is present.
+    window.__resourceProbes = {
+        'firebase-app-compat.js': function(){ return typeof firebase !== 'undefined' && !!firebase.initializeApp; },
+        'firebase-auth-compat.js': function(){ return typeof firebase !== 'undefined' && !!firebase.auth; },
+        'firebase-firestore-compat.js': function(){ return typeof firebase !== 'undefined' && !!firebase.firestore; },
+        'firebase-storage-compat.js': function(){ return typeof firebase !== 'undefined' && !!firebase.storage; },
+        'jszip.min.js': function(){ return typeof JSZip !== 'undefined'; },
+        'leaflet.min.js': function(){ return typeof L !== 'undefined'; },
+        'leaflet.min.css': function(){ return typeof L !== 'undefined'; },
+        'leaflet-heat.js': function(){ return typeof L !== 'undefined' && typeof L.heatLayer === 'function'; }
+    };
+    window.addEventListener('error', function(e) {
         var src = e.target && (e.target.src || e.target.href);
         if (!src) return;
         var file = src.split('/').pop();
-        if (window.__resourceStatus.hasOwnProperty(file)) window.__resourceStatus[file] = status;
-    }
-    window.addEventListener('error', function(e) { __trackResourceEvent(e, 'error'); }, true);
-    window.addEventListener('load', function(e) { __trackResourceEvent(e, 'ok'); }, true);
+        if (window.__resourceStatus.hasOwnProperty(file)) window.__resourceStatus[file] = 'error';
+    }, true);
     window.getResourceLoadSummary = function() {
         var essentialFailed = [], essentialPending = [], optionalFailed = [], optionalPending = [];
         Object.keys(window.__resourceStatus).forEach(function(file) {
             var label = window.__cdnResourceLabels[file] || file;
             var essential = window.__essentialResources[file];
-            if (window.__resourceStatus[file] === 'error') (essential ? essentialFailed : optionalFailed).push(label);
-            else if (window.__resourceStatus[file] === 'pending') (essential ? essentialPending : optionalPending).push(label);
+            var probe = window.__resourceProbes[file];
+            var loaded = probe ? probe() : false;
+            if (window.__resourceStatus[file] === 'error' && !loaded) (essential ? essentialFailed : optionalFailed).push(label);
+            else if (!loaded) (essential ? essentialPending : optionalPending).push(label);
         });
         return {
             essentialFailed: essentialFailed, essentialPending: essentialPending,
@@ -56,14 +69,17 @@
         };
     };
     </script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.heat/0.2.0/leaflet-heat.js"></script>
+    <!-- Vendor libraries are self-hosted (../vendor/) instead of loaded from external CDNs,
+         so they load from the same origin as the app itself — reliably, even on weak field
+         connections — and are cached by the service worker for full offline use. -->
+    <script src="../vendor/firebase-app-compat.js"></script>
+    <script src="../vendor/firebase-auth-compat.js"></script>
+    <script src="../vendor/firebase-firestore-compat.js"></script>
+    <script src="../vendor/firebase-storage-compat.js"></script>
+    <script src="../vendor/jszip.min.js"></script>
+    <link rel="stylesheet" href="../vendor/leaflet.min.css" />
+    <script src="../vendor/leaflet.min.js"></script>
+    <script src="../vendor/leaflet-heat.js"></script>
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
         :root{
@@ -1481,11 +1497,16 @@ const debouncedConnectionBanner = debounce(updateConnectionBanner, 500);
 window.addEventListener('online', debouncedConnectionBanner);
 window.addEventListener('offline', debouncedConnectionBanner);
 updateConnectionBanner();
-
-trackOfflineTime();
+// NOTE: trackOfflineTime() is intentionally NOT called here — it reads performanceMetrics,
+// which is declared much later in this script. Calling it now would throw a temporal-dead-zone
+// ReferenceError that halts the whole script before auth is set up. It's invoked right after
+// the performanceMetrics declaration instead.
 
 // Pending sync counter
 let pendingCount = 0;
+// Declared here (not lower down) because updateSyncBadge() runs during early startup;
+// a later declaration would put it in the temporal dead zone and throw.
+let lastSyncTimestamp = Date.now();
 function updateSyncBadge(){
     const badge = document.getElementById('syncBadge');
     if (!badge) return;
@@ -2228,8 +2249,6 @@ function updateHeatMap() {
     }
 }
 
-let lastSyncTimestamp = Date.now();
-
 function prepareOfflineQueueTab() {
     updateQueueDisplay();
     if (!navigator.onLine) {
@@ -2365,6 +2384,9 @@ let performanceMetrics = {
     offlineMinutes: 0,
     totalRecordsSynced: 0
 };
+// Start offline-time tracking now that performanceMetrics exists (see note near the
+// connection-banner setup above for why this can't run earlier in the script).
+trackOfflineTime();
 
 function preparePerformanceTab() {
     updatePerformanceMetrics();

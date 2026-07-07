@@ -9,18 +9,17 @@ const urlsToCache = [
   './icons/icon-96.png',
   './icons/icon-192.png',
   './icons/icon-512.png',
-  'https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js',
-  'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js',
-  'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js',
-  'https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js',
-  'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js',
-  'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css',
-  'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js',
-  'https://cdnjs.cloudflare.com/ajax/libs/leaflet.heat/0.2.0/leaflet-heat.js'
+  // Self-hosted vendor libraries (same origin as the app) — precached so the app loads
+  // reliably on weak connections and works fully offline after the first visit.
+  './vendor/firebase-app-compat.js',
+  './vendor/firebase-auth-compat.js',
+  './vendor/firebase-firestore-compat.js',
+  './vendor/firebase-storage-compat.js',
+  './vendor/jszip.min.js',
+  './vendor/leaflet.min.css',
+  './vendor/leaflet.min.js',
+  './vendor/leaflet-heat.js'
 ];
-// Vendor/app-shell files rarely change — served cache-first so a slow or flaky
-// connection (common for field workers) doesn't stall the app on every load.
-const cacheFirstUrls = new Set(urlsToCache.filter(u => u.startsWith('http')));
 
 self.addEventListener('install', event => {
   self.skipWaiting();
@@ -37,7 +36,10 @@ self.addEventListener('install', event => {
 });
 
 self.addEventListener('fetch', event => {
-  if (cacheFirstUrls.has(event.request.url)) {
+  // Self-hosted vendor libraries are versioned and immutable — serve them cache-first so a
+  // slow/flaky connection never stalls the app waiting on them (they load instantly, offline
+  // or online). Everything else stays network-first so app/HTML updates are picked up.
+  if (event.request.url.includes('/vendor/')) {
     event.respondWith(
       caches.match(event.request).then(cached => {
         if (cached) return cached;
