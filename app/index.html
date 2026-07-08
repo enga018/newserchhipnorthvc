@@ -99,7 +99,7 @@
         @media (prefers-color-scheme:dark){html:not([data-theme]){color-scheme:dark}}
         body.modal-open{overflow:hidden;position:fixed;width:100%;height:100%}
         body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);line-height:1.5}
-        .container{max-width:620px;margin:0 auto;padding:10px 10px 88px;min-height:100vh}
+        .container{max-width:860px;margin:0 auto;padding:10px 10px 88px;min-height:100vh}
 
         /* AUTH */
         .auth-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:20px}
@@ -128,7 +128,7 @@
         .tab-btn.active{background:var(--primary);color:white;box-shadow:var(--shadow)}
 
         /* BOTTOM NAV */
-        .bottomnav{position:fixed;left:0;right:0;bottom:0;margin:0 auto;max-width:620px;z-index:90;display:flex;background:var(--surface);border-top:1px solid var(--border);box-shadow:0 -4px 16px rgba(0,0,0,0.08);padding:8px 8px calc(8px + env(safe-area-inset-bottom));gap:4px}
+        .bottomnav{position:fixed;left:0;right:0;bottom:0;margin:0 auto;max-width:860px;z-index:90;display:flex;background:var(--surface);border-top:1px solid var(--border);box-shadow:0 -4px 16px rgba(0,0,0,0.08);padding:8px 8px calc(8px + env(safe-area-inset-bottom));gap:4px}
         .bottomnav .navbtn{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;background:none;border:none;min-height:0;padding:10px 4px;color:var(--text2);font-size:11px;font-weight:600;border-radius:14px;transition:all 0.2s ease}
         .bottomnav .navbtn .navicon{font-size:22px;line-height:1;filter:grayscale(0.5);transition:filter 0.2s ease}
         .bottomnav .navbtn:hover{background:var(--bg);color:var(--text)}
@@ -161,7 +161,7 @@
         .collapsible-body{overflow:hidden;transition:max-height 0.3s ease,opacity 0.25s ease;max-height:0;opacity:0}
         .collapsible-body.open{max-height:3000px;opacity:1}
         .wizard-nav{display:flex;gap:8px;margin-top:20px}
-        .wizard-nav-fixed{position:fixed;left:0;right:0;bottom:calc(76px + env(safe-area-inset-bottom));z-index:80;background:var(--surface);border-top:1px solid var(--border);box-shadow:0 -2px 10px rgba(16,32,52,0.07);padding:8px 10px;max-width:620px;margin:0 auto}
+        .wizard-nav-fixed{position:fixed;left:0;right:0;bottom:calc(96px + env(safe-area-inset-bottom));z-index:80;background:var(--surface);border-top:1px solid var(--border);box-shadow:0 -2px 10px rgba(16,32,52,0.07);padding:8px 10px;max-width:860px;margin:0 auto}
         .wizard-nav-fixed .wizard-nav{margin-top:0}
         .wizard-nav-fixed .btn-clear-wiz{font-size:13px;padding:10px 12px;min-height:40px;border-radius:8px;background:var(--surface-2);color:var(--text2);border:1px solid var(--border);width:100%;margin-top:8px;font-weight:600}
         .wizard-nav-fixed .btn-clear-wiz:hover{background:#e8e8e8;color:var(--danger)}
@@ -319,6 +319,17 @@
         .section-title{font-size:13px;font-weight:700;letter-spacing:0.3px;margin-bottom:10px;color:var(--text)}
         .info-box{background:var(--primary-tint);border:1px solid var(--primary-light);border-radius:var(--radius);padding:12px;font-size:13px;color:var(--primary-dark);margin-bottom:12px}
         @media(max-width:480px){.stats-grid{grid-template-columns:1fr 1fr}}
+        @media(max-width:360px){
+            .bottomnav{gap:2px;padding-left:4px;padding-right:4px}
+            .bottomnav .navbtn{padding:8px 2px;font-size:10px}
+            .bottomnav .navbtn .navicon{font-size:18px}
+            .worker-bottomnav .navbtn{padding:10px 2px}
+            .admin-header{padding:8px 10px}
+            .admin-header h1{font-size:13px}
+            .user-badge,.btn-logout{padding:4px 8px;font-size:11px}
+            .header{padding:10px 12px}
+            .header-left h1{font-size:15px}
+        }
         #fullPhotoOverlay.active{display:flex !important}
         .save-success-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.35);z-index:1500;align-items:center;justify-content:center;padding:20px}
         .save-success-overlay.active{display:flex;animation:fadeIn 0.2s}
@@ -395,41 +406,43 @@ setTimeout(function() {
 </script>
 
 <div id="authScreen" class="auth-screen hidden">
-    <div class="auth-box">
-        <div class="auth-logo">
-            <div style="font-size:42px">🏘️</div>
-            <h1>NSN VC Field Survey</h1>
-            <p>Village Council Field Data App</p>
-            <p id="authVersion" style="font-size:11px;color:#999;margin-top:6px"></p>
-        </div>
-        <div id="authAlert"></div>
-        <div class="auth-tabs">
-            <button class="auth-tab active" onclick="switchAuthTab('login',this)">Login</button>
-            <button class="auth-tab" onclick="switchAuthTab('register',this)">Register</button>
-        </div>
-        <div id="loginForm">
-            <div class="form-group">
-                <label>Email Address</label>
-                <input type="email" id="loginEmail" placeholder="your@email.com">
+    <div style="flex:1;display:flex;align-items:center;justify-content:center;width:100%">
+        <div class="auth-box">
+            <div class="auth-logo">
+                <div style="font-size:42px">🏘️</div>
+                <h1>NSN VC Field Survey</h1>
+                <p>Village Council Field Data App</p>
             </div>
-            <div class="form-group">
-                <label>Password</label>
-                <input type="password" id="loginPassword" placeholder="Enter password">
+            <div id="authAlert"></div>
+            <div class="auth-tabs">
+                <button class="auth-tab active" onclick="switchAuthTab('login',this)">Login</button>
+                <button class="auth-tab" onclick="switchAuthTab('register',this)">Register</button>
             </div>
-            <button class="btn-primary" onclick="loginUser()" style="margin-top:8px">🔐 Login</button>
-            <div style="text-align:center;margin-top:12px">
-                <a href="#" onclick="forgotPassword();return false;" style="color:var(--primary);font-size:13px">Forgot password?</a>
+            <div id="loginForm">
+                <div class="form-group">
+                    <label>Email Address</label>
+                    <input type="email" id="loginEmail" placeholder="your@email.com">
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="loginPassword" placeholder="Enter password">
+                </div>
+                <button class="btn-primary" onclick="loginUser()" style="margin-top:8px">🔐 Login</button>
+                <div style="text-align:center;margin-top:12px">
+                    <a href="#" onclick="forgotPassword();return false;" style="color:var(--primary);font-size:13px">Forgot password?</a>
+                </div>
             </div>
-        </div>
-        <div id="registerForm" class="hidden">
-            <div class="info-box">📋 Register your account. Your supervisor will activate it.</div>
-            <div class="form-group"><label>Full Name</label><input type="text" id="regName" placeholder="Your full name"></div>
-            <div class="form-group"><label>Phone Number</label><input type="tel" id="regPhone" placeholder="10-digit mobile number"></div>
-            <div class="form-group"><label>Email Address</label><input type="email" id="regEmail" placeholder="your@email.com"></div>
-            <div class="form-group"><label>Password</label><input type="password" id="regPassword" placeholder="Minimum 6 characters"></div>
-            <button class="btn-primary" onclick="registerUser()" style="margin-top:8px">✅ Create Account</button>
+            <div id="registerForm" class="hidden">
+                <div class="info-box">📋 Register your account. Your supervisor will activate it.</div>
+                <div class="form-group"><label>Full Name</label><input type="text" id="regName" placeholder="Your full name"></div>
+                <div class="form-group"><label>Phone Number</label><input type="tel" id="regPhone" placeholder="10-digit mobile number"></div>
+                <div class="form-group"><label>Email Address</label><input type="email" id="regEmail" placeholder="your@email.com"></div>
+                <div class="form-group"><label>Password</label><input type="password" id="regPassword" placeholder="Minimum 6 characters"></div>
+                <button class="btn-primary" onclick="registerUser()" style="margin-top:8px">✅ Create Account</button>
+            </div>
         </div>
     </div>
+    <div style="text-align:center;padding:16px 20px;font-size:11px;color:#999" id="authVersionFooter"></div>
 </div>
 
 <!-- MAIN APP -->
@@ -721,12 +734,12 @@ setTimeout(function() {
                     <div class="stat-value" id="completionRate" style="font-size:16px;white-space:nowrap">0%</div>
                 </div>
             </div>
-            <div class="stats-grid" style="margin-bottom:8px">
-                <div class="stat-card warning" id="correctionsCard">
+            <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap">
+                <div class="stat-card warning" id="correctionsCard" style="flex:1;min-width:200px">
                     <div class="stat-label">⚠️ Pending Corrections</div>
                     <div id="correctionsList" style="font-size:13px;color:var(--text);margin-top:8px;text-align:left"></div>
                 </div>
-                <div class="stat-card" id="cardWorkerActivity">
+                <div class="stat-card" id="cardWorkerActivity" style="flex:1;min-width:200px">
                     <div class="stat-label">👥 Worker Activity Today</div>
                     <div id="adminWorkerToday" style="font-size:13px;color:var(--text2);margin-top:8px"></div>
                 </div>
@@ -1325,12 +1338,13 @@ try {
 })();
 // Show app version
 (function(){
-    const av = document.getElementById('authVersion');
+    const af = document.getElementById('authVersionFooter');
     const vf = document.getElementById('versionFooter');
-    if (av) av.innerHTML = APP_VERSION + ' | Made with ❤️ by <a href="https://enga.in" target="_blank" style="color:#2c5282;text-decoration:none;font-weight:600">Enga</a>';
-    if (vf) vf.innerHTML = APP_VERSION + ' | Made with ❤️ by <a href="https://enga.in" target="_blank" style="color:#2c5282;text-decoration:none;font-weight:600">Enga</a>';
+    const html = APP_VERSION + ' | Made with ❤️ by <a href="https://enga.in" target="_blank" style="color:#2c5282;text-decoration:none;font-weight:600">Enga</a>';
+    if (af) af.innerHTML = html;
+    if (vf) vf.innerHTML = html;
     const sv = document.getElementById('splashVersion');
-    if (sv) sv.innerHTML = APP_VERSION + ' | Made with ❤️ by <a href="https://enga.in" target="_blank" style="color:#2c5282;text-decoration:none;font-weight:600">Enga</a>';
+    if (sv) sv.innerHTML = html;
 })();
 
 // Register Service Worker for PWA
