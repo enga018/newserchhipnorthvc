@@ -227,9 +227,8 @@
 
         /* STATS */
         .stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
-        .nest-grid{display:grid;grid-template-columns:1fr;gap:10px;margin-bottom:14px}
-        @media(min-width:520px){.nest-grid{grid-template-columns:1fr 1fr}}
-        @media(min-width:860px){.nest-grid{grid-template-columns:1fr 1fr 1fr}}
+        .nest-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+        @media(min-width:860px){.nest-grid{grid-template-columns:1fr 1fr 1fr;gap:10px}}
         .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;text-align:center;box-shadow:var(--shadow)}
         .stat-value{font-size:26px;font-weight:700;color:var(--primary);line-height:1}
         .stat-label{font-size:11px;color:var(--text2);margin-top:4px;text-transform:uppercase;letter-spacing:0.5px}
@@ -651,6 +650,7 @@ setTimeout(function() {
                         <span class="nest-hero-label">Total Population</span>
                         <span class="nest-hero-num" id="myPopulation">0</span>
                     </div>
+                    <div id="myPopGender" style="font-size:12px;color:var(--text2);text-align:center;margin-top:2px"></div>
                 </div>
                 <div class="nest-box">
                     <div class="section-title">🧒 Children</div>
@@ -658,6 +658,7 @@ setTimeout(function() {
                         <span class="nest-hero-label">No of Children</span>
                         <span class="nest-hero-num" id="myChildren">0</span>
                     </div>
+                    <div id="myChildGender" style="font-size:12px;color:var(--text2);text-align:center;margin-top:2px"></div>
                 </div>
                 <div class="nest-box">
                     <div class="section-title">🏠 Households</div>
@@ -759,6 +760,7 @@ setTimeout(function() {
                         <span class="nest-hero-label">Total Population</span>
                         <span class="nest-hero-num" id="adminPopulation">0</span>
                     </div>
+                    <div id="adminPopGender" style="font-size:12px;color:var(--text2);text-align:center;margin-top:2px"></div>
                 </div>
                 <div class="nest-box">
                     <div class="section-title">🧒 Children</div>
@@ -766,6 +768,7 @@ setTimeout(function() {
                         <span class="nest-hero-label">No of Children</span>
                         <span class="nest-hero-num" id="adminChildren">0</span>
                     </div>
+                    <div id="adminChildGender" style="font-size:12px;color:var(--text2);text-align:center;margin-top:2px"></div>
                 </div>
                 <div class="nest-box">
                     <div class="section-title">🏠 Households</div>
@@ -3146,12 +3149,19 @@ function renderPopHouseholds(prefix, records) {
         a.families += s.families;
         a.population += s.population;
         a.children += s.children;
+        a.males += s.males;
+        a.females += s.females;
+        a.childMales += s.childMales;
+        a.childFemales += s.childFemales;
         return a;
-    }, {families:0,population:0,children:0});
+    }, {families:0,population:0,children:0,males:0,females:0,childMales:0,childFemales:0});
     const set = (id,v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
+    const hset = (id,v) => { const e = document.getElementById(id); if (e) e.innerHTML = v; };
     set(prefix+'Families', hh.families);
     set(prefix+'Population', hh.population);
     set(prefix+'Children', hh.children);
+    hset(prefix+'PopGender', `♂ ${hh.males} &nbsp;|&nbsp; ♀ ${hh.females}`);
+    hset(prefix+'ChildGender', `♂ ${hh.childMales} &nbsp;|&nbsp; ♀ ${hh.childFemales}`);
 }
 
 function recordCard(r, context) {
