@@ -112,7 +112,7 @@
         .auth-tab.active{background:var(--primary);color:white}
 
         /* HEADER */
-        .header{background:var(--primary);color:white;padding:14px 18px;border-radius:var(--radius-lg);margin-bottom:16px;display:flex;flex-direction:column;gap:12px;box-shadow:0 4px 12px rgba(0,0,0,0.15);border-bottom:2px solid rgba(255,255,255,0.1)}
+        .header{background:var(--primary);color:white;padding:10px 18px;border-radius:var(--radius-lg);margin-bottom:16px;display:flex;flex-direction:column;gap:12px;box-shadow:0 4px 12px rgba(0,0,0,0.15);border-bottom:2px solid rgba(255,255,255,0.1);position:sticky;top:6px;z-index:60}
         .header-row{display:flex;justify-content:space-between;align-items:center;gap:12px}
         .header-left{display:flex;align-items:center}
         .header-left h1{font-size:17px;font-weight:700;letter-spacing:-0.3px;line-height:1.2}
@@ -1196,6 +1196,10 @@ const THEME_STORAGE_KEY = 'appTheme';
 const DARK_THEME = 'dark';
 const LIGHT_THEME = 'light';
 
+function truncateName(name, maxLen = 10) {
+    return name && name.length > maxLen ? name.substring(0, maxLen) : (name || 'Account');
+}
+
 function getSystemThemePreference() {
     if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
         return DARK_THEME;
@@ -1488,8 +1492,9 @@ auth.onAuthStateChanged(async user => {
         document.getElementById('mainApp').classList.remove('hidden');
         if (isAdmin || isSupervisor) {
             document.getElementById('adminView').classList.remove('hidden');
+            const adminName = truncateName(profile?.name || 'Admin');
             const roleBadge = document.getElementById('adminRoleBadge');
-            roleBadge.textContent = isSupervisor ? '🔎 SUPERVISOR' : '👑 ADMIN';
+            roleBadge.textContent = isSupervisor ? ('🔎 ' + adminName) : ('👑 ' + adminName);
             roleBadge.className = isSupervisor ? 'supervisor-badge' : 'admin-badge';
             if (isSupervisor) {
                 document.querySelectorAll('.admin-only-tab').forEach(b => b.classList.add('hidden'));
@@ -1500,6 +1505,11 @@ auth.onAuthStateChanged(async user => {
             }
         } else {
             document.getElementById('workerView').classList.remove('hidden');
+            // Update worker badge with name
+            const workerBadge = document.getElementById('workerRoleBadge');
+            if (workerBadge && profile?.name) {
+                workerBadge.textContent = '👤 ' + truncateName(profile.name);
+            }
             updateConnectionBanner();
             // Auto-heal: if a logged-in worker has no profile (e.g. after a reset that
             // deleted the profile but not the Firebase Auth login), recreate a basic one
@@ -1527,6 +1537,9 @@ auth.onAuthStateChanged(async user => {
                 // If admin disables the account while the worker is logged in, kick them out immediately.
                 if (data.disabled === true) { auth.signOut(); return; }
                 myProfile = data;
+                // Update badge if name changed
+                const workerBadge = document.getElementById('workerRoleBadge');
+                if (workerBadge && data.name) workerBadge.textContent = '👤 ' + truncateName(data.name);
                 updateRangeHint();
             });
             loadMyRecords();
@@ -1732,6 +1745,9 @@ async function saveWorkerProfile() {
     if (phone && !/^[0-9]{10}$/.test(phone)) { box.innerHTML = '<div class="alert alert-error">Phone must be 10 digits</div>'; return; }
     try {
         await db.collection('users').doc(currentUser.uid).update({ name, phone });
+        // Update badge with new name
+        const workerBadge = document.getElementById('workerRoleBadge');
+        if (workerBadge) workerBadge.textContent = '👤 ' + truncateName(name);
         box.innerHTML = '<div class="alert alert-success">✓ Details saved!</div>';
         setTimeout(()=>{ document.getElementById('workerProfileModal').classList.remove('active'); }, 1500);
     } catch(e) { box.innerHTML = `<div class="alert alert-error">${e.message}</div>`; }
@@ -1753,6 +1769,12 @@ async function saveAdminProfile() {
         // Preserve the caller's actual role — this modal is shared by admin and supervisor,
         // and hardcoding 'admin' here would silently demote a supervisor saving their name.
         await db.collection('users').doc(currentUser.uid).set({ name, email: currentUser.email, role: isSupervisor ? 'supervisor' : 'admin' }, { merge:true });
+        // Update badge with new name
+        const roleBadge = document.getElementById('adminRoleBadge');
+        if (roleBadge) {
+            const displayName = truncateName(name);
+            roleBadge.textContent = isSupervisor ? ('🔎 ' + displayName) : ('👑 ' + displayName);
+        }
         box.innerHTML = '<div class="alert alert-success">✓ Saved!</div>';
         setTimeout(()=>{ document.getElementById('adminProfileModal').classList.remove('active'); }, 1500);
     } catch(e) { box.innerHTML = `<div class="alert alert-error">${e.message}</div>`; }
