@@ -14,11 +14,11 @@ function loadLogic() {
   const m = html.match(/=== BEGIN testable logic ===[\s\S]*?\*\/([\s\S]*?)\/\* === END testable logic ===/);
   if (!m) throw new Error("testable logic block not found in index.html");
   return new Function(
-    m[1] + "\nreturn { getExifOrientation, needsFollowUp, missingFields, isRecordAbsent, computeIsAbsent, familyMembersIncomplete, householdStats, correctionState };"
+    m[1] + "\nreturn { getExifOrientation, needsFollowUp, missingFields, isRecordAbsent, computeIsAbsent, familyMembersIncomplete, householdStats, correctionState, detailsSnapshotOf, diffDetailsSnapshots };"
   )();
 }
 
-const { missingFields, isRecordAbsent, computeIsAbsent, familyMembersIncomplete, needsFollowUp, getExifOrientation, householdStats, correctionState } = loadLogic();
+const { missingFields, isRecordAbsent, computeIsAbsent, familyMembersIncomplete, needsFollowUp, getExifOrientation, householdStats, correctionState, detailsSnapshotOf, diffDetailsSnapshots } = loadLogic();
 
 // A minimal fully-complete record: owner details filled, one occupied residential
 // unit with a fully-filled head member. Used as the baseline for "no gaps" tests.
@@ -130,6 +130,43 @@ test("familyMembersIncomplete: non-residential units are never checked for membe
 
 test("familyMembersIncomplete: an occupied residential unit with zero members is incomplete", () => {
   assert.equal(familyMembersIncomplete([{ type: "Residential", occupied: true, members: [] }]), true);
+});
+
+/* ---------------- detailsSnapshotOf / diffDetailsSnapshots ---------------- */
+
+test("diffDetailsSnapshots: no snapshot on either side yields no changes", () => {
+  assert.deepEqual(diffDetailsSnapshots(null, detailsSnapshotOf(completeResidentRecord())), []);
+  assert.deepEqual(diffDetailsSnapshots(detailsSnapshotOf(completeResidentRecord()), null), []);
+});
+
+test("diffDetailsSnapshots: identical records report no changes", () => {
+  const r = completeResidentRecord();
+  assert.deepEqual(diffDetailsSnapshots(detailsSnapshotOf(r), detailsSnapshotOf(r)), []);
+});
+
+test("diffDetailsSnapshots: catches a spelling fix a completeness check can't see", () => {
+  const before = detailsSnapshotOf({ ...completeResidentRecord(), ownerName: "Ramesh Kumer" });
+  const after = detailsSnapshotOf({ ...completeResidentRecord(), ownerName: "Ramesh Kumar" });
+  assert.deepEqual(diffDetailsSnapshots(before, after), ['Owner name: "Ramesh Kumer" -> "Ramesh Kumar"']);
+});
+
+test("diffDetailsSnapshots: catches a head-of-family member field change", () => {
+  const before = detailsSnapshotOf(completeResidentRecord());
+  const afterRec = completeResidentRecord();
+  afterRec.families[0].members[0].name = "A. Smith";
+  const after = detailsSnapshotOf(afterRec);
+  assert.deepEqual(diffDetailsSnapshots(before, after), ['Unit 1 member 1 name: "A" -> "A. Smith"']);
+});
+
+test("diffDetailsSnapshots: reports added/removed units and members", () => {
+  const before = detailsSnapshotOf({ families: [{ type: "Residential", members: [{ name: "A" }] }] });
+  const after = detailsSnapshotOf({ families: [
+    { type: "Residential", members: [{ name: "A" }, { name: "B" }] },
+    { type: "Commercial", label: "Shop" }
+  ]});
+  const changes = diffDetailsSnapshots(before, after);
+  assert.ok(changes.includes("Unit 1 member 2: added (B)"));
+  assert.ok(changes.includes("Unit 2: added"));
 });
 
 test("familyMembersIncomplete: a vacant residential unit is skipped regardless of members", () => {

@@ -1175,7 +1175,7 @@ const firebaseConfig = {
     appId: "1:547385765757:web:df18cd27e9161b7d1c2614"
 };
 const ADMIN_EMAIL = "enga018@gmail.com";
-const APP_VERSION = "v3.7.1";
+const APP_VERSION = "v3.8.0";
 
 // Dark mode theme management
 const THEME_STORAGE_KEY = 'appTheme';
@@ -2484,8 +2484,13 @@ async function saveRecord(e) {
                 const now = new Date().toISOString();
                 if (stillNeeded.length === 0) {
                     // Everything requested has actually been addressed — close out the correction.
-                    if (history.length) history[history.length-1] = { ...history[history.length-1], status: 'fixed', fixedAt: now };
-                    else history.push({ note: rec.adminFlagNote || '', flaggedAt: rec.adminFlaggedAt || null, status: 'fixed', fixedAt: now });
+                    // Snapshot "after" state alongside the "before" one captured at flag time, so
+                    // the admin can see exactly what changed instead of just trusting the resave.
+                    const fixedFields = { status: 'fixed', fixedAt: now };
+                    if (rec.correctionAllowDetails) fixedFields.detailsAfter = detailsSnapshotOf(data);
+                    if (rec.correctionAllowGps) fixedFields.gpsAfter = { latitude: data.latitude, longitude: data.longitude };
+                    if (history.length) history[history.length-1] = { ...history[history.length-1], ...fixedFields };
+                    else history.push({ note: rec.adminFlagNote || '', flaggedAt: rec.adminFlaggedAt || null, ...fixedFields });
                     data.corrections = history;
                     data.correctionStatus = 'fixed';
                     data.correctionFixedAt = now;
@@ -2815,6 +2820,66 @@ function familyMembersIncomplete(families) {
         }
     }
     return false;
+}
+// Snapshot of the text fields a "Details" correction can touch, taken when a correction
+// is flagged and again when the worker resaves it fixed — so the two can be diffed to
+// show an admin what actually changed (a spelling fix isn't visible to computeIsAbsent,
+// since the field was never empty, just wrong).
+function detailsSnapshotOf(r) {
+    return {
+        ownerName: r.ownerName || '',
+        fatherHusbandName: r.fatherHusbandName || '',
+        contact: r.contact || '',
+        organizationName: r.organizationName || '',
+        contactPerson: r.contactPerson || '',
+        designation: r.designation || '',
+        families: (Array.isArray(r.families) ? r.families : []).map(f => ({
+            type: f.type || 'Residential',
+            label: f.label || '',
+            members: (Array.isArray(f.members) ? f.members : []).map(m => ({
+                name: m.name || '', gender: m.gender || '',
+                age: (m.age === '' || m.age == null) ? '' : String(m.age),
+                relation: m.relation || ''
+            }))
+        }))
+    };
+}
+// Compares two detailsSnapshotOf() results and returns human-readable "field: before -> after"
+// change descriptions. An empty array is meaningful — it means nothing in the snapshotted
+// fields actually changed, which is worth flagging when verifying a "Details" correction.
+function diffDetailsSnapshots(before, after) {
+    if (!before || !after) return [];
+    const changes = [];
+    const simpleFields = [
+        ['ownerName', 'Owner name'], ['fatherHusbandName', 'Father/Husband name'], ['contact', 'Phone number'],
+        ['organizationName', 'Organization name'], ['contactPerson', 'Contact person'], ['designation', 'Designation']
+    ];
+    simpleFields.forEach(([key, label]) => {
+        const b = before[key] || '', a = after[key] || '';
+        if (b !== a) changes.push(label + ': "' + (b || '—') + '" -> "' + (a || '—') + '"');
+    });
+    const bf = Array.isArray(before.families) ? before.families : [];
+    const af = Array.isArray(after.families) ? after.families : [];
+    const maxUnits = Math.max(bf.length, af.length);
+    for (let i = 0; i < maxUnits; i++) {
+        const bu = bf[i], au = af[i];
+        if (!bu && au) { changes.push('Unit ' + (i + 1) + ': added'); continue; }
+        if (bu && !au) { changes.push('Unit ' + (i + 1) + ': removed'); continue; }
+        if (bu.label !== au.label) changes.push('Unit ' + (i + 1) + ' label: "' + (bu.label || '—') + '" -> "' + (au.label || '—') + '"');
+        const bm = Array.isArray(bu.members) ? bu.members : [];
+        const am = Array.isArray(au.members) ? au.members : [];
+        const maxM = Math.max(bm.length, am.length);
+        for (let j = 0; j < maxM; j++) {
+            const b = bm[j], a = am[j];
+            if (!b && a) { changes.push('Unit ' + (i + 1) + ' member ' + (j + 1) + ': added (' + (a.name || 'unnamed') + ')'); continue; }
+            if (b && !a) { changes.push('Unit ' + (i + 1) + ' member ' + (j + 1) + ': removed'); continue; }
+            ['name', 'gender', 'age', 'relation'].forEach(f => {
+                const bv = b[f] || '', av = a[f] || '';
+                if (bv !== av) changes.push('Unit ' + (i + 1) + ' member ' + (j + 1) + ' ' + f + ': "' + (bv || '—') + '" -> "' + (av || '—') + '"');
+            });
+        }
+    }
+    return changes;
 }
 
 function householdStats(r) {
@@ -3231,6 +3296,25 @@ function renderPopHouseholds(prefix, records) {
     hset(prefix+'ChildGender', genderSplit(hh.childMales, hh.childFemales, 'No data'));
 }
 
+// Renders what actually changed on a "Fixed — verify" correction, using the before/after
+// snapshots taken at flag-time and fix-time. Lets the admin see a spelling fix (or GPS
+// re-capture) that a plain completeness check can't detect, instead of just trusting the resave.
+function correctionDiffHtml(r) {
+    if (correctionState(r) !== 'fixed') return '';
+    const hist = Array.isArray(r.corrections) ? r.corrections : [];
+    const last = hist.length ? hist[hist.length - 1] : null;
+    if (!last) return '';
+    const changes = diffDetailsSnapshots(last.detailsBefore, last.detailsAfter);
+    const gpsChanged = last.gpsBefore && last.gpsAfter &&
+        (last.gpsBefore.latitude !== last.gpsAfter.latitude || last.gpsBefore.longitude !== last.gpsAfter.longitude);
+    const hadDetailsCheck = !!last.detailsBefore;
+    return `<div style="background:var(--primary-tint);border-radius:4px;padding:6px 8px;margin-top:5px;font-size:12px;color:var(--primary-dark)">
+        🔍 <b>Flagged for:</b> ${esc(last.note || '')}
+        ${changes.length ? `<div style="margin-top:4px"><b>Changed:</b><ul style="margin:4px 0 0 16px;padding:0">${changes.map(c=>`<li>${esc(c)}</li>`).join('')}</ul></div>` : (hadDetailsCheck ? '<div style="margin-top:4px"><i>⚠️ No text field changes detected — double-check before verifying.</i></div>' : '')}
+        ${gpsChanged ? `<div style="margin-top:4px">📍 GPS re-captured: ${last.gpsBefore.latitude!=null?last.gpsBefore.latitude.toFixed(5):'—'}, ${last.gpsBefore.longitude!=null?last.gpsBefore.longitude.toFixed(5):'—'} → ${last.gpsAfter.latitude.toFixed(5)}, ${last.gpsAfter.longitude.toFixed(5)}</div>` : ''}
+    </div>`;
+}
+
 function recordCard(r, context) {
     const absent = isRecordAbsent(r);
     const cstate = correctionState(r);
@@ -3309,6 +3393,7 @@ function recordCard(r, context) {
             ${showWorker ? `<span class="badge badge-worker">👤 ${esc(r.workerName || 'Unknown')}</span>` : ''}
         </div>
         ${r.adminFlagNote ? `<div style="background:#fff3cd;border-radius:4px;padding:5px 8px;margin-top:5px;font-size:12px;color:#856404">⚠️ <b>Fix needed:</b> ${esc(r.adminFlagNote)}${r.needsCorrection ? `<br><span style="font-size:11px">Redo: ${[r.correctionAllowGps?'📍 GPS':'', r.correctionAllowPhoto?'📷 Photo':'', r.correctionAllowDetails?'✏️ Details':''].filter(Boolean).join(', ')||'Details'}</span>` : ''}</div>` : ''}
+        ${isAdminView ? correctionDiffHtml(r) : ''}
         <div class="record-actions">
             <button class="btn-small btn-primary" onclick='showDetail(${JSON.stringify(r).replace(/'/g,"&#39;")})'>👁 View</button>
             ${context === 'followup' ? `<button class="btn-small" style="background:#e65100;color:white" onclick='startEditRecord(${JSON.stringify(r).replace(/'/g,"&#39;")})'>✏️ Edit</button>` : ''}
@@ -3346,7 +3431,13 @@ async function submitCorrection() {
         const rec = (allRecords||[]).find(x => x.id === id) || {};
         const history = Array.isArray(rec.corrections) ? rec.corrections.slice() : [];
         const now = new Date().toISOString();
-        history.push({ note, allowGps, allowPhoto, allowDetails, flaggedAt: now, flaggedBy: (currentUser && currentUser.email) || '', status: 'pending' });
+        history.push({
+            note, allowGps, allowPhoto, allowDetails, flaggedAt: now, flaggedBy: (currentUser && currentUser.email) || '', status: 'pending',
+            // Snapshot "before" state so the admin can see exactly what changed once the
+            // worker resaves it — a spelling fix isn't otherwise visible to any completeness check.
+            detailsBefore: allowDetails ? detailsSnapshotOf(rec) : null,
+            gpsBefore: allowGps ? { latitude: rec.latitude != null ? rec.latitude : null, longitude: rec.longitude != null ? rec.longitude : null } : null
+        });
         await db.collection('records').doc(id).update({
             needsCorrection: true,
             adminFlagNote: note,
@@ -4154,6 +4245,7 @@ function recordDetailHtml(r) {
         <div style="background:var(--bg);padding:12px;border-radius:8px;margin-bottom:12px">
             ${r.needsCorrection ? '<div style="color:#856404;font-weight:600;margin-bottom:6px">🟡 Needs Correction — sent back to worker</div>' : (isRecordAbsent(r) ? `<div style="color:var(--warning);font-weight:600;margin-bottom:6px">🔴 Incomplete — Needs Follow-up</div>${missingFields(r).length ? `<div style="background:#ffebee;border-radius:4px;padding:6px 8px;margin-bottom:6px;font-size:13px;color:#cb2431">📋 Missing: ${missingFields(r).join(', ')}</div>` : ''}` : '<div style="color:var(--success);font-weight:600;margin-bottom:6px">✅ Complete Record</div>')}
             ${r.adminFlagNote ? `<div style="background:#fff3cd;border-radius:4px;padding:6px 8px;margin-bottom:6px;font-size:13px;color:#856404">⚠️ <b>Fix needed:</b> ${esc(r.adminFlagNote)}</div>` : ''}
+            ${correctionDiffHtml(r)}
             <b>Property ID:</b> ${esc(r.propertyId)}<br>
             <b>Type:</b> ${esc(r.propertyType)} &nbsp;|&nbsp; <b>Building:</b> ${esc(r.buildingType)}<br>
             ${r.ownerCategory ? `<b>Owner Type:</b> ${esc(r.ownerCategory)}<br>` : ''}
