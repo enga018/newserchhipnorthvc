@@ -1175,7 +1175,7 @@ const firebaseConfig = {
     appId: "1:547385765757:web:df18cd27e9161b7d1c2614"
 };
 const ADMIN_EMAIL = "enga018@gmail.com";
-const APP_VERSION = "v3.7.0";
+const APP_VERSION = "v3.7.1";
 
 // Dark mode theme management
 const THEME_STORAGE_KEY = 'appTheme';
@@ -1435,6 +1435,10 @@ if (auth) {
     }
 }
 let pendingPhotoBlob = null; // blob waiting for Storage upload
+// Set true only when captureLocation() actually runs during this edit session — as opposed
+// to GPS merely being restored from the existing record — so a correction flagged for GPS
+// redo can verify the worker actually recaptured it, not just resaved the old value.
+let gpsRecapturedThisEdit = false;
 // Unstamped (oriented + resized, but no banner yet) copy of the just-captured photo, kept
 // so the GPS line in the stamp can be redrawn if location is captured after the photo —
 // otherwise a photo taken before GPS permanently reads "GPS not captured".
@@ -2465,21 +2469,36 @@ async function saveRecord(e) {
         btn.textContent = '⏳ Saving...';
         if (editingRecordId) {
             const rec = (myRecordsCache||[]).find(x => x.id === editingRecordId) || (allRecords||[]).find(x => x.id === editingRecordId) || {};
+            let correctionStillOpen = false;
+            let stillNeeded = [];
             if (correctionState(rec) === 'pending') {
-                // Worker has acted on a redo request: log it as fixed (awaiting admin verify),
-                // keep the correction history, and clear the active redo-gating flags.
+                // Only close out the correction once everything the admin actually asked for
+                // has been verifiably addressed — a resave alone used to be enough to clear
+                // it, which let the actual flagged issue (e.g. a missing head-of-family name)
+                // go unresolved while the record silently dropped out of Follow Up.
+                if (rec.correctionAllowDetails && computeIsAbsent(data)) stillNeeded.push(...missingFields(data));
+                if (rec.correctionAllowGps && !gpsRecapturedThisEdit) stillNeeded.push('GPS re-capture');
+                if (rec.correctionAllowPhoto && !pendingPhotoBlob) stillNeeded.push('Photo re-take');
+
                 const history = Array.isArray(rec.corrections) ? rec.corrections.slice() : [];
                 const now = new Date().toISOString();
-                if (history.length) history[history.length-1] = { ...history[history.length-1], status: 'fixed', fixedAt: now };
-                else history.push({ note: rec.adminFlagNote || '', flaggedAt: rec.adminFlaggedAt || null, status: 'fixed', fixedAt: now });
-                data.corrections = history;
-                data.correctionStatus = 'fixed';
-                data.correctionFixedAt = now;
-                data.needsCorrection = false;
-                data.adminFlagNote = firebase.firestore.FieldValue.delete();
-                data.correctionAllowGps = firebase.firestore.FieldValue.delete();
-                data.correctionAllowPhoto = firebase.firestore.FieldValue.delete();
-                data.correctionAllowDetails = firebase.firestore.FieldValue.delete();
+                if (stillNeeded.length === 0) {
+                    // Everything requested has actually been addressed — close out the correction.
+                    if (history.length) history[history.length-1] = { ...history[history.length-1], status: 'fixed', fixedAt: now };
+                    else history.push({ note: rec.adminFlagNote || '', flaggedAt: rec.adminFlaggedAt || null, status: 'fixed', fixedAt: now });
+                    data.corrections = history;
+                    data.correctionStatus = 'fixed';
+                    data.correctionFixedAt = now;
+                    data.needsCorrection = false;
+                    data.adminFlagNote = firebase.firestore.FieldValue.delete();
+                    data.correctionAllowGps = firebase.firestore.FieldValue.delete();
+                    data.correctionAllowPhoto = firebase.firestore.FieldValue.delete();
+                    data.correctionAllowDetails = firebase.firestore.FieldValue.delete();
+                } else {
+                    // Leave correctionStatus/needsCorrection untouched — still pending until
+                    // the worker actually addresses what was flagged. Progress is still saved.
+                    correctionStillOpen = true;
+                }
             }
             const recordId = editingRecordId;
             markRecordPending(recordId);
@@ -2494,7 +2513,11 @@ async function saveRecord(e) {
             });
             cancelEdit();
             resetForm();
-            showAlert(navigator.onLine ? '✓ Record updated! Pick the next one to follow up.' : '✓ Saved offline — will sync automatically. Pick the next one to follow up.', 'success');
+            if (correctionStillOpen) {
+                showAlert('⚠️ Saved — but this correction isn\'t resolved yet. Still needed: ' + stillNeeded.join(', ') + '.', 'error');
+            } else {
+                showAlert(navigator.onLine ? '✓ Record updated! Pick the next one to follow up.' : '✓ Saved offline — will sync automatically. Pick the next one to follow up.', 'success');
+            }
             // Return to Follow Up tab so they can continue with the next follow-up
             setTimeout(() => switchTab('followup', document.querySelectorAll('#workerView .tab-btn')[2]), 1000);
         } else {
@@ -2567,6 +2590,7 @@ function checkFailedSaves() {
 function startEditRecord(r) {
     if (typeof r === 'string') r = JSON.parse(r);
     editingRecordId = r.id;
+    gpsRecapturedThisEdit = false; // restoring existing GPS below isn't a recapture
     closeModal();
     // Switch to collect tab
     switchTab('collect', document.querySelectorAll('#workerView .tab-btn')[0]);
@@ -2691,6 +2715,7 @@ function resetForm() {
     document.getElementById('organizationName').removeAttribute('required');
     householdDraft = [];
     pendingPhotoBlob = null;
+    gpsRecapturedThisEdit = false;
     renderUnits();
     showWizardStep(0);
     clearEditLocks();
@@ -2960,6 +2985,7 @@ function captureLocation() {
         document.getElementById('accuracy').value = pos.coords.accuracy;
         status.className = 'location-status success';
         status.textContent = `✅ ${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)} (±${pos.coords.accuracy.toFixed(0)}m)`;
+        gpsRecapturedThisEdit = true;
         restampPhotoIfNeeded();
     }, err => {
         status.className = 'location-status error';
