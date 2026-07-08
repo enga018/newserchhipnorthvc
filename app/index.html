@@ -465,6 +465,7 @@ setTimeout(function() {
             <button type="button" class="navbtn tab-btn active" onclick="switchTab('collect',this)"><span class="navicon">📋</span>Collect</button>
             <button type="button" class="navbtn tab-btn" onclick="switchTab('myrecords',this)"><span class="navicon">📊</span>My Work</button>
             <button type="button" class="navbtn tab-btn" onclick="switchTab('followup',this)"><span class="navicon">🔴</span>Follow Up<span id="followupBadge" class="navbadge"></span></button>
+            <div class="nav-version" style="text-align:center;padding:6px 0 2px;font-size:10px;color:var(--text2);opacity:0.7;width:100%"></div>
         </nav>
 
         <!-- COLLECT TAB -->
@@ -714,6 +715,7 @@ setTimeout(function() {
             <button type="button" class="navbtn tab-btn" onclick="switchAdminTab('allrecords',this)"><span class="navicon">📁</span>Records</button>
             <button type="button" class="navbtn tab-btn" onclick="switchAdminTab('workers',this)"><span class="navicon">👥</span>Workers</button>
             <button type="button" class="navbtn tab-btn admin-only-tab" onclick="switchAdminTab('adminsettings',this)"><span class="navicon">⚙️</span>Settings</button>
+            <div class="nav-version" style="text-align:center;padding:6px 0 2px;font-size:10px;color:var(--text2);opacity:0.7;width:100%"></div>
         </nav>
 
         <!-- OVERVIEW -->
@@ -902,7 +904,6 @@ setTimeout(function() {
         </div>
 
     </div>
-    <div style="text-align:center;padding:16px 0 8px;font-size:11px;color:#999" id="versionFooter"></div>
 </div>
 
 <!-- Save Success Popup -->
@@ -1339,12 +1340,12 @@ try {
 // Show app version
 (function(){
     const af = document.getElementById('authVersionFooter');
-    const vf = document.getElementById('versionFooter');
+    const sv = document.getElementById('splashVersion');
+    const nvf = document.querySelectorAll('.nav-version');
     const html = APP_VERSION + ' | Made with ❤️ by <a href="https://enga.in" target="_blank" style="color:#2c5282;text-decoration:none;font-weight:600">Enga</a>';
     if (af) af.innerHTML = html;
-    if (vf) vf.innerHTML = html;
-    const sv = document.getElementById('splashVersion');
-    if (sv) sv.innerHTML = html;
+    if (sv) sv.textContent = APP_VERSION;
+    nvf.forEach(el => el.innerHTML = html);
 })();
 
 // Register Service Worker for PWA
