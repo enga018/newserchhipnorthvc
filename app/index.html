@@ -875,13 +875,6 @@ setTimeout(function() {
             </div>
             <div style="background:var(--bg);border-radius:8px;padding:12px;margin-bottom:12px">
                 <div style="font-size:13px;color:var(--text2);margin-bottom:10px">
-                    Scans all existing records and marks any that have family members with missing age or gender as <b>Needs Correction</b>, so workers can fill them in. Safe to run more than once — only records with missing data are flagged.
-                </div>
-                <button class="btn-primary" onclick="flagMissingMemberData()">🔍 Flag Records with Missing Member Data</button>
-                <div id="flagMissingAlert" style="margin-top:8px"></div>
-            </div>
-            <div style="background:var(--bg);border-radius:8px;padding:12px;margin-bottom:12px">
-                <div style="font-size:13px;color:var(--text2);margin-bottom:10px">
                     Some older records may have family members with relation <b>"Head"</b> instead of <b>"Self"</b>. This one-time action converts them all to "Self" so the head of family is consistently identified. Safe to run more than once — only members with "Head" are touched.
                 </div>
                 <button class="btn-primary" onclick="normalizeHeadToSelf()">🔄 Normalize "Head" → "Self"</button>
@@ -893,13 +886,6 @@ setTimeout(function() {
                 </div>
                 <button class="btn-primary" onclick="normalizeItalicNames()">🔤 Normalize Italic/Styled Names</button>
                 <div id="normalizeItalicAlert" style="margin-top:8px"></div>
-            </div>
-            <div style="background:var(--bg);border-radius:8px;padding:12px;margin-bottom:12px">
-                <div style="font-size:13px;color:var(--text2);margin-bottom:10px">
-                    Some older records were saved before properties were broken into <b>units</b> and have none recorded at all. This one-time action marks those as <b>Needs Correction</b> so workers add at least one unit. Safe to run more than once — only records with zero units are flagged.
-                </div>
-                <button class="btn-primary" onclick="flagRecordsWithNoUnits()">🏪 Flag Records with No Units</button>
-                <div id="flagNoUnitsAlert" style="margin-top:8px"></div>
             </div>
             </div>
             <div class="section-title" style="color:var(--warning)">⚠️ Danger Zone</div>
@@ -1189,7 +1175,7 @@ const firebaseConfig = {
     appId: "1:547385765757:web:df18cd27e9161b7d1c2614"
 };
 const ADMIN_EMAIL = "enga018@gmail.com";
-const APP_VERSION = "v3.6.3";
+const APP_VERSION = "v3.7.0";
 
 // Dark mode theme management
 const THEME_STORAGE_KEY = 'appTheme';
@@ -2292,20 +2278,21 @@ function renderUnits(){
     refreshWizardChrome();
 }
 
-// Strip fully-empty families/members so vacant houses store a clean [].
+// Normalize each unit's fields for storage. Every unit the worker added is kept — even
+// if left blank (e.g. a non-residential unit with no label) — so it isn't silently lost;
+// an incomplete unit is instead surfaced via computeIsAbsent()/missingFields() so the
+// record correctly lands in Follow Up instead of disappearing with families:[].
 // headName is derived from the head member (no separate head field).
 function cleanHouseholds(draft){
-    return (draft || [])
-        .map((f, i) => {
-            const isRes = f.type === 'Residential';
-            const occupied = f.occupied !== false;
-            const members = isRes ? (f.members||[])
-                .map(m => ({ name:normalizeText(m.name||'').trim(), gender:m.gender||'', age:(m.age===''||m.age==null)?'':Number(m.age), relation:m.relation||'' }))
-                .filter(m => m.name || m.age !== '' || m.gender || m.relation) : [];
-            const familyId = f.familyId || (isRes && occupied ? 'Unit ' + (i+1) : '');
-            return { type: f.type || 'Residential', occupied, label: normalizeText(f.label||'').trim(), familyId, headName: isRes ? familyHeadName({ members }) : '', contact: isRes ? (f.contact||'').trim() : '', isTemporaryResidence: f.isTemporaryResidence || false, members };
-        })
-        .filter(f => f.contact || f.members.length || f.label);
+    return (draft || []).map((f, i) => {
+        const isRes = f.type === 'Residential';
+        const occupied = f.occupied !== false;
+        const members = isRes ? (f.members||[])
+            .map(m => ({ name:normalizeText(m.name||'').trim(), gender:m.gender||'', age:(m.age===''||m.age==null)?'':Number(m.age), relation:m.relation||'' }))
+            .filter(m => m.name || m.age !== '' || m.gender || m.relation) : [];
+        const familyId = f.familyId || (isRes && occupied ? 'Unit ' + (i+1) : '');
+        return { type: f.type || 'Residential', occupied, label: normalizeText(f.label||'').trim(), familyId, headName: isRes ? familyHeadName({ members }) : '', contact: isRes ? (f.contact||'').trim() : '', isTemporaryResidence: f.isTemporaryResidence || false, members };
+    });
 }
 
 let editingRecordId = null;
@@ -2375,24 +2362,15 @@ async function saveRecord(e) {
     const designation = isInst ? document.getElementById('designation').value.trim() : '';
     const fatherHusband = isInst ? '' : normalizeText(document.getElementById('fatherHusbandName').value).trim();
 
-    // A record is INCOMPLETE (needs follow-up) if any expected detail is missing.
-    // Always-required (ID, GPS, photo, and org name for institutions) are enforced separately above.
-    let isAbsent;
-    if (isInst) {
-        // Institution: org name is mandatory; missing contact person, designation, or phone = needs follow-up
-        isAbsent = !orgName || !contactPerson || !designation || !contact;
-    } else {
-        // Residential/Commercial: missing owner name, father/husband, or phone = needs follow-up
-        isAbsent = !ownerName || !fatherHusband || !contact;
-    }
-    // Also mark incomplete if any occupied residential unit has empty member details
-    if (householdDraft.some(u => u.type === 'Residential' && u.occupied && familyMembersIncomplete([u]))) {
-        isAbsent = true;
-    }
-    // Also mark incomplete if any occupied non-residential unit has no label
-    if (householdDraft.some(u => u.type !== 'Residential' && u.occupied && !(u.label||'').trim())) {
-        isAbsent = true;
-    }
+    // Incompleteness is derived by the same rule used everywhere the record is displayed
+    // (computeIsAbsent), so save-time and display-time can never drift apart.
+    const isAbsent = computeIsAbsent({
+        isInstitution: isInst,
+        organizationName: orgName, contactPerson, designation,
+        ownerName, fatherHusbandName: fatherHusband,
+        contact,
+        families: cleanedUnits
+    });
     const fullId = 'NSN-' + document.getElementById('propertyId').value.trim().replace(/^NSN-/i,'').replace(/^[0]*/,'').padStart(4,'0');
 
     // RANGE CHECK (hard block for NEW records only; edits to own records always allowed)
@@ -2767,22 +2745,43 @@ function missingFields(r) {
         if (!r.fatherHusbandName) m.push('Father/Husband name');
         if (!r.contact) m.push('Phone number');
     }
-    if (familyMembersIncomplete(r.families)) m.push('Family member details');
+    const fams = Array.isArray(r.families) ? r.families : [];
+    if (fams.length === 0) {
+        m.push('At least one unit');
+    } else {
+        if (familyMembersIncomplete(fams)) m.push('Family member details');
+        if (fams.some(f => f.type && f.type !== 'Residential' && f.occupied !== false && !(f.label||'').trim())) m.push('Unit name/label');
+    }
     return m;
 }
-function isRecordAbsent(r) {
-    // Trust the stored flag for all records saved by the app
-    if (typeof r.isAbsent === 'boolean') return r.isAbsent;
-    // Fallback for very old records without the field
-    if (r.isInstitution) return false;
-    return !r.ownerName;
+// A record needs follow-up if any expected detail is missing: owner/institution fields,
+// at least one unit, family member details in occupied residential units, or a label on
+// occupied non-residential units. Derived live from the data on every call — never cached
+// or trusted from storage — so a record can't drift out of sync with the rules that define
+// "complete," and legacy records self-correct instead of needing a one-off migration.
+function computeIsAbsent(r) {
+    const fams = Array.isArray(r.families) ? r.families : [];
+    if (r.isInstitution) {
+        if (!r.organizationName || !r.contactPerson || !r.designation || !r.contact) return true;
+    } else {
+        if (!r.ownerName || !r.fatherHusbandName || !r.contact) return true;
+    }
+    if (fams.length === 0) return true;
+    if (familyMembersIncomplete(fams)) return true;
+    if (fams.some(f => f.type && f.type !== 'Residential' && f.occupied !== false && !(f.label||'').trim())) return true;
+    return false;
 }
-// Check if any family member has empty details (name, gender, age, or relation)
+function isRecordAbsent(r) {
+    return computeIsAbsent(r);
+}
+// Check if any occupied residential unit has nobody recorded, or any member has empty details
 function familyMembersIncomplete(families) {
     const fams = Array.isArray(families) ? families : [];
     for (const f of fams) {
-        if (f.occupied === false) continue; // skip empty units
+        if (f.occupied === false) continue; // skip vacant units
+        if (f.type && f.type !== 'Residential') continue; // non-residential units don't track members
         const members = Array.isArray(f && f.members) ? f.members : [];
+        if (members.length === 0) return true; // occupied unit with nobody recorded
         for (const m of members) {
             if (!(m && m.name && m.name.toString().trim())) return true;
             if (!(m && m.gender)) return true;
@@ -3532,9 +3531,6 @@ async function saveAdminEdit() {
         data.ownerName = data.contactPerson || data.organizationName;
         data.ownerType = 'Contact Person';
         data.fatherHusbandName = '';
-        // Same "needs follow-up" rule as saveRecord(): org name is mandatory, so its
-        // absence is caught before here; missing contact person/designation/phone means incomplete.
-        data.isAbsent = !data.organizationName || !data.contactPerson || !data.designation || !contact;
     } else {
         data.ownerName = document.getElementById('aeOwnerName').value.trim();
         data.fatherHusbandName = document.getElementById('aeFatherHusband').value.trim();
@@ -3542,17 +3538,12 @@ async function saveAdminEdit() {
         data.organizationName = '';
         data.contactPerson = '';
         data.designation = '';
-        data.isAbsent = !data.ownerName || !data.fatherHusbandName || !contact;
     }
     // Strip member/contact data from non-Residential units
     aeFamilies.forEach(f => { if (f.type !== 'Residential') { f.members = []; f.contact = ''; } });
-    if (aeFamilies.some(u => u.type !== 'Residential' && u.occupied && !(u.label||'').trim())) {
-        data.isAbsent = true;
-    }
-    if (aeFamilies.some(u => u.type === 'Residential' && u.occupied && familyMembersIncomplete([u]))) {
-        data.isAbsent = true;
-    }
     data.families = aeFamilies;
+    // Same rule as saveRecord(): derived live so save-time and display-time never drift apart.
+    data.isAbsent = computeIsAbsent(data);
     try {
         await db.collection('records').doc(id).update(data);
         document.getElementById('adminEditModal').classList.remove('active');
@@ -3945,102 +3936,6 @@ async function normalizeItalicNames() {
         box.innerHTML = updatedFields
             ? `<div class="alert alert-success">✓ Normalized ${updatedFields} field${updatedFields===1?'':'s'} across ${updatedRecords} record${updatedRecords===1?'':'s'}.</div>`
             : '<div class="alert alert-success">✓ Nothing to do — all names already use plain ASCII.</div>';
-    } catch(e) { box.innerHTML = `<div class="alert alert-error">${e.message}</div>`; }
-}
-
-// One-time backfill: scan all records and flag those with family members missing age
-// or gender as needing correction, so workers can complete the data. Idempotent —
-// skips records that are already flagged for correction.
-async function flagMissingMemberData() {
-    const box = document.getElementById('flagMissingAlert');
-    box.innerHTML = '<div class="alert alert-info">🔍 Scanning records…</div>';
-    try {
-        const snap = await db.collection('records').get();
-        let flaggedRecords = 0;
-        let batch = db.batch();
-        let opsInBatch = 0;
-        const now = new Date().toISOString();
-        const note = 'Missing member age or gender — please fill in';
-        for (const doc of snap.docs) {
-            const data = doc.data();
-            if (data.needsCorrection === true) continue; // already flagged
-            const families = Array.isArray(data.families) ? data.families : [];
-            let missing = false;
-            for (const f of families) {
-                // Skip non-residential units and vacant residential units
-                if (f.type && f.type !== 'Residential') continue; // non-residential has no members
-                if (f.occupied === false) continue; // vacant residential shouldn't be flagged
-                const members = Array.isArray(f && f.members) ? f.members : [];
-                for (const m of members) {
-                    if (m.age === '' || m.age == null || !m.gender) {
-                        missing = true;
-                        break;
-                    }
-                }
-                if (missing) break;
-            }
-            if (!missing) continue;
-            const history = Array.isArray(data.corrections) ? data.corrections.slice() : [];
-            history.push({ note, flaggedAt: now, flaggedBy: (currentUser && currentUser.email) || '', status: 'pending' });
-            batch.update(doc.ref, {
-                needsCorrection: true,
-                correctionStatus: 'pending',
-                adminFlagNote: note,
-                adminFlaggedAt: now,
-                correctionAllowGps: false,
-                correctionAllowPhoto: false,
-                correctionAllowDetails: true,
-                corrections: history
-            });
-            flaggedRecords++;
-            opsInBatch++;
-            if (opsInBatch >= 400) { await batch.commit(); batch = db.batch(); opsInBatch = 0; }
-        }
-        if (opsInBatch > 0) await batch.commit();
-        box.innerHTML = flaggedRecords
-            ? `<div class="alert alert-success">✓ Flagged ${flaggedRecords} record${flaggedRecords===1?'':'s'} with missing member data.</div>`
-            : '<div class="alert alert-success">✓ Nothing to flag — all members have age and gender.</div>';
-    } catch(e) { box.innerHTML = `<div class="alert alert-error">${e.message}</div>`; }
-}
-
-// One-time flag: scan all records and mark any saved before the "units" concept
-// existed (empty/missing families array) as Needs Correction. Idempotent — skips
-// records already flagged and records that already have at least one unit.
-async function flagRecordsWithNoUnits() {
-    const box = document.getElementById('flagNoUnitsAlert');
-    box.innerHTML = '<div class="alert alert-info">🔍 Scanning records…</div>';
-    try {
-        const snap = await db.collection('records').get();
-        let flaggedRecords = 0;
-        let batch = db.batch();
-        let opsInBatch = 0;
-        const now = new Date().toISOString();
-        const note = 'No units recorded — please add at least one unit';
-        for (const doc of snap.docs) {
-            const data = doc.data();
-            if (data.needsCorrection === true) continue; // already flagged
-            const families = Array.isArray(data.families) ? data.families : [];
-            if (families.length > 0) continue; // has at least one unit
-            const history = Array.isArray(data.corrections) ? data.corrections.slice() : [];
-            history.push({ note, flaggedAt: now, flaggedBy: (currentUser && currentUser.email) || '', status: 'pending' });
-            batch.update(doc.ref, {
-                needsCorrection: true,
-                correctionStatus: 'pending',
-                adminFlagNote: note,
-                adminFlaggedAt: now,
-                correctionAllowGps: false,
-                correctionAllowPhoto: false,
-                correctionAllowDetails: true,
-                corrections: history
-            });
-            flaggedRecords++;
-            opsInBatch++;
-            if (opsInBatch >= 400) { await batch.commit(); batch = db.batch(); opsInBatch = 0; }
-        }
-        if (opsInBatch > 0) await batch.commit();
-        box.innerHTML = flaggedRecords
-            ? `<div class="alert alert-success">✓ Flagged ${flaggedRecords} record${flaggedRecords===1?'':'s'} with no units.</div>`
-            : '<div class="alert alert-success">✓ Nothing to flag — every record has at least one unit.</div>';
     } catch(e) { box.innerHTML = `<div class="alert alert-error">${e.message}</div>`; }
 }
 

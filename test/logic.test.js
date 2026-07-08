@@ -14,22 +14,32 @@ function loadLogic() {
   const m = html.match(/=== BEGIN testable logic ===[\s\S]*?\*\/([\s\S]*?)\/\* === END testable logic ===/);
   if (!m) throw new Error("testable logic block not found in index.html");
   return new Function(
-    m[1] + "\nreturn { getExifOrientation, needsFollowUp, missingFields, isRecordAbsent, householdStats, correctionState };"
+    m[1] + "\nreturn { getExifOrientation, needsFollowUp, missingFields, isRecordAbsent, computeIsAbsent, familyMembersIncomplete, householdStats, correctionState };"
   )();
 }
 
-const { missingFields, isRecordAbsent, needsFollowUp, getExifOrientation, householdStats, correctionState } = loadLogic();
+const { missingFields, isRecordAbsent, computeIsAbsent, familyMembersIncomplete, needsFollowUp, getExifOrientation, householdStats, correctionState } = loadLogic();
+
+// A minimal fully-complete record: owner details filled, one occupied residential
+// unit with a fully-filled head member. Used as the baseline for "no gaps" tests.
+function completeResidentRecord() {
+  return {
+    ownerName: "A", fatherHusbandName: "B", contact: "9999999999",
+    families: [{ type: "Residential", occupied: true, members: [
+      { name: "A", gender: "Male", age: 40, relation: "Self" }
+    ]}]
+  };
+}
 
 /* ---------------- missingFields ---------------- */
 
 test("missingFields: complete resident record has no gaps", () => {
-  const r = { ownerName: "A", fatherHusbandName: "B", contact: "999" };
-  assert.deepEqual(missingFields(r), []);
+  assert.deepEqual(missingFields(completeResidentRecord()), []);
 });
 
-test("missingFields: resident reports the resident-specific fields", () => {
+test("missingFields: resident reports the resident-specific fields plus no units", () => {
   assert.deepEqual(missingFields({}), [
-    "Owner name", "Father/Husband name", "Phone number"
+    "Owner name", "Father/Husband name", "Phone number", "At least one unit"
   ]);
 });
 
@@ -37,53 +47,107 @@ test("missingFields: complete institution has no gaps", () => {
   const r = {
     isInstitution: true,
     organizationName: "Org", contactPerson: "P",
-    designation: "Head", contact: "999"
+    designation: "Head", contact: "999",
+    families: [{ type: "Commercial", occupied: true, label: "Shop" }]
   };
   assert.deepEqual(missingFields(r), []);
 });
 
 test("missingFields: institution uses the institution field set, not the resident one", () => {
   assert.deepEqual(missingFields({ isInstitution: true }), [
-    "Organization name", "Contact person", "Designation", "Phone number"
+    "Organization name", "Contact person", "Designation", "Phone number", "At least one unit"
   ]);
 });
 
 test("missingFields: reports only the genuinely missing fields", () => {
-  const r = { ownerName: "A", contact: "" };
+  const r = { ...completeResidentRecord(), fatherHusbandName: "", contact: "" };
   assert.deepEqual(missingFields(r), ["Father/Husband name", "Phone number"]);
 });
 
-/* ---------------- isRecordAbsent ---------------- */
-
-test("isRecordAbsent: trusts the stored boolean flag (true)", () => {
-  assert.equal(isRecordAbsent({ isAbsent: true, ownerName: "A" }), true);
+test("missingFields: flags an occupied unit with an incomplete member", () => {
+  const r = { ...completeResidentRecord(), families: [
+    { type: "Residential", occupied: true, members: [{ name: "", gender: "", age: "", relation: "Self" }] }
+  ]};
+  assert.deepEqual(missingFields(r), ["Family member details"]);
 });
 
-test("isRecordAbsent: trusts the stored boolean flag (false)", () => {
-  assert.equal(isRecordAbsent({ isAbsent: false }), false);
+test("missingFields: flags a non-residential unit with no label", () => {
+  const r = { ...completeResidentRecord(), families: [
+    { type: "Commercial", occupied: true, label: "" }
+  ]};
+  assert.deepEqual(missingFields(r), ["Unit name/label"]);
 });
 
-test("isRecordAbsent: legacy institution without the flag is never absent", () => {
-  assert.equal(isRecordAbsent({ isInstitution: true }), false);
+/* ---------------- isRecordAbsent / computeIsAbsent ---------------- */
+
+test("isRecordAbsent: derives live from the data, ignoring any stored flag", () => {
+  // A stale/incorrect stored isAbsent must not be trusted — the live data wins either way.
+  assert.equal(isRecordAbsent({ ...completeResidentRecord(), isAbsent: true }), false);
+  assert.equal(isRecordAbsent({ isAbsent: false }), true);
 });
 
-test("isRecordAbsent: legacy resident without the flag is absent when no owner name", () => {
+test("isRecordAbsent: institution missing any of its fields is absent", () => {
+  assert.equal(isRecordAbsent({ isInstitution: true }), true);
+});
+
+test("isRecordAbsent: resident with no owner name is absent", () => {
   assert.equal(isRecordAbsent({}), true);
-  assert.equal(isRecordAbsent({ ownerName: "A" }), false);
+  assert.equal(isRecordAbsent(completeResidentRecord()), false);
+});
+
+test("isRecordAbsent: a record with zero units is always absent", () => {
+  const r = { ownerName: "A", fatherHusbandName: "B", contact: "999", families: [] };
+  assert.equal(isRecordAbsent(r), true);
+});
+
+test("isRecordAbsent: an occupied residential unit with zero members is absent", () => {
+  const r = { ...completeResidentRecord(), families: [
+    { type: "Residential", occupied: true, members: [] }
+  ]};
+  assert.equal(isRecordAbsent(r), true);
+});
+
+test("isRecordAbsent: a vacant unit needs no members and doesn't make the record absent", () => {
+  const r = { ...completeResidentRecord() };
+  r.families.push({ type: "Residential", occupied: false, members: [] });
+  assert.equal(isRecordAbsent(r), false);
+});
+
+test("isRecordAbsent: an occupied non-residential unit needs a label", () => {
+  const r = { ownerName: "A", fatherHusbandName: "B", contact: "999", families: [
+    { type: "Commercial", occupied: true, label: "" }
+  ]};
+  assert.equal(isRecordAbsent(r), true);
+  r.families[0].label = "Corner shop";
+  assert.equal(isRecordAbsent(r), false);
+});
+
+/* ---------------- familyMembersIncomplete ---------------- */
+
+test("familyMembersIncomplete: non-residential units are never checked for members", () => {
+  assert.equal(familyMembersIncomplete([{ type: "Commercial", occupied: true, members: [] }]), false);
+});
+
+test("familyMembersIncomplete: an occupied residential unit with zero members is incomplete", () => {
+  assert.equal(familyMembersIncomplete([{ type: "Residential", occupied: true, members: [] }]), true);
+});
+
+test("familyMembersIncomplete: a vacant residential unit is skipped regardless of members", () => {
+  assert.equal(familyMembersIncomplete([{ type: "Residential", occupied: false, members: [] }]), false);
 });
 
 /* ---------------- needsFollowUp ---------------- */
 
 test("needsFollowUp: a complete present record needs nothing", () => {
-  assert.equal(needsFollowUp({ isAbsent: false, needsCorrection: false }), false);
+  assert.equal(needsFollowUp({ ...completeResidentRecord(), needsCorrection: false }), false);
 });
 
-test("needsFollowUp: absent records need follow-up", () => {
-  assert.equal(needsFollowUp({ isAbsent: true }), true);
+test("needsFollowUp: an incomplete record needs follow-up", () => {
+  assert.equal(needsFollowUp({}), true);
 });
 
-test("needsFollowUp: admin-flagged corrections need follow-up even if present", () => {
-  assert.equal(needsFollowUp({ isAbsent: false, needsCorrection: true }), true);
+test("needsFollowUp: admin-flagged corrections need follow-up even if otherwise complete", () => {
+  assert.equal(needsFollowUp({ ...completeResidentRecord(), needsCorrection: true }), true);
 });
 
 /* ---------------- householdStats ---------------- */
