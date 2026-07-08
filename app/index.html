@@ -112,8 +112,9 @@
         .auth-tab.active{background:var(--primary);color:white}
 
         /* HEADER */
-        .header{background:var(--primary);color:white;padding:14px 18px;border-radius:var(--radius-lg);margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 4px 12px rgba(0,0,0,0.15);gap:12px;border-bottom:2px solid rgba(255,255,255,0.1)}
-        .header-left{flex:1}
+        .header{background:var(--primary);color:white;padding:14px 18px;border-radius:var(--radius-lg);margin-bottom:16px;display:flex;flex-direction:column;gap:12px;box-shadow:0 4px 12px rgba(0,0,0,0.15);border-bottom:2px solid rgba(255,255,255,0.1)}
+        .header-row{display:flex;justify-content:space-between;align-items:center;gap:12px}
+        .header-left{display:flex;align-items:center}
         .header-left h1{font-size:17px;font-weight:700;letter-spacing:-0.3px;line-height:1.2}
         .header-left p{font-size:12px;opacity:0.85;margin-top:3px;font-weight:500}
         .header-right{display:flex;flex-direction:row;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
@@ -273,8 +274,13 @@
         .gender-card-pct{font-size:11px;color:var(--text2);margin-top:2px}
 
         /* ADMIN */
-        .admin-header{background:var(--primary-dark);color:white;padding:10px 16px;border-radius:var(--radius-lg);margin-bottom:14px;box-shadow:var(--shadow-md)}
-        .admin-badge{background:rgba(255,215,0,0.3);border:1px solid rgba(255,215,0,0.5);padding:2px 10px;border-radius:10px;font-size:11px;font-weight:600;color:#ffd700;display:inline-block}
+        #adminView .header{background:var(--primary-dark)}
+        .admin-badge{background:rgba(255,215,0,0.3);border:1px solid rgba(255,215,0,0.5);padding:2px 10px;border-radius:10px;font-size:11px;font-weight:600;color:#ffd700;display:inline-block;cursor:pointer;transition:all 0.2s ease}
+        .admin-badge:hover{background:rgba(255,215,0,0.4);border-color:rgba(255,215,0,0.7)}
+        .field-worker-badge{background:rgba(58,110,165,0.3);border:1px solid rgba(58,110,165,0.5);padding:2px 10px;border-radius:10px;font-size:11px;font-weight:600;color:#3a6ea5;display:inline-block;cursor:pointer;transition:all 0.2s ease}
+        .field-worker-badge:hover{background:rgba(58,110,165,0.4);border-color:rgba(58,110,165,0.7)}
+        .supervisor-badge{background:rgba(123,91,198,0.3);border:1px solid rgba(123,91,198,0.5);padding:2px 10px;border-radius:10px;font-size:11px;font-weight:600;color:#7b5bc6;display:inline-block;cursor:pointer;transition:all 0.2s ease}
+        .supervisor-badge:hover{background:rgba(123,91,198,0.4);border-color:rgba(123,91,198,0.7)}
         .worker-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px}
         #workersList,#supervisorsList{display:grid;grid-template-columns:1fr;gap:10px}
         @media(min-width:620px){#workersList,#supervisorsList{grid-template-columns:1fr 1fr}}
@@ -452,12 +458,16 @@ setTimeout(function() {
     <!-- WORKER VIEW -->
     <div id="workerView" class="hidden">
         <div class="header">
-            <div class="header-left">
-                <h1>🏘️ NSN VC Field Survey</h1>
+            <div class="header-row">
+                <div class="header-left">
+                    <h1>🏘️ NSN VC Field Survey</h1>
+                </div>
+                <div class="header-right">
+                    <span class="field-worker-badge" id="workerRoleBadge" onclick="openWorkerProfile()" style="cursor:pointer">👤 Field Worker</span>
+                </div>
             </div>
-            <div class="header-right">
+            <div class="header-row">
                 <button class="btn-theme-toggle" id="themeToggle" title="Toggle dark mode" onclick="toggleTheme()"><span class="theme-icon">🌙</span></button>
-                <span class="user-badge" id="userNameBadge" onclick="openWorkerProfile()" style="cursor:pointer">👤</span>
                 <button class="btn-logout" onclick="logoutUser()">Logout</button>
             </div>
         </div>
@@ -695,17 +705,18 @@ setTimeout(function() {
 
     <!-- ADMIN VIEW -->
     <div id="adminView" class="hidden">
-        <div class="admin-header">
-            <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
-                <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-                    <div class="admin-badge" id="adminRoleBadge">👑 ADMIN</div>
-                    <h1 style="font-size:15px;font-weight:600;margin:0">🏘️ Admin Dashboard</h1>
+        <div class="header">
+            <div class="header-row">
+                <div class="header-left">
+                    <h1>🏘️ NSN VC Field Survey</h1>
                 </div>
-                <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-                    <button class="btn-theme-toggle" id="adminThemeToggle" title="Toggle dark mode" onclick="toggleTheme()"><span class="theme-icon">🌙</span></button>
-                    <span class="user-badge" id="adminNameBadge" onclick="openAdminProfile()" style="cursor:pointer">⚙️ Profile</span>
-                    <button class="btn-logout" onclick="logoutUser()">Logout</button>
+                <div class="header-right">
+                    <div class="admin-badge" id="adminRoleBadge" onclick="openAdminProfile()" style="cursor:pointer">👑 ADMIN</div>
                 </div>
+            </div>
+            <div class="header-row">
+                <button class="btn-theme-toggle" id="adminThemeToggle" title="Toggle dark mode" onclick="toggleTheme()"><span class="theme-icon">🌙</span></button>
+                <button class="btn-logout" onclick="logoutUser()">Logout</button>
             </div>
         </div>
         <nav class="bottomnav">
@@ -1477,10 +1488,9 @@ auth.onAuthStateChanged(async user => {
         document.getElementById('mainApp').classList.remove('hidden');
         if (isAdmin || isSupervisor) {
             document.getElementById('adminView').classList.remove('hidden');
-            const roleName = isSupervisor ? 'Supervisor' : 'Admin';
-            const adminName = profile?.name || roleName;
-            document.getElementById('adminNameBadge').textContent = (isSupervisor ? '🔎 ' : '⚙️ ') + adminName;
-            document.getElementById('adminRoleBadge').textContent = isSupervisor ? '🔎 SUPERVISOR' : '👑 ADMIN';
+            const roleBadge = document.getElementById('adminRoleBadge');
+            roleBadge.textContent = isSupervisor ? '🔎 SUPERVISOR' : '👑 ADMIN';
+            roleBadge.className = isSupervisor ? 'supervisor-badge' : 'admin-badge';
             if (isSupervisor) {
                 document.querySelectorAll('.admin-only-tab').forEach(b => b.classList.add('hidden'));
                 loadAdminData();
@@ -1509,7 +1519,6 @@ auth.onAuthStateChanged(async user => {
             }
             myProfile = profile;
             checkFailedSaves();
-            document.getElementById('userNameBadge').textContent = '👤 ' + (profile?.name || user.email);
             // Live-listen for range/profile changes from admin - TIER 2: Fixed memory leak
             if (unsubscribers.userProfile) unsubscribers.userProfile();
             unsubscribers.userProfile = db.collection('users').doc(user.uid).onSnapshot(d => {
@@ -1723,7 +1732,6 @@ async function saveWorkerProfile() {
     if (phone && !/^[0-9]{10}$/.test(phone)) { box.innerHTML = '<div class="alert alert-error">Phone must be 10 digits</div>'; return; }
     try {
         await db.collection('users').doc(currentUser.uid).update({ name, phone });
-        document.getElementById('userNameBadge').textContent = '👤 ' + name;
         box.innerHTML = '<div class="alert alert-success">✓ Details saved!</div>';
         setTimeout(()=>{ document.getElementById('workerProfileModal').classList.remove('active'); }, 1500);
     } catch(e) { box.innerHTML = `<div class="alert alert-error">${e.message}</div>`; }
@@ -1745,7 +1753,6 @@ async function saveAdminProfile() {
         // Preserve the caller's actual role — this modal is shared by admin and supervisor,
         // and hardcoding 'admin' here would silently demote a supervisor saving their name.
         await db.collection('users').doc(currentUser.uid).set({ name, email: currentUser.email, role: isSupervisor ? 'supervisor' : 'admin' }, { merge:true });
-        document.getElementById('adminNameBadge').textContent = (isSupervisor ? '🔎 ' : '⚙️ ') + name;
         box.innerHTML = '<div class="alert alert-success">✓ Saved!</div>';
         setTimeout(()=>{ document.getElementById('adminProfileModal').classList.remove('active'); }, 1500);
     } catch(e) { box.innerHTML = `<div class="alert alert-error">${e.message}</div>`; }
