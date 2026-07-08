@@ -454,7 +454,6 @@ setTimeout(function() {
         <div class="header">
             <div class="header-left">
                 <h1>🏘️ NSN VC Field Survey</h1>
-                <p id="vcNameDisplay">📍 New Serchhip North</p>
             </div>
             <div class="header-right">
                 <button class="btn-theme-toggle" id="themeToggle" title="Toggle dark mode" onclick="toggleTheme()"><span class="theme-icon">🌙</span></button>
@@ -701,7 +700,6 @@ setTimeout(function() {
                 <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
                     <div class="admin-badge" id="adminRoleBadge">👑 ADMIN</div>
                     <h1 style="font-size:15px;font-weight:600;margin:0">🏘️ Admin Dashboard</h1>
-                    <p style="font-size:11px;opacity:0.9;margin:0">📍 New Serchhip North</p>
                 </div>
                 <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
                     <button class="btn-theme-toggle" id="adminThemeToggle" title="Toggle dark mode" onclick="toggleTheme()"><span class="theme-icon">🌙</span></button>
@@ -2871,7 +2869,7 @@ function stampAndStorePhoto(canvas, ctx, statusText) {
     const gpsText = (lat && lng) ? `${parseFloat(lat).toFixed(5)}, ${parseFloat(lng).toFixed(5)}` : 'GPS not captured';
     const dateText = photoCaptureDateText || (new Date()).toLocaleDateString();
 
-    const lines = [ propId, '📍 ' + gpsText, '🕒 ' + dateText, 'New Serchhip North' ];
+    const lines = [ propId, '📍 ' + gpsText, '🕒 ' + dateText ];
 
     const fontSize = Math.max(13, Math.round(w/40));
     const lineH = fontSize + 6;
