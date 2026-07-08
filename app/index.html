@@ -261,16 +261,8 @@
 
         /* NESTED BOX (population/children/households) */
         .nest-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;box-shadow:var(--shadow)}
-        .nest-hero{display:flex;flex-direction:column;align-items:center;gap:2px;margin-bottom:12px}
-        .nest-hero-label{font-size:12px;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;font-weight:600}
+        .nest-hero{display:flex;flex-direction:column;align-items:center;gap:2px;margin-bottom:4px}
         .nest-hero-num{font-size:32px;font-weight:800;color:var(--primary);line-height:1}
-        .gender-split{display:flex;gap:8px}
-        .gender-card{flex:1;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;text-align:center}
-        .gender-card.m{border-top:3px solid var(--primary)}
-        .gender-card.f{border-top:3px solid var(--primary-lighter)}
-        .gender-card-label{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px}
-        .gender-card-value{font-size:22px;font-weight:700;color:var(--text);line-height:1}
-        .gender-card-pct{font-size:11px;color:var(--text2);margin-top:2px}
 
         /* ADMIN */
         #adminView .header{background:var(--primary-dark)}
@@ -647,7 +639,6 @@ setTimeout(function() {
                 <div class="nest-box">
                     <div class="section-title">👨‍👩‍👧‍👦 Population</div>
                     <div class="nest-hero">
-                        <span class="nest-hero-label">Total Population</span>
                         <span class="nest-hero-num" id="myPopulation">0</span>
                     </div>
                     <div id="myPopGender" style="font-size:12px;color:var(--text2);text-align:center;margin-top:2px"></div>
@@ -655,7 +646,6 @@ setTimeout(function() {
                 <div class="nest-box">
                     <div class="section-title">🧒 Children</div>
                     <div class="nest-hero">
-                        <span class="nest-hero-label">No of Children</span>
                         <span class="nest-hero-num" id="myChildren">0</span>
                     </div>
                     <div id="myChildGender" style="font-size:12px;color:var(--text2);text-align:center;margin-top:2px"></div>
@@ -663,21 +653,16 @@ setTimeout(function() {
                 <div class="nest-box">
                     <div class="section-title">🏠 Households</div>
                     <div class="nest-hero">
-                        <span class="nest-hero-label">Total No. of Household</span>
                         <span class="nest-hero-num" id="myFamilies">0</span>
                     </div>
+                    <div id="myFamilySizes" style="font-size:12px;color:var(--text2);text-align:center;margin-top:4px"></div>
                 </div>
                 <div class="nest-box">
-                    <div class="section-title">🏗️ Building Types</div>
-                    <div id="myBuildingBreakdown"></div>
-                </div>
-                <div class="nest-box">
-                    <div class="section-title">🪪 Owner Types</div>
-                    <div id="myOwnerBreakdown"></div>
-                </div>
-                <div class="nest-box">
-                    <div class="section-title">🏠 Property Types</div>
-                    <div id="myPropertyBreakdown"></div>
+                    <div class="section-title">🏠 Property</div>
+                    <div class="nest-hero">
+                        <span class="nest-hero-num" id="myPropertyCount">0</span>
+                    </div>
+                    <div id="myBuildingBreakdown" style="margin-top:8px"></div>
                 </div>
             </div>
             <div class="info-box" style="margin-top:4px">
@@ -757,7 +742,6 @@ setTimeout(function() {
                 <div class="nest-box">
                     <div class="section-title">👨‍👩‍👧‍👦 Population</div>
                     <div class="nest-hero">
-                        <span class="nest-hero-label">Total Population</span>
                         <span class="nest-hero-num" id="adminPopulation">0</span>
                     </div>
                     <div id="adminPopGender" style="font-size:12px;color:var(--text2);text-align:center;margin-top:2px"></div>
@@ -765,7 +749,6 @@ setTimeout(function() {
                 <div class="nest-box">
                     <div class="section-title">🧒 Children</div>
                     <div class="nest-hero">
-                        <span class="nest-hero-label">No of Children</span>
                         <span class="nest-hero-num" id="adminChildren">0</span>
                     </div>
                     <div id="adminChildGender" style="font-size:12px;color:var(--text2);text-align:center;margin-top:2px"></div>
@@ -773,21 +756,16 @@ setTimeout(function() {
                 <div class="nest-box">
                     <div class="section-title">🏠 Households</div>
                     <div class="nest-hero">
-                        <span class="nest-hero-label">Total No. of Household</span>
                         <span class="nest-hero-num" id="adminFamilies">0</span>
                     </div>
+                    <div id="adminFamilySizes" style="font-size:12px;color:var(--text2);text-align:center;margin-top:4px"></div>
                 </div>
                 <div class="nest-box">
-                    <div class="section-title">🏗️ Building Types</div>
-                    <div id="adminBuildingBreakdown"></div>
-                </div>
-                <div class="nest-box">
-                    <div class="section-title">🪪 Owner Types</div>
-                    <div id="adminOwnerBreakdown"></div>
-                </div>
-                <div class="nest-box">
-                    <div class="section-title">🏠 Property Types</div>
-                    <div id="adminPropertyBreakdown"></div>
+                    <div class="section-title">🏠 Property</div>
+                    <div class="nest-hero">
+                        <span class="nest-hero-num" id="adminPropertyCount">0</span>
+                    </div>
+                    <div id="adminBuildingBreakdown" style="margin-top:8px"></div>
                 </div>
             </div>
         </div>
@@ -3006,8 +2984,7 @@ function renderMyRecords(records) {
     const myCompletionRate = document.getElementById('myCompletionRate');
     const myProgressBar = document.getElementById('myProgressBar');
     const myBuildingEl = document.getElementById('myBuildingBreakdown');
-    const myPropertyEl = document.getElementById('myPropertyBreakdown');
-    const myOwnerEl = document.getElementById('myOwnerBreakdown');
+    const myPropertyCount = document.getElementById('myPropertyCount');
     const list = document.getElementById('myRecordsList');
     const seeMoreBtn = document.getElementById('myRecordsSeeMore');
     const empty = document.getElementById('myRecordsEmpty');
@@ -3028,16 +3005,7 @@ function renderMyRecords(records) {
     const bc = {};
     completed.forEach(r => { bc[r.buildingType] = (bc[r.buildingType]||0)+1; });
     if (myBuildingEl) myBuildingEl.innerHTML = tagList(bc, 'No records yet');
-
-    // Property type breakdown (completed only)
-    const pc = {};
-    completed.forEach(r => { pc[r.propertyType] = (pc[r.propertyType]||0)+1; });
-    if (myPropertyEl) myPropertyEl.innerHTML = tagList(pc, 'No records yet');
-
-    // Owner type breakdown (completed only)
-    const oc = {};
-    completed.forEach(r => { const k = r.ownerCategory||'Individual'; oc[k] = (oc[k]||0)+1; });
-    if (myOwnerEl) myOwnerEl.innerHTML = tagList(oc, 'No records yet');
+    if (myPropertyCount) myPropertyCount.textContent = completed.length;
 
     // Population & households for this worker's completed records
     renderPopHouseholds('my', completed);
@@ -3153,8 +3121,9 @@ function renderPopHouseholds(prefix, records) {
         a.females += s.females;
         a.childMales += s.childMales;
         a.childFemales += s.childFemales;
+        if (s.familySizes) for (const sz of s.familySizes) a.familySizes.push(sz);
         return a;
-    }, {families:0,population:0,children:0,males:0,females:0,childMales:0,childFemales:0});
+    }, {families:0,population:0,children:0,males:0,females:0,childMales:0,childFemales:0,familySizes:[]});
     const set = (id,v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
     const hset = (id,v) => { const e = document.getElementById(id); if (e) e.innerHTML = v; };
     set(prefix+'Families', hh.families);
@@ -3162,6 +3131,21 @@ function renderPopHouseholds(prefix, records) {
     set(prefix+'Children', hh.children);
     hset(prefix+'PopGender', `♂ ${hh.males} &nbsp;|&nbsp; ♀ ${hh.females}`);
     hset(prefix+'ChildGender', `♂ ${hh.childMales} &nbsp;|&nbsp; ♀ ${hh.childFemales}`);
+    // Family size tags
+    const freq = {};
+    hh.familySizes.forEach(n => { freq[n] = (freq[n] || 0) + 1; });
+    const categories = [
+        { label: 'Small', min: 1, max: 3 },
+        { label: 'Medium', min: 4, max: 6 },
+        { label: 'Large', min: 7, max: 9 },
+        { label: 'Very Large', min: 10, max: Infinity }
+    ];
+    const parts = [];
+    categories.forEach(cat => {
+        const total = Object.keys(freq).map(Number).filter(n => n >= cat.min && n <= cat.max).reduce((s,n)=>s+freq[n],0);
+        if (total) parts.push(`${cat.label} (${cat.min}-${cat.max===Infinity?'+':cat.max}): ${total}`);
+    });
+    hset(prefix+'FamilySizes', parts.join(' &nbsp;|&nbsp; ') || 'No data');
 }
 
 function recordCard(r, context) {
@@ -3603,11 +3587,10 @@ function renderAdminOverview() {
     document.getElementById('correctionsList').innerHTML = correctionsList || '<div style="padding:8px 0;color:var(--text2)">No pending corrections</div>';
     document.getElementById('correctionsCard').classList.toggle('warning', totalPending > 0);
 
-    const bc={}, pc={}, oc={};
-    completed.forEach(r=>{ bc[r.buildingType]=(bc[r.buildingType]||0)+1; pc[r.propertyType]=(pc[r.propertyType]||0)+1; const ok=r.ownerCategory||'Individual'; oc[ok]=(oc[ok]||0)+1; });
+    const bc={};
+    completed.forEach(r=>{ bc[r.buildingType]=(bc[r.buildingType]||0)+1; });
     document.getElementById('adminBuildingBreakdown').innerHTML = tagList(bc, 'No data');
-    document.getElementById('adminPropertyBreakdown').innerHTML = tagList(pc, 'No data');
-    document.getElementById('adminOwnerBreakdown').innerHTML = tagList(oc, 'No data');
+    document.getElementById('adminPropertyCount').textContent = completed.length;
 
     renderPopHouseholds('admin', completed);
 
