@@ -211,7 +211,8 @@
         .location-status.error{background:#ffebee;color:#cb2431;border-color:#ea4c89}
 
         /* RECORDS */
-        .records-list{display:flex;flex-direction:column;gap:10px}
+        .records-list{display:grid;grid-template-columns:1fr;gap:10px}
+        @media(min-width:620px){.records-list{grid-template-columns:1fr 1fr}}
         .record-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px;box-shadow:var(--shadow)}
         .record-card.absent{border-left:4px solid var(--warning)}
         .record-card.complete{border-left:4px solid var(--success)}
@@ -227,6 +228,7 @@
 
         /* STATS */
         .stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+        .nest-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-bottom:14px}
         .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;text-align:center;box-shadow:var(--shadow)}
         .stat-value{font-size:26px;font-weight:700;color:var(--primary);line-height:1}
         .stat-label{font-size:11px;color:var(--text2);margin-top:4px;text-transform:uppercase;letter-spacing:0.5px}
@@ -242,7 +244,6 @@
         .progress-fill{height:100%;background:var(--primary);transition:width 0.3s ease}
 
         /* WEEKLY CHART */
-        #weeklyChart{display:flex;gap:4px;height:40px;align-items:flex-end}
         .chart-bar{flex:1;background:var(--primary);border-radius:3px;position:relative;transition:background 0.2s}
         .chart-bar:hover{background:var(--primary-dark)}
         .chart-bar-label{font-size:10px;text-align:center;margin-top:4px;color:var(--text2)}
@@ -258,7 +259,7 @@
         .bar-row .bar-pct{font-size:11px;color:var(--text2);min-width:36px;text-align:right;font-weight:500}
 
         /* NESTED BOX (population/children/households) */
-        .nest-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;box-shadow:var(--shadow);margin-bottom:12px}
+        .nest-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;box-shadow:var(--shadow)}
         .nest-hero{display:flex;flex-direction:column;align-items:center;gap:2px;margin-bottom:12px}
         .nest-hero-label{font-size:12px;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;font-weight:600}
         .nest-hero-num{font-size:32px;font-weight:800;color:var(--primary);line-height:1}
@@ -273,7 +274,9 @@
         /* ADMIN */
         .admin-header{position:sticky;top:6px;z-index:60;background:var(--primary-dark);color:white;padding:10px 16px;border-radius:var(--radius-lg);margin-bottom:14px;box-shadow:var(--shadow-md)}
         .admin-badge{background:rgba(255,215,0,0.3);border:1px solid rgba(255,215,0,0.5);padding:2px 10px;border-radius:10px;font-size:11px;font-weight:600;color:#ffd700;display:inline-block}
-        .worker-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:10px}
+        .worker-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px}
+        #workersList,#supervisorsList{display:grid;grid-template-columns:1fr;gap:10px}
+        @media(min-width:620px){#workersList,#supervisorsList{grid-template-columns:1fr 1fr}}
         .worker-name{font-weight:600;font-size:15px;color:var(--primary)}
         .worker-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-top:8px}
         .worker-stat{text-align:center;background:var(--bg);border-radius:6px;padding:8px}
@@ -611,41 +614,50 @@ setTimeout(function() {
                 <div class="stat-card"><div class="stat-value" id="myTodayTotal">0</div><div class="stat-label">Today Total</div></div>
                 <div class="stat-card warning"><div class="stat-value" id="myTodayIncomplete">0</div><div class="stat-label">Today Incomplete</div></div>
             </div>
-            <div class="nest-box">
-                <div class="section-title">👨‍👩‍👧‍👦 Population</div>
-                <div class="nest-hero">
-                    <span class="nest-hero-label">Total Population</span>
-                    <span class="nest-hero-num" id="myPopulation">0</span>
+            <div class="stat-card" style="margin-bottom:12px">
+                <div style="display:flex;align-items:center;gap:12px">
+                    <div class="stat-label" style="margin:0;white-space:nowrap">📊 Completion Rate</div>
+                    <div class="progress-bar" style="flex:1;margin:0"><div class="progress-fill" id="myProgressBar" style="width:0%"></div></div>
+                    <div class="stat-value" id="myCompletionRate" style="font-size:16px;white-space:nowrap">0%</div>
                 </div>
-                <div id="myPopGender"></div>
             </div>
-            <div class="nest-box">
-                <div class="section-title">🧒 Children</div>
-                <div class="nest-hero">
-                    <span class="nest-hero-label">No of Children</span>
-                    <span class="nest-hero-num" id="myChildren">0</span>
+            <div class="nest-grid">
+                <div class="nest-box">
+                    <div class="section-title">👨‍👩‍👧‍👦 Population</div>
+                    <div class="nest-hero">
+                        <span class="nest-hero-label">Total Population</span>
+                        <span class="nest-hero-num" id="myPopulation">0</span>
+                    </div>
+                    <div id="myPopGender"></div>
                 </div>
-                <div id="myChildGender"></div>
-            </div>
-            <div class="nest-box">
-                <div class="section-title">🏠 Households</div>
-                <div class="nest-hero">
-                    <span class="nest-hero-label">Total No. of Household</span>
-                    <span class="nest-hero-num" id="myFamilies">0</span>
+                <div class="nest-box">
+                    <div class="section-title">🧒 Children</div>
+                    <div class="nest-hero">
+                        <span class="nest-hero-label">No of Children</span>
+                        <span class="nest-hero-num" id="myChildren">0</span>
+                    </div>
+                    <div id="myChildGender"></div>
                 </div>
-                <div id="myFamilySizes"></div>
-            </div>
-            <div class="nest-box">
-                <div class="section-title">🏗️ Building Types</div>
-                <div id="myBuildingBreakdown"></div>
-            </div>
-            <div class="nest-box">
-                <div class="section-title">🪪 Owner Types</div>
-                <div id="myOwnerBreakdown"></div>
-            </div>
-            <div class="nest-box">
-                <div class="section-title">🏠 Property Types</div>
-                <div id="myPropertyBreakdown"></div>
+                <div class="nest-box">
+                    <div class="section-title">🏠 Households</div>
+                    <div class="nest-hero">
+                        <span class="nest-hero-label">Total No. of Household</span>
+                        <span class="nest-hero-num" id="myFamilies">0</span>
+                    </div>
+                    <div id="myFamilySizes"></div>
+                </div>
+                <div class="nest-box">
+                    <div class="section-title">🏗️ Building Types</div>
+                    <div id="myBuildingBreakdown"></div>
+                </div>
+                <div class="nest-box">
+                    <div class="section-title">🪪 Owner Types</div>
+                    <div id="myOwnerBreakdown"></div>
+                </div>
+                <div class="nest-box">
+                    <div class="section-title">🏠 Property Types</div>
+                    <div id="myPropertyBreakdown"></div>
+                </div>
             </div>
             <div class="info-box" style="margin-top:4px">
                 💡 Records still needing details are in the <b>Follow Up</b> tab. Your <b>Complete</b> count is your finished work.
@@ -702,62 +714,60 @@ setTimeout(function() {
                 <div class="stat-card"><div class="stat-value" id="adminTodayTotal">0</div><div class="stat-label">Today Total</div></div>
                 <div class="stat-card warning"><div class="stat-value" id="adminTodayIncomplete">0</div><div class="stat-label">Today Incomplete</div></div>
             </div>
-            <div class="stat-card" style="margin-bottom:14px">
-                <div class="stat-label">📊 Completion Rate</div>
-                <div class="progress-bar"><div class="progress-fill" id="progressBar" style="width:0%"></div></div>
-                <div class="stat-value" id="completionRate">0%</div>
-            </div>
-            <div class="stat-card warning" style="margin-bottom:14px" id="correctionsCard">
-                <div class="stat-label">⚠️ Pending Corrections</div>
-                <div id="correctionsList" style="font-size:13px;color:var(--text);margin-top:8px;text-align:left"></div>
-            </div>
-            <div class="stat-card" style="margin-bottom:14px">
-                <div class="section-title" style="margin-bottom:8px">📈 This Week's Activity</div>
-                <div id="weeklyChart"></div>
-            </div>
-            <div class="stat-card" style="margin-bottom:14px">
-                <div class="section-title" style="margin-bottom:8px">🏘️ Properties by Type</div>
-                <div id="propertyTypeList" style="font-size:12px;text-align:left"></div>
-            </div>
-            <div class="nest-box">
-                <div class="section-title">👨‍👩‍👧‍👦 Population</div>
-                <div class="nest-hero">
-                    <span class="nest-hero-label">Total Population</span>
-                    <span class="nest-hero-num" id="adminPopulation">0</span>
+            <div class="stat-card" style="margin-bottom:8px">
+                <div style="display:flex;align-items:center;gap:12px">
+                    <div class="stat-label" style="margin:0;white-space:nowrap">📊 Completion Rate</div>
+                    <div class="progress-bar" style="flex:1;margin:0"><div class="progress-fill" id="progressBar" style="width:0%"></div></div>
+                    <div class="stat-value" id="completionRate" style="font-size:16px;white-space:nowrap">0%</div>
                 </div>
-                <div id="adminPopGender"></div>
             </div>
-            <div class="nest-box">
-                <div class="section-title">🧒 Children</div>
-                <div class="nest-hero">
-                    <span class="nest-hero-label">No of Children</span>
-                    <span class="nest-hero-num" id="adminChildren">0</span>
+            <div class="stats-grid" style="margin-bottom:8px">
+                <div class="stat-card warning" id="correctionsCard">
+                    <div class="stat-label">⚠️ Pending Corrections</div>
+                    <div id="correctionsList" style="font-size:13px;color:var(--text);margin-top:8px;text-align:left"></div>
                 </div>
-                <div id="adminChildGender"></div>
-            </div>
-            <div class="nest-box">
-                <div class="section-title">🏠 Households</div>
-                <div class="nest-hero">
-                    <span class="nest-hero-label">Total No. of Household</span>
-                    <span class="nest-hero-num" id="adminFamilies">0</span>
+                <div class="stat-card" id="cardWorkerActivity">
+                    <div class="stat-label">👥 Worker Activity Today</div>
+                    <div id="adminWorkerToday" style="font-size:13px;color:var(--text2);margin-top:8px"></div>
                 </div>
-                <div id="adminFamilySizes"></div>
             </div>
-            <div class="nest-box">
-                <div class="section-title">🏗️ Building Types</div>
-                <div id="adminBuildingBreakdown"></div>
-            </div>
-            <div class="nest-box">
-                <div class="section-title">🪪 Owner Types</div>
-                <div id="adminOwnerBreakdown"></div>
-            </div>
-            <div class="nest-box">
-                <div class="section-title">🏠 Property Types</div>
-                <div id="adminPropertyBreakdown"></div>
-            </div>
-            <div class="nest-box" id="cardWorkerActivity">
-                <div class="section-title">👥 Worker Activity Today</div>
-                <div id="adminWorkerToday" style="font-size:13px;color:var(--text2)"></div>
+            <div class="nest-grid">
+                <div class="nest-box">
+                    <div class="section-title">👨‍👩‍👧‍👦 Population</div>
+                    <div class="nest-hero">
+                        <span class="nest-hero-label">Total Population</span>
+                        <span class="nest-hero-num" id="adminPopulation">0</span>
+                    </div>
+                    <div id="adminPopGender"></div>
+                </div>
+                <div class="nest-box">
+                    <div class="section-title">🧒 Children</div>
+                    <div class="nest-hero">
+                        <span class="nest-hero-label">No of Children</span>
+                        <span class="nest-hero-num" id="adminChildren">0</span>
+                    </div>
+                    <div id="adminChildGender"></div>
+                </div>
+                <div class="nest-box">
+                    <div class="section-title">🏠 Households</div>
+                    <div class="nest-hero">
+                        <span class="nest-hero-label">Total No. of Household</span>
+                        <span class="nest-hero-num" id="adminFamilies">0</span>
+                    </div>
+                    <div id="adminFamilySizes"></div>
+                </div>
+                <div class="nest-box">
+                    <div class="section-title">🏗️ Building Types</div>
+                    <div id="adminBuildingBreakdown"></div>
+                </div>
+                <div class="nest-box">
+                    <div class="section-title">🪪 Owner Types</div>
+                    <div id="adminOwnerBreakdown"></div>
+                </div>
+                <div class="nest-box">
+                    <div class="section-title">🏠 Property Types</div>
+                    <div id="adminPropertyBreakdown"></div>
+                </div>
             </div>
         </div>
 
@@ -775,6 +785,13 @@ setTimeout(function() {
                     <option value="Religious">Religious</option>
                     <option value="NGO">NGO</option>
                     <option value="Government">Government</option>
+                </select>
+                <select id="filterPropertyType" onchange="filterRecords()">
+                    <option value="">All Property Types</option>
+                    <option value="Residential">Residential</option>
+                    <option value="Commercial">Commercial</option>
+                    <option value="Institutional/Public">Institutional/Public</option>
+                    <option value="Mixed Use">Mixed Use</option>
                 </select>
                 <select id="filterBuilding" onchange="filterRecords()">
                     <option value="">All Building Types</option>
@@ -1149,7 +1166,7 @@ const firebaseConfig = {
     appId: "1:547385765757:web:df18cd27e9161b7d1c2614"
 };
 const ADMIN_EMAIL = "enga018@gmail.com";
-const APP_VERSION = "v3.4.0";
+const APP_VERSION = "v3.5.0";
 
 // Dark mode theme management
 const THEME_STORAGE_KEY = 'appTheme';
@@ -2947,6 +2964,8 @@ function renderMyRecords(records) {
     const myIncomplete = document.getElementById('myIncomplete');
     const myTodayTotal = document.getElementById('myTodayTotal');
     const myTodayIncomplete = document.getElementById('myTodayIncomplete');
+    const myCompletionRate = document.getElementById('myCompletionRate');
+    const myProgressBar = document.getElementById('myProgressBar');
     const myBuildingEl = document.getElementById('myBuildingBreakdown');
     const myPropertyEl = document.getElementById('myPropertyBreakdown');
     const myOwnerEl = document.getElementById('myOwnerBreakdown');
@@ -2960,6 +2979,11 @@ function renderMyRecords(records) {
     if (myIncomplete) myIncomplete.textContent = incomplete;
     if (myTodayTotal) myTodayTotal.textContent = todayRecords.length;
     if (myTodayIncomplete) myTodayIncomplete.textContent = todayIncomplete;
+
+    // Personal completion rate
+    const myRate = records.length > 0 ? Math.round((completed.length / records.length) * 100) : 0;
+    if (myCompletionRate) myCompletionRate.textContent = myRate + '%';
+    if (myProgressBar) myProgressBar.style.width = myRate + '%';
 
     // Building type breakdown (completed only)
     const bc = {};
@@ -3579,47 +3603,6 @@ function renderAdminOverview() {
     document.getElementById('correctionsList').innerHTML = correctionsList || '<div style="padding:8px 0;color:var(--text2)">No pending corrections</div>';
     document.getElementById('correctionsCard').classList.toggle('warning', totalPending > 0);
 
-    // This week's activity
-    const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-    const thisWeek = {};
-    allRecords.forEach(r => {
-        if (r.localTimestamp) {
-            const date = new Date(r.localTimestamp);
-            const dayKey = days[date.getDay()];
-            thisWeek[dayKey] = (thisWeek[dayKey] || 0) + 1;
-        }
-    });
-    const maxDay = Math.max(...Object.values(thisWeek), 1);
-    const weeklyHtml = days.map(day => {
-        const count = thisWeek[day] || 0;
-        const height = maxDay > 0 ? (count / maxDay) * 100 : 0;
-        return `<div style="flex:1;display:flex;flex-direction:column;align-items:center">
-            <div class="chart-bar" style="height:${height}%" title="${day}: ${count}"></div>
-            <div class="chart-bar-label">${day.slice(0,1)}</div>
-        </div>`;
-    }).join('');
-    document.getElementById('weeklyChart').innerHTML = weeklyHtml;
-
-    // Property type breakdown
-    const propertyTypes = {};
-    completed.forEach(r => {
-        const type = r.propertyType || 'Unknown';
-        if (!propertyTypes[type]) {
-            propertyTypes[type] = { count: 0, households: 0, population: 0 };
-        }
-        propertyTypes[type].count++;
-        const stats = householdStats(r);
-        propertyTypes[type].households += stats.families;
-        propertyTypes[type].population += stats.population;
-    });
-    const propertyTypeHtml = Object.entries(propertyTypes).map(([type, data]) =>
-        `<div style="padding:6px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between">
-            <span>${type}</span>
-            <span><b>${data.count}</b> properties • <b>${data.households}</b> households • <b>${data.population}</b> people</span>
-        </div>`
-    ).join('') || '<div style="padding:8px 0;color:var(--text2)">No completed records</div>';
-    document.getElementById('propertyTypeList').innerHTML = propertyTypeHtml;
-
     const bc={}, pc={}, oc={};
     completed.forEach(r=>{ bc[r.buildingType]=(bc[r.buildingType]||0)+1; pc[r.propertyType]=(pc[r.propertyType]||0)+1; const ok=r.ownerCategory||'Individual'; oc[ok]=(oc[ok]||0)+1; });
     document.getElementById('adminBuildingBreakdown').innerHTML = barList(bc, 'No data');
@@ -3788,12 +3771,14 @@ function populateWorkerFilter() {
 function getFilteredRecords() {
     const wf = document.getElementById('filterWorker').value;
     const of = document.getElementById('filterOwner').value;
+    const pf = document.getElementById('filterPropertyType').value;
     const bf = document.getElementById('filterBuilding').value;
     const sf = document.getElementById('filterStatus').value;
     const pidSearch = document.getElementById('filterPropertyId').value.trim().toLowerCase().replace(/^nsn-/, '');
     let f = allRecords;
     if (wf) f = f.filter(r=>r.workerUid===wf);
     if (of) f = f.filter(r=>(r.ownerCategory||'Individual')===of);
+    if (pf) f = f.filter(r=>(r.propertyType||'')===pf);
     if (bf) f = f.filter(r=>(r.buildingType||'')===bf);
     if (sf==='complete') f = f.filter(r=>!needsFollowUp(r));
     if (sf==='absent') f = f.filter(r=>isRecordAbsent(r));
