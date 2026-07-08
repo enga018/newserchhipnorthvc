@@ -32,7 +32,9 @@
   .worker-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #eee; font-size: 13px; }
   .worker-row:last-child { border-bottom: none; }
 
-  .nest-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; }
+  .nest-grid { display: grid; grid-template-columns: 1fr; gap: 8px; }
+  @media(min-width:520px){ .nest-grid { grid-template-columns: 1fr 1fr; } }
+  @media(min-width:860px){ .nest-grid { grid-template-columns: 1fr 1fr 1fr; } }
   .nest-box { background: #fff; border-radius: 10px; padding: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
   .nest-box.full { grid-column: 1 / -1; }
   .section-title { font-size: 13px; font-weight: 600; margin-bottom: 8px; }

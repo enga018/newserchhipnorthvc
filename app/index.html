@@ -228,7 +228,9 @@
 
         /* STATS */
         .stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
-        .nest-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-bottom:14px}
+        .nest-grid{display:grid;grid-template-columns:1fr;gap:10px;margin-bottom:14px}
+        @media(min-width:520px){.nest-grid{grid-template-columns:1fr 1fr}}
+        @media(min-width:860px){.nest-grid{grid-template-columns:1fr 1fr 1fr}}
         .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;text-align:center;box-shadow:var(--shadow)}
         .stat-value{font-size:26px;font-weight:700;color:var(--primary);line-height:1}
         .stat-label{font-size:11px;color:var(--text2);margin-top:4px;text-transform:uppercase;letter-spacing:0.5px}
