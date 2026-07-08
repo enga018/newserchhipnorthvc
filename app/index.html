@@ -112,7 +112,7 @@
         .auth-tab.active{background:var(--primary);color:white}
 
         /* HEADER */
-        .header{background:var(--primary);color:white;padding:10px 18px;border-radius:var(--radius-lg);margin-bottom:16px;display:flex;flex-direction:column;gap:12px;box-shadow:0 4px 12px rgba(0,0,0,0.15);border-bottom:2px solid rgba(255,255,255,0.1);position:sticky;top:6px;z-index:60}
+        .header{background:var(--primary);color:white;padding:10px 18px;border-radius:var(--radius-lg);margin-bottom:16px;display:flex;flex-direction:column;gap:12px;box-shadow:0 4px 12px rgba(0,0,0,0.15);border-bottom:2px solid rgba(255,255,255,0.1)}
         .header-row{display:flex;justify-content:space-between;align-items:center;gap:12px}
         .header-left{display:flex;align-items:center}
         .header-left h1{font-size:17px;font-weight:700;letter-spacing:-0.3px;line-height:1.2}
@@ -277,9 +277,9 @@
         #adminView .header{background:var(--primary-dark)}
         .admin-badge{background:rgba(255,215,0,0.3);border:1px solid rgba(255,215,0,0.5);padding:2px 10px;border-radius:10px;font-size:11px;font-weight:600;color:#ffd700;display:inline-block;cursor:pointer;transition:all 0.2s ease}
         .admin-badge:hover{background:rgba(255,215,0,0.4);border-color:rgba(255,215,0,0.7)}
-        .field-worker-badge{background:rgba(58,110,165,0.3);border:1px solid rgba(58,110,165,0.5);padding:2px 10px;border-radius:10px;font-size:11px;font-weight:600;color:#3a6ea5;display:inline-block;cursor:pointer;transition:all 0.2s ease}
+        .field-worker-badge{background:rgba(58,110,165,0.3);border:1px solid rgba(58,110,165,0.5);padding:2px 10px;border-radius:10px;font-size:11px;font-weight:600;color:white;display:inline-block;cursor:pointer;transition:all 0.2s ease}
         .field-worker-badge:hover{background:rgba(58,110,165,0.4);border-color:rgba(58,110,165,0.7)}
-        .supervisor-badge{background:rgba(123,91,198,0.3);border:1px solid rgba(123,91,198,0.5);padding:2px 10px;border-radius:10px;font-size:11px;font-weight:600;color:#7b5bc6;display:inline-block;cursor:pointer;transition:all 0.2s ease}
+        .supervisor-badge{background:rgba(123,91,198,0.3);border:1px solid rgba(123,91,198,0.5);padding:2px 10px;border-radius:10px;font-size:11px;font-weight:600;color:white;display:inline-block;cursor:pointer;transition:all 0.2s ease}
         .supervisor-badge:hover{background:rgba(123,91,198,0.4);border-color:rgba(123,91,198,0.7)}
         .worker-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px}
         #workersList,#supervisorsList{display:grid;grid-template-columns:1fr;gap:10px}
@@ -1196,7 +1196,7 @@ const THEME_STORAGE_KEY = 'appTheme';
 const DARK_THEME = 'dark';
 const LIGHT_THEME = 'light';
 
-function truncateName(name, maxLen = 10) {
+function truncateName(name, maxLen = 15) {
     return name && name.length > maxLen ? name.substring(0, maxLen) : (name || 'Account');
 }
 
@@ -3653,7 +3653,8 @@ function renderAdminOverview() {
 
     renderPopHouseholds('admin', completed);
 
-    document.getElementById('cardWorkerActivity').classList.toggle('hidden', isSupervisor);
+    // Show Worker Activity card to both admin and supervisor
+    document.getElementById('cardWorkerActivity').classList.remove('hidden');
     if (!isSupervisor) {
         const tw={};
         todayRecords.forEach(r=>{
