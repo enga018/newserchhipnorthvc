@@ -651,7 +651,6 @@ setTimeout(function() {
                         <span class="nest-hero-label">Total Population</span>
                         <span class="nest-hero-num" id="myPopulation">0</span>
                     </div>
-                    <div id="myPopGender"></div>
                 </div>
                 <div class="nest-box">
                     <div class="section-title">🧒 Children</div>
@@ -659,7 +658,6 @@ setTimeout(function() {
                         <span class="nest-hero-label">No of Children</span>
                         <span class="nest-hero-num" id="myChildren">0</span>
                     </div>
-                    <div id="myChildGender"></div>
                 </div>
                 <div class="nest-box">
                     <div class="section-title">🏠 Households</div>
@@ -667,7 +665,6 @@ setTimeout(function() {
                         <span class="nest-hero-label">Total No. of Household</span>
                         <span class="nest-hero-num" id="myFamilies">0</span>
                     </div>
-                    <div id="myFamilySizes"></div>
                 </div>
                 <div class="nest-box">
                     <div class="section-title">🏗️ Building Types</div>
@@ -762,7 +759,6 @@ setTimeout(function() {
                         <span class="nest-hero-label">Total Population</span>
                         <span class="nest-hero-num" id="adminPopulation">0</span>
                     </div>
-                    <div id="adminPopGender"></div>
                 </div>
                 <div class="nest-box">
                     <div class="section-title">🧒 Children</div>
@@ -770,7 +766,6 @@ setTimeout(function() {
                         <span class="nest-hero-label">No of Children</span>
                         <span class="nest-hero-num" id="adminChildren">0</span>
                     </div>
-                    <div id="adminChildGender"></div>
                 </div>
                 <div class="nest-box">
                     <div class="section-title">🏠 Households</div>
@@ -778,7 +773,6 @@ setTimeout(function() {
                         <span class="nest-hero-label">Total No. of Household</span>
                         <span class="nest-hero-num" id="adminFamilies">0</span>
                     </div>
-                    <div id="adminFamilySizes"></div>
                 </div>
                 <div class="nest-box">
                     <div class="section-title">🏗️ Building Types</div>
@@ -3030,17 +3024,17 @@ function renderMyRecords(records) {
     // Building type breakdown (completed only)
     const bc = {};
     completed.forEach(r => { bc[r.buildingType] = (bc[r.buildingType]||0)+1; });
-    if (myBuildingEl) myBuildingEl.innerHTML = barList(bc, 'No records yet');
+    if (myBuildingEl) myBuildingEl.innerHTML = tagList(bc, 'No records yet');
 
     // Property type breakdown (completed only)
     const pc = {};
     completed.forEach(r => { pc[r.propertyType] = (pc[r.propertyType]||0)+1; });
-    if (myPropertyEl) myPropertyEl.innerHTML = barList(pc, 'No records yet');
+    if (myPropertyEl) myPropertyEl.innerHTML = tagList(pc, 'No records yet');
 
     // Owner type breakdown (completed only)
     const oc = {};
     completed.forEach(r => { const k = r.ownerCategory||'Individual'; oc[k] = (oc[k]||0)+1; });
-    if (myOwnerEl) myOwnerEl.innerHTML = barList(oc, 'No records yet');
+    if (myOwnerEl) myOwnerEl.innerHTML = tagList(oc, 'No records yet');
 
     // Population & households for this worker's completed records
     renderPopHouseholds('my', completed);
@@ -3084,31 +3078,14 @@ function renderFollowUp(records) {
 }
 
 
-const BAR_SHADES = ['var(--primary)','var(--primary-light)','var(--primary-lighter)','#94a3b8'];
-
-// Render a {label: count} map as blue-shaded bar list (sorted high to low).
-// preserveOrder: if true, keep insertion order instead of sorting by count.
-function barList(map, emptyMsg, preserveOrder){
+// Render a {label: count} map as simple tags (no bars, no percentages)
+function tagList(map, emptyMsg){
     const entries = Object.entries(map || {});
     if (!entries.length) return `<div style="color:var(--text2)">${emptyMsg || 'No data'}</div>`;
-    const total = entries.reduce((a,[,v]) => a + v, 0) || 1;
-    const ordered = preserveOrder ? entries : entries.sort((a,b) => b[1]-a[1]);
-    return `<div class="bar-list">${ordered.map(([k,v], i) => {
-        const pct = (v / total * 100).toFixed(2);
-        const color = BAR_SHADES[Math.min(i, BAR_SHADES.length-1)];
-        return `<div class="bar-row"><span class="bar-label">${esc(k)}</span><span class="bar-count">${v}</span><div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${color}"></div></div><span class="bar-pct">${Math.round(pct)}%</span></div>`;
-    }).join('')}</div>`;
-}
-
-// Render a gender split (two side-by-side cards)
-function genderSplit(male, female, emptyMsg){
-    const total = (male||0) + (female||0) || 1;
-    if (!total || (male===0 && female===0)) return `<div style="color:var(--text2);text-align:center;padding:8px">${emptyMsg||'No data'}</div>`;
-    const mPct = Math.round(male/total*100), fPct = Math.round(female/total*100);
-    return `<div class="gender-split">
-        <div class="gender-card m"><div class="gender-card-label">Male</div><div class="gender-card-value">${male||0}</div><div class="gender-card-pct">${mPct}%</div></div>
-        <div class="gender-card f"><div class="gender-card-label">Female</div><div class="gender-card-value">${female||0}</div><div class="gender-card-pct">${fPct}%</div></div>
-    </div>`;
+    const ordered = entries.sort((a,b) => b[1]-a[1]);
+    return `<div style="display:flex;flex-wrap:wrap;gap:6px">${ordered.map(([k,v]) =>
+        `<span style="background:var(--surface-2);border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-size:13px;white-space:nowrap">${esc(k)}: <b>${v}</b></span>`
+    ).join('')}</div>`;
 }
 
 // Household summary line (+ optional full family/member breakdown) for record views.
@@ -3169,41 +3146,12 @@ function renderPopHouseholds(prefix, records) {
         a.families += s.families;
         a.population += s.population;
         a.children += s.children;
-        a.males += s.males;
-        a.females += s.females;
-        a.adults += s.adults;
-        a.adultMales += s.adultMales;
-        a.adultFemales += s.adultFemales;
-        a.childMales += s.childMales;
-        a.childFemales += s.childFemales;
-        if (s.familySizes) for (const sz of s.familySizes) a.familySizes.push(sz);
         return a;
-    }, {families:0,population:0,children:0,males:0,females:0,adults:0,adultMales:0,adultFemales:0,childMales:0,childFemales:0,familySizes:[]});
-
-    const freq = {};
-    hh.familySizes.forEach(n => { freq[n] = (freq[n] || 0) + 1; });
-
-    const categories = [
-        { label: 'Small', min: 1, max: 3 },
-        { label: 'Medium', min: 4, max: 6 },
-        { label: 'Large', min: 7, max: 9 },
-        { label: 'Very Large', min: 10, max: Infinity }
-    ];
-    const hhMap = {};
-    categories.forEach(cat => {
-        const total = Object.keys(freq).map(Number).filter(n => n >= cat.min && n <= cat.max).reduce((sum,n)=>sum+freq[n],0);
-        if (total) hhMap[cat.label + ' (' + cat.min + (cat.max===Infinity?'+':'-'+cat.max) + ')'] = total;
-    });
-
+    }, {families:0,population:0,children:0});
     const set = (id,v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
-    const hset = (id,v) => { const e = document.getElementById(id); if (e) e.innerHTML = v; };
-
     set(prefix+'Families', hh.families);
-    hset(prefix+'FamilySizes', barList(hhMap, 'No data', true));
     set(prefix+'Population', hh.population);
-    hset(prefix+'PopGender', genderSplit(hh.males, hh.females, 'No data'));
     set(prefix+'Children', hh.children);
-    hset(prefix+'ChildGender', genderSplit(hh.childMales, hh.childFemales, 'No data'));
 }
 
 function recordCard(r, context) {
@@ -3647,9 +3595,9 @@ function renderAdminOverview() {
 
     const bc={}, pc={}, oc={};
     completed.forEach(r=>{ bc[r.buildingType]=(bc[r.buildingType]||0)+1; pc[r.propertyType]=(pc[r.propertyType]||0)+1; const ok=r.ownerCategory||'Individual'; oc[ok]=(oc[ok]||0)+1; });
-    document.getElementById('adminBuildingBreakdown').innerHTML = barList(bc, 'No data');
-    document.getElementById('adminPropertyBreakdown').innerHTML = barList(pc, 'No data');
-    document.getElementById('adminOwnerBreakdown').innerHTML = barList(oc, 'No data');
+    document.getElementById('adminBuildingBreakdown').innerHTML = tagList(bc, 'No data');
+    document.getElementById('adminPropertyBreakdown').innerHTML = tagList(pc, 'No data');
+    document.getElementById('adminOwnerBreakdown').innerHTML = tagList(oc, 'No data');
 
     renderPopHouseholds('admin', completed);
 
