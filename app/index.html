@@ -774,8 +774,8 @@ setTimeout(function() {
         <!-- ALL RECORDS -->
         <div id="allrecords" class="form-section">
             <div class="form-group" style="margin-bottom:10px">
-                <label>Search Property ID</label>
-                <input type="text" id="filterPropertyId" placeholder="e.g. 0001 or NSN-0001" oninput="filterRecords()">
+                <label>Search</label>
+                <input type="text" id="filterPropertyId" placeholder="Search property ID or owner name..." oninput="filterRecords()">
             </div>
             <div class="filter-bar">
                 <select id="filterWorker" onchange="filterRecords()"><option value="">All Workers</option></select>
@@ -3894,7 +3894,8 @@ function getFilteredRecords() {
     const pf = document.getElementById('filterPropertyType').value;
     const bf = document.getElementById('filterBuilding').value;
     const sf = document.getElementById('filterStatus').value;
-    const pidSearch = document.getElementById('filterPropertyId').value.trim().toLowerCase().replace(/^nsn-/, '');
+    const search = document.getElementById('filterPropertyId').value.trim().toLowerCase();
+    const pidSearch = search.replace(/^nsn-/, '');
     let f = allRecords;
     if (wf) f = f.filter(r=>r.workerUid===wf);
     if (of) f = f.filter(r=>(r.ownerCategory||'Individual')===of);
@@ -3905,9 +3906,15 @@ function getFilteredRecords() {
     if (sf==='correction') f = f.filter(r=>r.needsCorrection===true);
     if (sf==='verify') f = f.filter(r=>correctionState(r)==='fixed');
     if (sf==='verified') f = f.filter(r=>correctionState(r)==='verified');
-    if (pidSearch) {
+    if (search) {
         const searchPadded = pidSearch.padStart(4, '0');
-        f = f.filter(r => (r.propertyId || '').toLowerCase().replace(/^nsn-/, '').padStart(4, '0') === searchPadded);
+        f = f.filter(r => {
+            if ((r.propertyId || '').toLowerCase().replace(/^nsn-/, '').padStart(4, '0') === searchPadded) return true;
+            if ((r.ownerName || '').toLowerCase().includes(search)) return true;
+            if ((r.organizationName || '').toLowerCase().includes(search)) return true;
+            if ((r.contactPerson || '').toLowerCase().includes(search)) return true;
+            return false;
+        });
     }
     return f;
 }
