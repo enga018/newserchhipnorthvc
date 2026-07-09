@@ -3841,13 +3841,24 @@ function renderWorkers() {
     renderSupervisorAccounts(supervisors);
     const el = document.getElementById('workersList');
     if (!workers.length) { el.innerHTML='<div class="empty-state"><div class="empty-state-icon">👥</div><p>No workers yet.</p></div>'; return; }
-    el.innerHTML = workers.map(u => {
+    const workerData = workers.map(u => {
         const recs = allRecords.filter(r=>r.workerUid===u.uid);
         const today = new Date().toDateString();
         const todayCount = recs.filter(r=>r.localTimestamp&&new Date(r.localTimestamp).toDateString()===today).length;
         const absentCount = recs.filter(r=>needsFollowUp(r)).length;
         const completeCount = recs.length - absentCount;
         const hh = recs.reduce((a,r)=>{ const s=householdStats(r); a.families+=s.families; a.population+=s.population; return a; }, {families:0,population:0});
+        const payWorker = (completeCount * (paymentRates.ratePerRecord||0)) + (hh.population * (paymentRates.ratePerPerson||0));
+        return { u, recs, todayCount, absentCount, completeCount, hh, payWorker };
+    });
+    const totalPay = workerData.reduce((s,d) => s + d.payWorker, 0);
+    const totalRecs = workerData.reduce((s,d) => s + d.completeCount, 0);
+    const totalPop = workerData.reduce((s,d) => s + d.hh.population, 0);
+    el.innerHTML = `<div style="background:var(--success-bg);border:1px solid var(--success);border-radius:var(--radius-lg);padding:12px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+        <div><span class="stat-value" style="font-size:20px">💰 ₹ ${totalPay.toFixed(2)}</span><div class="stat-label" style="margin:0">Total Estimated Payment</div></div>
+        <div style="font-size:12px;color:var(--text2)">📋 ${totalRecs} records · 👥 ${totalPop} people</div>
+    </div>` + workerData.map(d => {
+        const { u, recs, todayCount, absentCount, completeCount, hh, payWorker } = d;
         const hasRange = (typeof u.rangeStart === 'number' && typeof u.rangeEnd === 'number');
         const rangeText = hasRange
             ? `🎫 Stickers: NSN-${String(u.rangeStart).padStart(4,'0')} to NSN-${String(u.rangeEnd).padStart(4,'0')}`
@@ -3880,7 +3891,7 @@ function renderWorkers() {
                 <div class="worker-stat"><div class="worker-stat-val" style="color:var(--primary)">${recs.length > 0 ? Math.round((completeCount / recs.length) * 100) : 0}%</div><div class="worker-stat-lbl">Done</div></div>
                 <div class="worker-stat"><div class="worker-stat-val">${hh.families}</div><div class="worker-stat-lbl">Households</div></div>
                 <div class="worker-stat"><div class="worker-stat-val">${hh.population}</div><div class="worker-stat-lbl">Persons</div></div>
-                <div class="worker-stat"><div class="worker-stat-val" style="color:var(--primary);font-size:13px">₹ ${((completeCount * (paymentRates.ratePerRecord||0)) + (hh.population * (paymentRates.ratePerPerson||0))).toFixed(0)}</div><div class="worker-stat-lbl">Payment</div></div>
+                <div class="worker-stat"><div class="worker-stat-val" style="color:var(--primary);font-size:13px">₹ ${payWorker.toFixed(0)}</div><div class="worker-stat-lbl">Payment</div></div>
             </div>
         </div>`;
     }).join('');
