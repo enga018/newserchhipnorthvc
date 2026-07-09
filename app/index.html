@@ -1152,7 +1152,7 @@ const firebaseConfig = {
     appId: "1:547385765757:web:df18cd27e9161b7d1c2614"
 };
 const ADMIN_EMAIL = "enga018@gmail.com";
-const APP_VERSION = "v3.8.1";
+const APP_VERSION = "v3.9.0";
 
 // Dark mode theme management
 const THEME_STORAGE_KEY = 'appTheme';
@@ -3253,6 +3253,24 @@ function renderPopHouseholds(prefix, records) {
         if (total) parts.push(`${cat.label} (${cat.min}-${cat.max===Infinity?'+':cat.max}): ${total}`);
     });
     hset(prefix+'FamilySizes', parts.join(' &nbsp;|&nbsp; ') || 'No data');
+    return hh;
+}
+
+// Keep the public landing page's stats counter fresh. Writes only the aggregate
+// counts (no PII) to public/stats, which is readable by anyone per firestore.rules —
+// skips the write entirely if nothing actually changed since last publish.
+let lastPublishedStatsKey = null;
+function maybePublishPublicStats(hh) {
+    if (!db || !hh) return;
+    const stats = {
+        population: hh.population, males: hh.males, females: hh.females,
+        households: hh.families, totalRecords: allRecords.length,
+        updatedAt: new Date().toISOString()
+    };
+    const key = JSON.stringify([stats.population, stats.males, stats.females, stats.households, stats.totalRecords]);
+    if (key === lastPublishedStatsKey) return;
+    lastPublishedStatsKey = key;
+    db.collection('public').doc('stats').set(stats).catch(e => console.warn('Could not publish public stats:', e.message));
 }
 
 // Renders what actually changed on a "Fixed — verify" correction, using the before/after
@@ -3717,7 +3735,7 @@ function renderAdminOverview() {
     document.getElementById('adminBuildingBreakdown').innerHTML = tagList(bc, 'No data');
     document.getElementById('adminPropertyCount').textContent = completed.length;
 
-    renderPopHouseholds('admin', completed);
+    maybePublishPublicStats(renderPopHouseholds('admin', completed));
 
     // Show Worker Activity card to both admin and supervisor
     document.getElementById('cardWorkerActivity').classList.remove('hidden');

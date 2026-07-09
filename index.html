@@ -50,17 +50,55 @@
 <div class="stats">
     <h2>NEW SERCHHIP NORTH VILLAGE COUNCIL</h2>
     <p style="text-align:left;font-size:12px;color:#d97706;margin:-16px 0 20px;font-style:italic">⚠️ Disclaimer: Survey is going on, data may change at any time.</p>
-    <div class="stat-row"><span class="label">POPULATION</span><span class="value">712</span></div>
-    <div class="stat-row"><span class="label">MALE</span><span class="value">333</span></div>
-    <div class="stat-row"><span class="label">FEMALE</span><span class="value">379</span></div>
-    <div class="stat-row"><span class="label">HOUSEHOLD</span><span class="value">171</span></div>
-    <div class="stat-row total"><span class="label">TOTAL</span><span class="value">1595</span></div>
+    <div class="stat-row"><span class="label">POPULATION</span><span class="value" id="statPopulation">712</span></div>
+    <div class="stat-row"><span class="label">MALE</span><span class="value" id="statMale">333</span></div>
+    <div class="stat-row"><span class="label">FEMALE</span><span class="value" id="statFemale">379</span></div>
+    <div class="stat-row"><span class="label">HOUSEHOLD</span><span class="value" id="statHousehold">171</span></div>
+    <div class="stat-row total"><span class="label">TOTAL</span><span class="value" id="statTotal">1595</span></div>
+    <div class="note" id="statFreshness"></div>
     <div class="note">Made with ❤️ by <a href="https://enga.in" target="_blank" style="color:#2c5282;text-decoration:none;font-weight:600">Enga</a></div>
 </div>
 
 <div class="footer">
     Source code on <a href="https://github.com/enga018/newserchhipnorthvc">GitHub</a>
 </div>
+
+<!-- Self-hosted, same as the app, so this loads reliably without depending on an
+     external CDN. Only app+firestore are needed here — no auth, no login on this page. -->
+<script src="./vendor/firebase-app-compat.js"></script>
+<script src="./vendor/firebase-firestore-compat.js"></script>
+<script>
+// The numbers above are static fallbacks (last hand-entered snapshot) so the page
+// still shows something reasonable if this fetch fails or the visitor is offline.
+// Live numbers come from public/stats, a small aggregate-only document the admin
+// dashboard keeps fresh — see firestore.rules for why only that one doc is public.
+try {
+    var firebaseConfig = {
+        apiKey: "AIzaSyCkOVmm1cndO_O7M_82RCXmaJey4oYKyaE",
+        authDomain: "newserchhipnorthvc.firebaseapp.com",
+        projectId: "newserchhipnorthvc",
+        storageBucket: "newserchhipnorthvc.firebasestorage.app",
+        messagingSenderId: "547385765757",
+        appId: "1:547385765757:web:df18cd27e9161b7d1c2614"
+    };
+    firebase.initializeApp(firebaseConfig);
+    var db = firebase.firestore();
+    db.collection('public').doc('stats').get().then(function(doc) {
+        if (!doc.exists) return;
+        var s = doc.data();
+        var set = function(id, v) { if (v != null) document.getElementById(id).textContent = v; };
+        set('statPopulation', s.population);
+        set('statMale', s.males);
+        set('statFemale', s.females);
+        set('statHousehold', s.households);
+        set('statTotal', s.totalRecords);
+        if (s.updatedAt) {
+            var d = new Date(s.updatedAt);
+            document.getElementById('statFreshness').textContent = 'Live as of ' + d.toLocaleDateString() + ' ' + d.toLocaleTimeString();
+        }
+    }).catch(function(e) { console.warn('Could not load live stats, showing last-known numbers:', e.message); });
+} catch (e) { console.warn('Live stats unavailable:', e.message); }
+</script>
 
 </body>
 </html>
