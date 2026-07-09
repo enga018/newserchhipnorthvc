@@ -315,6 +315,12 @@
         .empty-state-icon{font-size:48px;margin-bottom:12px}
         .divider{margin:14px 0;border:none;border-top:1px solid var(--border)}
         .section-title{font-size:13px;font-weight:700;letter-spacing:0.3px;margin-bottom:10px;color:var(--text)}
+        .admin-set-header{font-size:15px;padding:12px 14px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);margin-bottom:8px;font-weight:700;transition:background 0.2s}
+        .admin-set-header:hover{background:var(--surface-2)}
+        .admin-set-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;margin-bottom:10px}
+        .danger-zone-header{color:var(--danger);border-color:#f5c6cb;background:#fff5f5}
+        .danger-zone-header:hover{background:#ffe0e0}
+        .danger-zone-card{border-color:#f5c6cb;background:#fff5f5}
         .info-box{background:var(--primary-tint);border:1px solid var(--primary-light);border-radius:var(--radius);padding:12px;font-size:13px;color:var(--primary-dark);margin-bottom:12px}
         @media(max-width:480px){.stats-grid{grid-template-columns:1fr 1fr}}
         @media(max-width:360px){
@@ -849,25 +855,25 @@ setTimeout(function() {
 
         <!-- SETTINGS -->
         <div id="adminsettings" class="form-section">
-            <div class="section-title collapsible-header" onclick="toggleCollapsible('dataMaint')">
+            <div class="admin-set-header collapsible-header" onclick="toggleCollapsible('dataMaint')">
                 <span class="collapsible-chevron">▶</span> 🔢 Data Maintenance
             </div>
             <div id="dataMaint" class="collapsible-body">
-            <div style="background:var(--bg);border-radius:8px;padding:12px;margin-bottom:12px">
+            <div class="admin-set-card">
                 <div style="font-size:13px;color:var(--text2);margin-bottom:10px">
                     Every family already gets a permanent Family ID (e.g. NSN-0001/1) when created. This one-time action assigns one to <b>existing</b> families that were saved before that — safe to run more than once, and only ever fills in families that don't have one yet.
                 </div>
                 <button class="btn-primary" onclick="backfillFamilyIds()">🔢 Assign Family IDs to Existing Records</button>
                 <div id="backfillAlert" style="margin-top:8px"></div>
             </div>
-            <div style="background:var(--bg);border-radius:8px;padding:12px;margin-bottom:12px">
+            <div class="admin-set-card">
                 <div style="font-size:13px;color:var(--text2);margin-bottom:10px">
                     Some older records may have family members with relation <b>"Head"</b> instead of <b>"Self"</b>. This one-time action converts them all to "Self" so the head of family is consistently identified. Safe to run more than once — only members with "Head" are touched.
                 </div>
                 <button class="btn-primary" onclick="normalizeHeadToSelf()">🔄 Normalize "Head" → "Self"</button>
                 <div id="normalizeHeadAlert" style="margin-top:8px"></div>
             </div>
-            <div style="background:var(--bg);border-radius:8px;padding:12px;margin-bottom:12px">
+            <div class="admin-set-card">
                 <div style="font-size:13px;color:var(--text2);margin-bottom:10px">
                     Some older records may have names with unicode <b>italic/styled characters</b> (e.g. from WhatsApp). This one-time action converts them all to plain ASCII. Safe to run more than once — only names with styled characters are touched.
                 </div>
@@ -875,28 +881,39 @@ setTimeout(function() {
                 <div id="normalizeItalicAlert" style="margin-top:8px"></div>
             </div>
             </div>
-            <div class="section-title">💰 Payment Rates</div>
-            <div style="background:var(--bg);border-radius:8px;padding:12px;margin-bottom:12px">
-                <div style="display:flex;flex-direction:column;gap:10px">
+            <div class="admin-set-header collapsible-header" onclick="toggleCollapsible('payRates')">
+                <span class="collapsible-chevron">▶</span> 💰 Payment Rates
+            </div>
+            <div id="payRates" class="collapsible-body">
+            <div class="admin-set-card">
+                <div style="display:flex;flex-direction:column;gap:12px">
                     <div>
-                        <label style="font-size:13px;font-weight:600">Rate per completed record (₹)</label>
-                        <input type="number" id="ratePerRecord" step="0.01" min="0" style="width:100%">
+                        <label style="font-size:14px;font-weight:600">Rate per completed record (₹)</label>
+                        <input type="number" id="ratePerRecord" step="0.01" min="0" style="width:100%;margin-top:4px">
                     </div>
                     <div>
-                        <label style="font-size:13px;font-weight:600">Rate per person (₹)</label>
-                        <input type="number" id="ratePerPerson" step="0.01" min="0" style="width:100%">
+                        <label style="font-size:14px;font-weight:600">Rate per person (₹)</label>
+                        <input type="number" id="ratePerPerson" step="0.01" min="0" style="width:100%;margin-top:4px">
                     </div>
                     <button class="btn-primary" onclick="savePaymentRates()">💾 Save Rates</button>
                     <div id="rateSaveStatus" style="font-size:12px;color:var(--success)"></div>
                 </div>
             </div>
-            <div class="section-title" style="color:var(--warning)">⚠️ Danger Zone</div>
-            <div style="background:#ffebee;border:1px solid #ea4c89;border-radius:8px;padding:12px">
-                <div style="font-size:13px;color:#cb2431;margin-bottom:10px">
-                    <b>Reset Everything</b> permanently deletes <b>all records</b> and <b>all worker profiles</b>. Your admin login stays. This cannot be undone.
+            </div>
+            <div class="admin-set-header collapsible-header danger-zone-header" onclick="toggleDangerZone()">
+                <span class="collapsible-chevron">▶</span> ⚠️ Danger Zone
+            </div>
+            <div id="dangerZone" class="collapsible-body">
+            <div class="admin-set-card danger-zone-card">
+                <div style="font-size:14px;color:#cb2431;margin-bottom:12px;font-weight:600">
+                    🗑️ Reset Everything
+                </div>
+                <div style="font-size:13px;color:#cb2431;margin-bottom:12px">
+                    Permanently deletes <b>all records</b> and <b>all worker profiles</b>. Your admin login stays. This <b>cannot be undone</b>.
                     <br><br>💡 Tip: Export your data first!
                 </div>
                 <button class="btn-danger" onclick="resetEverything()" style="width:100%">🗑️ Delete All Records & Workers</button>
+            </div>
             </div>
         </div>
 
@@ -1271,6 +1288,22 @@ function toggleCollapsible(id) {
     if (!body) return;
     body.classList.toggle('open');
     if (chevron) chevron.classList.toggle('open');
+}
+function toggleDangerZone() {
+    const body = document.getElementById('dangerZone');
+    if (!body) return;
+    const isOpen = body.classList.contains('open');
+    if (isOpen) {
+        body.classList.remove('open');
+        const chevron = body.previousElementSibling.querySelector('.collapsible-chevron');
+        if (chevron) chevron.classList.remove('open');
+    } else {
+        if (confirm('⚠️ You are about to access the Danger Zone.\n\nThis area contains destructive actions that cannot be undone.\n\nAre you sure you want to continue?')) {
+            body.classList.add('open');
+            const chevron = body.previousElementSibling.querySelector('.collapsible-chevron');
+            if (chevron) chevron.classList.add('open');
+        }
+    }
 }
 
 // Debounce helper for high-frequency events
@@ -3847,7 +3880,8 @@ function renderWorkers() {
         const todayCount = recs.filter(r=>r.localTimestamp&&new Date(r.localTimestamp).toDateString()===today).length;
         const absentCount = recs.filter(r=>needsFollowUp(r)).length;
         const completeCount = recs.length - absentCount;
-        const hh = recs.reduce((a,r)=>{ const s=householdStats(r); a.families+=s.families; a.population+=s.population; return a; }, {families:0,population:0});
+        const completeRecs = recs.filter(r => !needsFollowUp(r));
+        const hh = completeRecs.reduce((a,r)=>{ const s=householdStats(r); a.families+=s.families; a.population+=s.population; return a; }, {families:0,population:0});
         const payWorker = (completeCount * (paymentRates.ratePerRecord||0)) + (hh.population * (paymentRates.ratePerPerson||0));
         return { u, recs, todayCount, absentCount, completeCount, hh, payWorker };
     });
