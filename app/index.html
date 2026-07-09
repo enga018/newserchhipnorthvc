@@ -635,6 +635,16 @@ setTimeout(function() {
                     <div class="stat-value" id="myCompletionRate" style="font-size:16px;white-space:nowrap">0%</div>
                 </div>
             </div>
+            <div class="stat-card" style="background:var(--success-bg);border:1px solid var(--success);margin-bottom:12px">
+                <div style="display:flex;justify-content:space-between;align-items:center">
+                    <span class="stat-label" style="margin:0">💰 Estimated Payment</span>
+                    <span class="stat-value" id="myPaymentTotal" style="font-size:22px;color:var(--success)">₹ 0</span>
+                </div>
+                <div style="font-size:12px;color:var(--text2);margin-top:6px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px">
+                    <span>📋 <span id="myPaymentRecords">0</span> records × ₹<span id="myRatePerRecord">0</span></span>
+                    <span>👥 <span id="myPaymentPeople">0</span> people × ₹<span id="myRatePerPerson">0</span></span>
+                </div>
+            </div>
             <div class="nest-grid">
                 <div class="nest-box">
                     <div class="section-title">👨‍👩‍👧‍👦 Population</div>
@@ -864,6 +874,21 @@ setTimeout(function() {
                 <button class="btn-primary" onclick="normalizeItalicNames()">🔤 Normalize Italic/Styled Names</button>
                 <div id="normalizeItalicAlert" style="margin-top:8px"></div>
             </div>
+            </div>
+            <div class="section-title">💰 Payment Rates</div>
+            <div style="background:var(--bg);border-radius:8px;padding:12px;margin-bottom:12px">
+                <div style="display:flex;flex-direction:column;gap:10px">
+                    <div>
+                        <label style="font-size:13px;font-weight:600">Rate per completed record (₹)</label>
+                        <input type="number" id="ratePerRecord" step="0.01" min="0" style="width:100%">
+                    </div>
+                    <div>
+                        <label style="font-size:13px;font-weight:600">Rate per person (₹)</label>
+                        <input type="number" id="ratePerPerson" step="0.01" min="0" style="width:100%">
+                    </div>
+                    <button class="btn-primary" onclick="savePaymentRates()">💾 Save Rates</button>
+                    <div id="rateSaveStatus" style="font-size:12px;color:var(--success)"></div>
+                </div>
             </div>
             <div class="section-title" style="color:var(--warning)">⚠️ Danger Zone</div>
             <div style="background:#ffebee;border:1px solid #ea4c89;border-radius:8px;padding:12px">
@@ -1262,8 +1287,10 @@ let unsubscribers = {
     userProfile: null,
     adminRecords: null,
     adminUsers: null,
-    myRecords: null
+    myRecords: null,
+    config: null
 };
+let paymentRates = { ratePerRecord: 0, ratePerPerson: 0 };
 
 function unsubscribeAll() {
     Object.values(unsubscribers).forEach(unsub => {
@@ -1273,7 +1300,8 @@ function unsubscribeAll() {
         userProfile: null,
         adminRecords: null,
         adminUsers: null,
-        myRecords: null
+        myRecords: null,
+        config: null
     };
 }
 
@@ -3063,6 +3091,7 @@ async function loadMyRecords() {
             console.error('Records query error:', err);
             showAlert('Error loading records: ' + err.message, 'error');
         });
+        loadPaymentRates();
     } catch(e) { console.error(e); }
 }
 
@@ -3098,6 +3127,18 @@ function renderMyRecords(records) {
     const myRate = records.length > 0 ? Math.round((completed.length / records.length) * 100) : 0;
     if (myCompletionRate) myCompletionRate.textContent = myRate + '%';
     if (myProgressBar) myProgressBar.style.width = myRate + '%';
+
+    // Payment calculation
+    const totalPop = completed.reduce((sum, r) => sum + householdStats(r).population, 0);
+    const payRecords = completed.length * (paymentRates.ratePerRecord || 0);
+    const payPeople = totalPop * (paymentRates.ratePerPerson || 0);
+    const payTotal = payRecords + payPeople;
+    const setTxt = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
+    setTxt('myPaymentTotal', '₹ ' + payTotal.toFixed(2));
+    setTxt('myPaymentRecords', completed.length);
+    setTxt('myRatePerRecord', paymentRates.ratePerRecord || 0);
+    setTxt('myPaymentPeople', totalPop);
+    setTxt('myRatePerPerson', paymentRates.ratePerPerson || 0);
 
     // Building type breakdown (completed only)
     const bc = {};
@@ -3653,6 +3694,34 @@ async function adminCancelCorrection(id, propId) {
     } catch(e) { showAlert('Could not cancel: ' + e.message, 'error'); }
 }
 
+// ========== PAYMENT RATES ==========
+function loadPaymentRates() {
+    if (unsubscribers.config) { unsubscribers.config(); unsubscribers.config = null; }
+    unsubscribers.config = db.collection('config').doc('paymentRates').onSnapshot(doc => {
+        paymentRates = doc.exists ? doc.data() : { ratePerRecord: 0, ratePerPerson: 0 };
+        // Update admin settings form if open
+        const rpr = document.getElementById('ratePerRecord');
+        const rpp = document.getElementById('ratePerPerson');
+        if (rpr) rpr.value = paymentRates.ratePerRecord || 0;
+        if (rpp) rpp.value = paymentRates.ratePerPerson || 0;
+        // Re-render worker dashboard if visible
+        if (myRecordsCache.length) renderMyRecords(myRecordsCache);
+    }, err => console.error('paymentRates error:', err));
+}
+
+async function savePaymentRates() {
+    const rpr = parseFloat(document.getElementById('ratePerRecord').value) || 0;
+    const rpp = parseFloat(document.getElementById('ratePerPerson').value) || 0;
+    try {
+        await db.collection('config').doc('paymentRates').set({ ratePerRecord: rpr, ratePerPerson: rpp });
+        const st = document.getElementById('rateSaveStatus');
+        if (st) { st.textContent = '✅ Rates saved!'; setTimeout(() => st.textContent = '', 3000); }
+    } catch(e) {
+        const st = document.getElementById('rateSaveStatus');
+        if (st) st.textContent = '❌ Error: ' + e.message;
+    }
+}
+
 // ========== ADMIN DATA ==========
 let adminRecordsLoaded = false;
 let adminUsersLoaded = false;
@@ -3667,6 +3736,7 @@ async function loadAdminData() {
         // TIER 2: Unsubscribe old listeners before creating new ones (prevents N+1 listeners)
         if (unsubscribers.adminRecords) unsubscribers.adminRecords();
         if (unsubscribers.adminUsers) unsubscribers.adminUsers();
+        loadPaymentRates();
 
         unsubscribers.adminRecords = db.collection('records').orderBy('localTimestamp','desc').onSnapshot(snap => {
             allRecords = snap.docs.map(d => ({id:d.id,...d.data()}));
