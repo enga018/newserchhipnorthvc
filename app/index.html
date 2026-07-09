@@ -276,7 +276,7 @@
         #workersList,#supervisorsList{display:grid;grid-template-columns:1fr;gap:10px}
         @media(min-width:620px){#workersList,#supervisorsList{grid-template-columns:1fr 1fr}}
         .worker-name{font-weight:600;font-size:15px;color:var(--primary)}
-        .worker-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-top:8px}
+        .worker-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-top:8px}
         .worker-stat{text-align:center;background:var(--bg);border-radius:6px;padding:8px}
         .worker-stat-val{font-size:17px;font-weight:700;color:var(--primary)}
         .worker-stat-lbl{font-size:10px;color:var(--text2);text-transform:uppercase}
@@ -3880,6 +3880,7 @@ function renderWorkers() {
                 <div class="worker-stat"><div class="worker-stat-val" style="color:var(--primary)">${recs.length > 0 ? Math.round((completeCount / recs.length) * 100) : 0}%</div><div class="worker-stat-lbl">Done</div></div>
                 <div class="worker-stat"><div class="worker-stat-val">${hh.families}</div><div class="worker-stat-lbl">Households</div></div>
                 <div class="worker-stat"><div class="worker-stat-val">${hh.population}</div><div class="worker-stat-lbl">Persons</div></div>
+                <div class="worker-stat"><div class="worker-stat-val" style="color:var(--primary);font-size:13px">₹ ${((completeCount * (paymentRates.ratePerRecord||0)) + (hh.population * (paymentRates.ratePerPerson||0))).toFixed(0)}</div><div class="worker-stat-lbl">Payment</div></div>
             </div>
         </div>`;
     }).join('');
