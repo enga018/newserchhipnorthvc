@@ -2869,12 +2869,16 @@ function householdStats(r) {
     // A household only counts once it has at least one member recorded — an occupied
     // unit with nobody entered yet isn't a household, it's just occupied-but-empty.
     const households = resFams.filter(f => Array.isArray(f.members) && f.members.length > 0);
+    // Trim away default empty members that were never filled in
+    function hasData(m) { return m && ((m.name||'').trim() || (m.gender||'') || (m.age !== '' && m.age != null)); }
     let population = 0, males = 0, females = 0, children = 0, adults = 0;
     let childMales = 0, childFemales = 0, adultMales = 0, adultFemales = 0;
-    const familySizes = households.map(f => f.members.length);
+    const familySizes = [];
     for (const f of households) {
-        const members = f.members;
-        for (const m of members) {
+        const realMembers = f.members.filter(hasData);
+        if (!realMembers.length) continue;
+        familySizes.push(realMembers.length);
+        for (const m of realMembers) {
             population++;
             const g = (m && m.gender || '').toLowerCase();
             if (g === 'male') males++;
@@ -2888,7 +2892,7 @@ function householdStats(r) {
             }
         }
     }
-    return { families: households.length, population, males, females, children, adults, childMales, childFemales, adultMales, adultFemales, familySizes };
+    return { families: familySizes.length, population, males, females, children, adults, childMales, childFemales, adultMales, adultFemales, familySizes };
 }
 function correctionState(r) {
     // none -> pending (worker must fix) -> fixed (awaiting admin) -> verified
@@ -3202,7 +3206,8 @@ function householdHtml(r, full) {
         const contact = isRes && f.contact ? ` · 📱 ${esc(f.contact)}` : '';
         let members;
         if (isRes) {
-            members = (f.members||[]).map(m=>{
+            const realMembers = (f.members||[]).filter(m => m && ((m.name||'').trim() || (m.gender||'') || (m.age !== '' && m.age != null)));
+            members = realMembers.map(m=>{
                 const bits = [esc(m.name)||'(no name)', m.gender||'', (m.age===''||m.age==null)?'':m.age+'y', m.relation||''].filter(Boolean);
                 return `<li>${bits.join(' · ')}</li>`;
             }).join('') || '<li style="color:#999">No members listed</li>';
