@@ -3321,6 +3321,7 @@ function recordCard(r, context) {
             <div style="margin-top:5px">
                 ${r.photo ? '<span class="badge badge-photo">📷 Photo</span> ' : ''}
                 ${r.latitude ? '<span class="badge badge-gps">📍 GPS</span> ' : ''}
+                <span class="badge badge-worker">👤 ${esc(r.workerName || 'Unknown')}</span>
             </div>
             ${r.adminFlagNote ? `<div style="background:#fff3cd;border-radius:4px;padding:5px 8px;margin-top:5px;font-size:12px;color:#856404">⚠️ <b>Fix needed:</b> ${esc(r.adminFlagNote)}</div>` : ''}
             <div class="record-actions">
@@ -4239,7 +4240,7 @@ function recordDetailHtml(r) {
             <a href="https://maps.google.com/?q=${r.latitude},${r.longitude}" target="_blank" style="color:var(--primary);font-size:13px">📌 Open in Google Maps →</a>
         </div>` : ''}
         ${r.remarks ? `<div style="margin-bottom:10px;background:var(--bg);padding:8px;border-radius:6px"><b>Remarks:</b> ${esc(r.remarks)}</div>` : ''}
-        ${isAdmin ? `<div style="margin-bottom:10px"><b>Worker:</b> ${esc(allUsers[r.workerUid]?.name||r.workerEmail||'Unknown')}</div>` : ''}
+        ${isAdmin || isSupervisor ? `<div style="margin-bottom:10px"><b>Worker:</b> ${esc(allUsers[r.workerUid]?.name||r.workerEmail||'Unknown')}</div>` : ''}
         ${r.photo ? `<div><b>📷 Photo:</b> <span style="font-size:11px;color:var(--text2)">(tap to enlarge)</span><br><img src="${r.photo}" onclick="openFullPhoto('${r.id}')" style="width:100%;border-radius:8px;margin-top:6px;max-height:280px;object-fit:cover;cursor:pointer"></div>` : '<div style="color:#999;font-size:13px">No photo</div>'}
     `;
 }
