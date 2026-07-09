@@ -276,7 +276,7 @@
         #workersList,#supervisorsList{display:grid;grid-template-columns:1fr;gap:10px}
         @media(min-width:620px){#workersList,#supervisorsList{grid-template-columns:1fr 1fr}}
         .worker-name{font-weight:600;font-size:15px;color:var(--primary)}
-        .worker-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-top:8px}
+        .worker-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-top:8px}
         .worker-stat{text-align:center;background:var(--bg);border-radius:6px;padding:8px}
         .worker-stat-val{font-size:17px;font-weight:700;color:var(--primary)}
         .worker-stat-lbl{font-size:10px;color:var(--text2);text-transform:uppercase}
@@ -315,6 +315,12 @@
         .empty-state-icon{font-size:48px;margin-bottom:12px}
         .divider{margin:14px 0;border:none;border-top:1px solid var(--border)}
         .section-title{font-size:13px;font-weight:700;letter-spacing:0.3px;margin-bottom:10px;color:var(--text)}
+        .admin-set-header{font-size:15px;padding:12px 14px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);margin-bottom:8px;font-weight:700;transition:background 0.2s}
+        .admin-set-header:hover{background:var(--surface-2)}
+        .admin-set-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;margin-bottom:10px}
+        .danger-zone-header{color:var(--danger);border-color:#f5c6cb;background:#fff5f5}
+        .danger-zone-header:hover{background:#ffe0e0}
+        .danger-zone-card{border-color:#f5c6cb;background:#fff5f5}
         .info-box{background:var(--primary-tint);border:1px solid var(--primary-light);border-radius:var(--radius);padding:12px;font-size:13px;color:var(--primary-dark);margin-bottom:12px}
         @media(max-width:480px){.stats-grid{grid-template-columns:1fr 1fr}}
         @media(max-width:360px){
@@ -635,6 +641,16 @@ setTimeout(function() {
                     <div class="stat-value" id="myCompletionRate" style="font-size:16px;white-space:nowrap">0%</div>
                 </div>
             </div>
+            <div class="stat-card" style="background:var(--success-bg);border:1px solid var(--success);margin-bottom:12px">
+                <div style="display:flex;justify-content:space-between;align-items:center">
+                    <span class="stat-label" style="margin:0">💰 Estimated Payment</span>
+                    <span class="stat-value" id="myPaymentTotal" style="font-size:22px;color:var(--success)">₹ 0</span>
+                </div>
+                <div style="font-size:12px;color:var(--text2);margin-top:6px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px">
+                    <span>📋 <span id="myPaymentRecords">0</span> records × ₹<span id="myRatePerRecord">0</span></span>
+                    <span>👥 <span id="myPaymentPeople">0</span> people × ₹<span id="myRatePerPerson">0</span></span>
+                </div>
+            </div>
             <div class="nest-grid">
                 <div class="nest-box">
                     <div class="section-title">👨‍👩‍👧‍👦 Population</div>
@@ -774,8 +790,8 @@ setTimeout(function() {
         <!-- ALL RECORDS -->
         <div id="allrecords" class="form-section">
             <div class="form-group" style="margin-bottom:10px">
-                <label>Search Property ID</label>
-                <input type="text" id="filterPropertyId" placeholder="e.g. 0001 or NSN-0001" oninput="filterRecords()">
+                <label>Search</label>
+                <input type="text" id="filterPropertyId" placeholder="Search property ID or owner name..." oninput="filterRecords()">
             </div>
             <div class="filter-bar">
                 <select id="filterWorker" onchange="filterRecords()"><option value="">All Workers</option></select>
@@ -839,25 +855,25 @@ setTimeout(function() {
 
         <!-- SETTINGS -->
         <div id="adminsettings" class="form-section">
-            <div class="section-title collapsible-header" onclick="toggleCollapsible('dataMaint')">
+            <div class="admin-set-header collapsible-header" onclick="toggleCollapsible('dataMaint')">
                 <span class="collapsible-chevron">▶</span> 🔢 Data Maintenance
             </div>
             <div id="dataMaint" class="collapsible-body">
-            <div style="background:var(--bg);border-radius:8px;padding:12px;margin-bottom:12px">
+            <div class="admin-set-card">
                 <div style="font-size:13px;color:var(--text2);margin-bottom:10px">
                     Every family already gets a permanent Family ID (e.g. NSN-0001/1) when created. This one-time action assigns one to <b>existing</b> families that were saved before that — safe to run more than once, and only ever fills in families that don't have one yet.
                 </div>
                 <button class="btn-primary" onclick="backfillFamilyIds()">🔢 Assign Family IDs to Existing Records</button>
                 <div id="backfillAlert" style="margin-top:8px"></div>
             </div>
-            <div style="background:var(--bg);border-radius:8px;padding:12px;margin-bottom:12px">
+            <div class="admin-set-card">
                 <div style="font-size:13px;color:var(--text2);margin-bottom:10px">
                     Some older records may have family members with relation <b>"Head"</b> instead of <b>"Self"</b>. This one-time action converts them all to "Self" so the head of family is consistently identified. Safe to run more than once — only members with "Head" are touched.
                 </div>
                 <button class="btn-primary" onclick="normalizeHeadToSelf()">🔄 Normalize "Head" → "Self"</button>
                 <div id="normalizeHeadAlert" style="margin-top:8px"></div>
             </div>
-            <div style="background:var(--bg);border-radius:8px;padding:12px;margin-bottom:12px">
+            <div class="admin-set-card">
                 <div style="font-size:13px;color:var(--text2);margin-bottom:10px">
                     Some older records may have names with unicode <b>italic/styled characters</b> (e.g. from WhatsApp). This one-time action converts them all to plain ASCII. Safe to run more than once — only names with styled characters are touched.
                 </div>
@@ -865,13 +881,39 @@ setTimeout(function() {
                 <div id="normalizeItalicAlert" style="margin-top:8px"></div>
             </div>
             </div>
-            <div class="section-title" style="color:var(--warning)">⚠️ Danger Zone</div>
-            <div style="background:#ffebee;border:1px solid #ea4c89;border-radius:8px;padding:12px">
-                <div style="font-size:13px;color:#cb2431;margin-bottom:10px">
-                    <b>Reset Everything</b> permanently deletes <b>all records</b> and <b>all worker profiles</b>. Your admin login stays. This cannot be undone.
+            <div class="admin-set-header collapsible-header" onclick="toggleCollapsible('payRates')">
+                <span class="collapsible-chevron">▶</span> 💰 Payment Rates
+            </div>
+            <div id="payRates" class="collapsible-body">
+            <div class="admin-set-card">
+                <div style="display:flex;flex-direction:column;gap:12px">
+                    <div>
+                        <label style="font-size:14px;font-weight:600">Rate per completed record (₹)</label>
+                        <input type="number" id="ratePerRecord" step="0.01" min="0" style="width:100%;margin-top:4px">
+                    </div>
+                    <div>
+                        <label style="font-size:14px;font-weight:600">Rate per person (₹)</label>
+                        <input type="number" id="ratePerPerson" step="0.01" min="0" style="width:100%;margin-top:4px">
+                    </div>
+                    <button class="btn-primary" onclick="savePaymentRates()">💾 Save Rates</button>
+                    <div id="rateSaveStatus" style="font-size:12px;color:var(--success)"></div>
+                </div>
+            </div>
+            </div>
+            <div class="admin-set-header collapsible-header danger-zone-header" onclick="toggleDangerZone()">
+                <span class="collapsible-chevron">▶</span> ⚠️ Danger Zone
+            </div>
+            <div id="dangerZone" class="collapsible-body">
+            <div class="admin-set-card danger-zone-card">
+                <div style="font-size:14px;color:#cb2431;margin-bottom:12px;font-weight:600">
+                    🗑️ Reset Everything
+                </div>
+                <div style="font-size:13px;color:#cb2431;margin-bottom:12px">
+                    Permanently deletes <b>all records</b> and <b>all worker profiles</b>. Your admin login stays. This <b>cannot be undone</b>.
                     <br><br>💡 Tip: Export your data first!
                 </div>
                 <button class="btn-danger" onclick="resetEverything()" style="width:100%">🗑️ Delete All Records & Workers</button>
+            </div>
             </div>
         </div>
 
@@ -1247,6 +1289,22 @@ function toggleCollapsible(id) {
     body.classList.toggle('open');
     if (chevron) chevron.classList.toggle('open');
 }
+function toggleDangerZone() {
+    const body = document.getElementById('dangerZone');
+    if (!body) return;
+    const isOpen = body.classList.contains('open');
+    if (isOpen) {
+        body.classList.remove('open');
+        const chevron = body.previousElementSibling.querySelector('.collapsible-chevron');
+        if (chevron) chevron.classList.remove('open');
+    } else {
+        if (confirm('⚠️ You are about to access the Danger Zone.\n\nThis area contains destructive actions that cannot be undone.\n\nAre you sure you want to continue?')) {
+            body.classList.add('open');
+            const chevron = body.previousElementSibling.querySelector('.collapsible-chevron');
+            if (chevron) chevron.classList.add('open');
+        }
+    }
+}
 
 // Debounce helper for high-frequency events
 function debounce(func, ms) {
@@ -1262,8 +1320,10 @@ let unsubscribers = {
     userProfile: null,
     adminRecords: null,
     adminUsers: null,
-    myRecords: null
+    myRecords: null,
+    config: null
 };
+let paymentRates = { ratePerRecord: 0, ratePerPerson: 0 };
 
 function unsubscribeAll() {
     Object.values(unsubscribers).forEach(unsub => {
@@ -1273,7 +1333,8 @@ function unsubscribeAll() {
         userProfile: null,
         adminRecords: null,
         adminUsers: null,
-        myRecords: null
+        myRecords: null,
+        config: null
     };
 }
 
@@ -2869,12 +2930,16 @@ function householdStats(r) {
     // A household only counts once it has at least one member recorded — an occupied
     // unit with nobody entered yet isn't a household, it's just occupied-but-empty.
     const households = resFams.filter(f => Array.isArray(f.members) && f.members.length > 0);
+    // Trim away default empty members that were never filled in
+    function hasData(m) { return m && ((m.name||'').trim() || (m.gender||'') || (m.age !== '' && m.age != null)); }
     let population = 0, males = 0, females = 0, children = 0, adults = 0;
     let childMales = 0, childFemales = 0, adultMales = 0, adultFemales = 0;
-    const familySizes = households.map(f => f.members.length);
+    const familySizes = [];
     for (const f of households) {
-        const members = f.members;
-        for (const m of members) {
+        const realMembers = f.members.filter(hasData);
+        if (!realMembers.length) continue;
+        familySizes.push(realMembers.length);
+        for (const m of realMembers) {
             population++;
             const g = (m && m.gender || '').toLowerCase();
             if (g === 'male') males++;
@@ -2888,7 +2953,7 @@ function householdStats(r) {
             }
         }
     }
-    return { families: households.length, population, males, females, children, adults, childMales, childFemales, adultMales, adultFemales, familySizes };
+    return { families: familySizes.length, population, males, females, children, adults, childMales, childFemales, adultMales, adultFemales, familySizes };
 }
 function correctionState(r) {
     // none -> pending (worker must fix) -> fixed (awaiting admin) -> verified
@@ -3059,6 +3124,7 @@ async function loadMyRecords() {
             console.error('Records query error:', err);
             showAlert('Error loading records: ' + err.message, 'error');
         });
+        loadPaymentRates();
     } catch(e) { console.error(e); }
 }
 
@@ -3094,6 +3160,18 @@ function renderMyRecords(records) {
     const myRate = records.length > 0 ? Math.round((completed.length / records.length) * 100) : 0;
     if (myCompletionRate) myCompletionRate.textContent = myRate + '%';
     if (myProgressBar) myProgressBar.style.width = myRate + '%';
+
+    // Payment calculation
+    const totalPop = completed.reduce((sum, r) => sum + householdStats(r).population, 0);
+    const payRecords = completed.length * (paymentRates.ratePerRecord || 0);
+    const payPeople = totalPop * (paymentRates.ratePerPerson || 0);
+    const payTotal = payRecords + payPeople;
+    const setTxt = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
+    setTxt('myPaymentTotal', '₹ ' + payTotal.toFixed(2));
+    setTxt('myPaymentRecords', completed.length);
+    setTxt('myRatePerRecord', paymentRates.ratePerRecord || 0);
+    setTxt('myPaymentPeople', totalPop);
+    setTxt('myRatePerPerson', paymentRates.ratePerPerson || 0);
 
     // Building type breakdown (completed only)
     const bc = {};
@@ -3202,7 +3280,8 @@ function householdHtml(r, full) {
         const contact = isRes && f.contact ? ` · 📱 ${esc(f.contact)}` : '';
         let members;
         if (isRes) {
-            members = (f.members||[]).map(m=>{
+            const realMembers = (f.members||[]).filter(m => m && ((m.name||'').trim() || (m.gender||'') || (m.age !== '' && m.age != null)));
+            members = realMembers.map(m=>{
                 const bits = [esc(m.name)||'(no name)', m.gender||'', (m.age===''||m.age==null)?'':m.age+'y', m.relation||''].filter(Boolean);
                 return `<li>${bits.join(' · ')}</li>`;
             }).join('') || '<li style="color:#999">No members listed</li>';
@@ -3339,6 +3418,7 @@ function recordCard(r, context) {
             <div style="margin-top:5px">
                 ${r.photo ? '<span class="badge badge-photo">📷 Photo</span> ' : ''}
                 ${r.latitude ? '<span class="badge badge-gps">📍 GPS</span> ' : ''}
+                <span class="badge badge-worker">👤 ${esc(r.workerName || 'Unknown')}</span>
             </div>
             ${r.adminFlagNote ? `<div style="background:#fff3cd;border-radius:4px;padding:5px 8px;margin-top:5px;font-size:12px;color:#856404">⚠️ <b>Fix needed:</b> ${esc(r.adminFlagNote)}</div>` : ''}
             <div class="record-actions">
@@ -3665,6 +3745,34 @@ async function adminCancelCorrection(id, propId) {
     } catch(e) { showAlert('Could not cancel: ' + e.message, 'error'); }
 }
 
+// ========== PAYMENT RATES ==========
+function loadPaymentRates() {
+    if (unsubscribers.config) { unsubscribers.config(); unsubscribers.config = null; }
+    unsubscribers.config = db.collection('config').doc('paymentRates').onSnapshot(doc => {
+        paymentRates = doc.exists ? doc.data() : { ratePerRecord: 0, ratePerPerson: 0 };
+        // Update admin settings form if open
+        const rpr = document.getElementById('ratePerRecord');
+        const rpp = document.getElementById('ratePerPerson');
+        if (rpr) rpr.value = paymentRates.ratePerRecord || 0;
+        if (rpp) rpp.value = paymentRates.ratePerPerson || 0;
+        // Re-render worker dashboard if visible
+        if (myRecordsCache.length) renderMyRecords(myRecordsCache);
+    }, err => console.error('paymentRates error:', err));
+}
+
+async function savePaymentRates() {
+    const rpr = parseFloat(document.getElementById('ratePerRecord').value) || 0;
+    const rpp = parseFloat(document.getElementById('ratePerPerson').value) || 0;
+    try {
+        await db.collection('config').doc('paymentRates').set({ ratePerRecord: rpr, ratePerPerson: rpp });
+        const st = document.getElementById('rateSaveStatus');
+        if (st) { st.textContent = '✅ Rates saved!'; setTimeout(() => st.textContent = '', 3000); }
+    } catch(e) {
+        const st = document.getElementById('rateSaveStatus');
+        if (st) st.textContent = '❌ Error: ' + e.message;
+    }
+}
+
 // ========== ADMIN DATA ==========
 let adminRecordsLoaded = false;
 let adminUsersLoaded = false;
@@ -3679,6 +3787,7 @@ async function loadAdminData() {
         // TIER 2: Unsubscribe old listeners before creating new ones (prevents N+1 listeners)
         if (unsubscribers.adminRecords) unsubscribers.adminRecords();
         if (unsubscribers.adminUsers) unsubscribers.adminUsers();
+        loadPaymentRates();
 
         unsubscribers.adminRecords = db.collection('records').orderBy('localTimestamp','desc').onSnapshot(snap => {
             allRecords = snap.docs.map(d => ({id:d.id,...d.data()}));
@@ -3783,13 +3892,25 @@ function renderWorkers() {
     renderSupervisorAccounts(supervisors);
     const el = document.getElementById('workersList');
     if (!workers.length) { el.innerHTML='<div class="empty-state"><div class="empty-state-icon">👥</div><p>No workers yet.</p></div>'; return; }
-    el.innerHTML = workers.map(u => {
+    const workerData = workers.map(u => {
         const recs = allRecords.filter(r=>r.workerUid===u.uid);
         const today = new Date().toDateString();
         const todayCount = recs.filter(r=>r.localTimestamp&&new Date(r.localTimestamp).toDateString()===today).length;
         const absentCount = recs.filter(r=>needsFollowUp(r)).length;
         const completeCount = recs.length - absentCount;
-        const hh = recs.reduce((a,r)=>{ const s=householdStats(r); a.families+=s.families; a.population+=s.population; return a; }, {families:0,population:0});
+        const completeRecs = recs.filter(r => !needsFollowUp(r));
+        const hh = completeRecs.reduce((a,r)=>{ const s=householdStats(r); a.families+=s.families; a.population+=s.population; return a; }, {families:0,population:0});
+        const payWorker = (completeCount * (paymentRates.ratePerRecord||0)) + (hh.population * (paymentRates.ratePerPerson||0));
+        return { u, recs, todayCount, absentCount, completeCount, hh, payWorker };
+    });
+    const totalPay = workerData.reduce((s,d) => s + d.payWorker, 0);
+    const totalRecs = workerData.reduce((s,d) => s + d.completeCount, 0);
+    const totalPop = workerData.reduce((s,d) => s + d.hh.population, 0);
+    el.innerHTML = `<div style="background:var(--success-bg);border:1px solid var(--success);border-radius:var(--radius-lg);padding:12px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+        <div><span class="stat-value" style="font-size:20px">💰 ₹ ${totalPay.toFixed(2)}</span><div class="stat-label" style="margin:0">Total Estimated Payment</div></div>
+        <div style="font-size:12px;color:var(--text2)">📋 ${totalRecs} records · 👥 ${totalPop} people</div>
+    </div>` + workerData.map(d => {
+        const { u, recs, todayCount, absentCount, completeCount, hh, payWorker } = d;
         const hasRange = (typeof u.rangeStart === 'number' && typeof u.rangeEnd === 'number');
         const rangeText = hasRange
             ? `🎫 Stickers: NSN-${String(u.rangeStart).padStart(4,'0')} to NSN-${String(u.rangeEnd).padStart(4,'0')}`
@@ -3822,6 +3943,7 @@ function renderWorkers() {
                 <div class="worker-stat"><div class="worker-stat-val" style="color:var(--primary)">${recs.length > 0 ? Math.round((completeCount / recs.length) * 100) : 0}%</div><div class="worker-stat-lbl">Done</div></div>
                 <div class="worker-stat"><div class="worker-stat-val">${hh.families}</div><div class="worker-stat-lbl">Households</div></div>
                 <div class="worker-stat"><div class="worker-stat-val">${hh.population}</div><div class="worker-stat-lbl">Persons</div></div>
+                <div class="worker-stat"><div class="worker-stat-val" style="color:var(--primary);font-size:13px">₹ ${payWorker.toFixed(0)}</div><div class="worker-stat-lbl">Payment</div></div>
             </div>
         </div>`;
     }).join('');
@@ -3912,7 +4034,8 @@ function getFilteredRecords() {
     const pf = document.getElementById('filterPropertyType').value;
     const bf = document.getElementById('filterBuilding').value;
     const sf = document.getElementById('filterStatus').value;
-    const pidSearch = document.getElementById('filterPropertyId').value.trim().toLowerCase().replace(/^nsn-/, '');
+    const search = document.getElementById('filterPropertyId').value.trim().toLowerCase();
+    const pidSearch = search.replace(/^nsn-/, '');
     let f = allRecords;
     if (wf) f = f.filter(r=>r.workerUid===wf);
     if (of) f = f.filter(r=>(r.ownerCategory||'Individual')===of);
@@ -3923,9 +4046,15 @@ function getFilteredRecords() {
     if (sf==='correction') f = f.filter(r=>r.needsCorrection===true);
     if (sf==='verify') f = f.filter(r=>correctionState(r)==='fixed');
     if (sf==='verified') f = f.filter(r=>correctionState(r)==='verified');
-    if (pidSearch) {
+    if (search) {
         const searchPadded = pidSearch.padStart(4, '0');
-        f = f.filter(r => (r.propertyId || '').toLowerCase().replace(/^nsn-/, '').padStart(4, '0') === searchPadded);
+        f = f.filter(r => {
+            if ((r.propertyId || '').toLowerCase().replace(/^nsn-/, '').padStart(4, '0') === searchPadded) return true;
+            if ((r.ownerName || '').toLowerCase().includes(search)) return true;
+            if ((r.organizationName || '').toLowerCase().includes(search)) return true;
+            if ((r.contactPerson || '').toLowerCase().includes(search)) return true;
+            return false;
+        });
     }
     return f;
 }
@@ -4250,7 +4379,7 @@ function recordDetailHtml(r) {
             <a href="https://maps.google.com/?q=${r.latitude},${r.longitude}" target="_blank" style="color:var(--primary);font-size:13px">📌 Open in Google Maps →</a>
         </div>` : ''}
         ${r.remarks ? `<div style="margin-bottom:10px;background:var(--bg);padding:8px;border-radius:6px"><b>Remarks:</b> ${esc(r.remarks)}</div>` : ''}
-        ${isAdmin ? `<div style="margin-bottom:10px"><b>Worker:</b> ${esc(allUsers[r.workerUid]?.name||r.workerEmail||'Unknown')}</div>` : ''}
+        ${isAdmin || isSupervisor ? `<div style="margin-bottom:10px"><b>Worker:</b> ${esc(allUsers[r.workerUid]?.name||r.workerEmail||'Unknown')}</div>` : ''}
         ${r.photo ? `<div><b>📷 Photo:</b> <span style="font-size:11px;color:var(--text2)">(tap to enlarge)</span><br><img src="${r.photo}" onclick="openFullPhoto('${r.id}')" style="width:100%;border-radius:8px;margin-top:6px;max-height:280px;object-fit:cover;cursor:pointer"></div>` : '<div style="color:#999;font-size:13px">No photo</div>'}
     `;
 }
