@@ -91,7 +91,7 @@ try {
         set('statMale', s.males);
         set('statFemale', s.females);
         set('statHousehold', s.households);
-        set('statTotal', s.totalRecords);
+        set('statTotal', s.total);
         if (s.updatedAt) {
             var d = new Date(s.updatedAt);
             document.getElementById('statFreshness').textContent = 'Live as of ' + d.toLocaleDateString() + ' ' + d.toLocaleTimeString();

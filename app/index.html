@@ -1194,7 +1194,7 @@ const firebaseConfig = {
     appId: "1:547385765757:web:df18cd27e9161b7d1c2614"
 };
 const ADMIN_EMAIL = "enga018@gmail.com";
-const APP_VERSION = "v3.9.0";
+const APP_VERSION = "v3.9.1";
 
 // Dark mode theme management
 const THEME_STORAGE_KEY = 'appTheme';
@@ -3343,10 +3343,12 @@ function maybePublishPublicStats(hh) {
     if (!db || !hh) return;
     const stats = {
         population: hh.population, males: hh.males, females: hh.females,
-        households: hh.families, totalRecords: allRecords.length,
+        households: hh.families,
+        // TOTAL on the landing page is the sum of the rows above it, not a record count.
+        total: hh.population + hh.males + hh.females + hh.families,
         updatedAt: new Date().toISOString()
     };
-    const key = JSON.stringify([stats.population, stats.males, stats.females, stats.households, stats.totalRecords]);
+    const key = JSON.stringify([stats.population, stats.males, stats.females, stats.households, stats.total]);
     if (key === lastPublishedStatsKey) return;
     lastPublishedStatsKey = key;
     db.collection('public').doc('stats').set(stats).catch(e => console.warn('Could not publish public stats:', e.message));
