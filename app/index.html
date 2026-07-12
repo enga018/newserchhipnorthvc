@@ -114,15 +114,16 @@
         .auth-tab.active{background:var(--primary);color:white}
 
         /* HEADER */
-        .header{background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:white;padding:10px 18px;border-radius:var(--radius-lg);margin-bottom:16px;display:flex;flex-direction:column;gap:12px;box-shadow:0 8px 24px rgba(6,182,212,0.18);border-bottom:2px solid rgba(255,255,255,0.1)}
+        .header{background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:white;padding:10px 18px;border-radius:var(--radius-lg);margin-bottom:16px;display:flex;flex-direction:column;gap:8px;box-shadow:0 8px 24px rgba(6,182,212,0.18);border-bottom:2px solid rgba(255,255,255,0.1)}
         .header-row{display:flex;justify-content:space-between;align-items:center;gap:12px}
+        .header-actions-row{justify-content:flex-end;gap:6px}
         .header-left{display:flex;align-items:center}
         .header-left h1{font-size:17px;font-weight:700;letter-spacing:-0.3px;line-height:1.2}
         .header-left p{font-size:12px;opacity:0.85;margin-top:3px;font-weight:500}
         .header-right{display:flex;flex-direction:row;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
         .user-badge{background:rgba(255,255,255,0.15);padding:6px 12px;border-radius:24px;font-size:12px;font-weight:500;cursor:pointer;transition:all 0.2s ease;border:1px solid rgba(255,255,255,0.2)}
         .user-badge:hover{background:rgba(255,255,255,0.25);border-color:rgba(255,255,255,0.4)}
-        .btn-logout{background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);color:white;padding:6px 12px;border-radius:8px;font-size:12px;font-weight:500;cursor:pointer;transition:all 0.2s ease}
+        .btn-logout{background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);color:white;padding:5px 12px;min-height:30px;border-radius:8px;font-size:12px;font-weight:500;cursor:pointer;transition:all 0.2s ease}
         .btn-logout:hover{background:rgba(255,255,255,0.22);border-color:rgba(255,255,255,0.4)}
         .btn-logout:active{background:rgba(255,255,255,0.08)}
 
@@ -359,7 +360,7 @@
         .overview-alert a{color:inherit;font-weight:600;text-decoration:underline}
         html[data-theme="dark"] .overview-alert-danger{background:#3d1f1f;border-color:#c53030;color:#feb2b2}
         html[data-theme="dark"] .overview-alert-warning{background:#3d3520;border-color:#975a16;color:#f6e05e}
-        .btn-theme-toggle{background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);color:white;padding:6px 10px;border-radius:8px;font-size:14px;cursor:pointer;transition:all 0.2s ease;display:flex;align-items:center;justify-content:center}
+        .btn-theme-toggle{background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);color:white;padding:5px 10px;min-height:30px;border-radius:8px;font-size:14px;cursor:pointer;transition:all 0.2s ease;display:flex;align-items:center;justify-content:center}
         .btn-theme-toggle:hover{background:rgba(255,255,255,0.22);border-color:rgba(255,255,255,0.4)}
         .btn-theme-toggle:active{background:rgba(255,255,255,0.08)}
     </style>
@@ -470,7 +471,7 @@ setTimeout(function() {
                     <span class="field-worker-badge" id="workerRoleBadge" onclick="openWorkerProfile()" style="cursor:pointer">👤 Field Worker</span>
                 </div>
             </div>
-            <div class="header-row">
+            <div class="header-row header-actions-row">
                 <button class="btn-theme-toggle" id="themeToggle" title="Toggle dark mode" onclick="toggleTheme()"><span class="theme-icon">🌙</span></button>
                 <button class="btn-logout" onclick="logoutUser()">Logout</button>
             </div>
@@ -721,7 +722,7 @@ setTimeout(function() {
                     <div class="admin-badge" id="adminRoleBadge" onclick="openAdminProfile()" style="cursor:pointer">👑 ADMIN</div>
                 </div>
             </div>
-            <div class="header-row">
+            <div class="header-row header-actions-row">
                 <button class="btn-theme-toggle" id="adminThemeToggle" title="Toggle dark mode" onclick="toggleTheme()"><span class="theme-icon">🌙</span></button>
                 <button class="btn-logout" onclick="logoutUser()">Logout</button>
             </div>
@@ -1201,7 +1202,7 @@ const firebaseConfig = {
     appId: "1:547385765757:web:df18cd27e9161b7d1c2614"
 };
 const ADMIN_EMAIL = "enga018@gmail.com";
-const APP_VERSION = "v3.10.0";
+const APP_VERSION = "v3.10.1";
 
 // Dark mode theme management
 const THEME_STORAGE_KEY = 'appTheme';
