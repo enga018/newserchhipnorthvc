@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NSN VC Field Survey</title>
     <meta name="description" content="Village Council Field Data App for property tax collection">
-    <meta name="theme-color" content="#2c5282">
+    <meta name="theme-color" content="#0E7490">
     <link rel="manifest" href="../manifest.json">
     <link rel="icon" type="image/png" href="../icons/icon-96.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -76,23 +76,25 @@
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
         :root{
-            --primary:#2c5282;--primary-dark:#1e3a5f;--primary-light:#3a6ea5;--primary-lighter:#5b8fc7;--primary-tint:#eaf1f9;
-            --success:#22863a;--success-bg:#e7f6ec;
-            --warning:#b76e00;--warning-bg:#fbf0db;
-            --danger:#c0392b;--danger-bg:#fbeaea;
+            --primary:#0E7490;--primary-dark:#155E75;--primary-light:#06B6D4;--primary-lighter:#22D3EE;--primary-tint:#ECFEFF;
+            --accent:#F59E0B;--accent-tint:#FEF3C7;
+            --success:#047857;--success-bg:#D1FAE5;
+            --warning:#B45309;--warning-bg:#FEF3C7;
+            --danger:#DC2626;--danger-bg:#FEE2E2;
             --bg:#f3f6fa;--surface:#fff;--surface-2:#f8fafc;--text:#16202e;
-            --text2:#5b6675;--border:#e2e7ee;--focus:#0366d6;--orange:#e65100;
+            --text2:#5b6675;--border:#e2e7ee;--focus:#0E7490;
             --radius:12px;--radius-lg:16px;
             --shadow:0 1px 2px rgba(16,32,52,0.06),0 1px 3px rgba(16,32,52,0.05);
             --shadow-md:0 4px 14px rgba(16,32,52,0.10)
         }
         html[data-theme="dark"]{
-            --primary:#5b8fc7;--primary-dark:#3a6ea5;--primary-light:#7ca5d4;--primary-lighter:#8eb5df;--primary-tint:#1e3a5f;
-            --success:#4caf50;--success-bg:#1b5e20;
-            --warning:#ffb74d;--warning-bg:#6d4c00;
-            --danger:#ef5350;--danger-bg:#6d3636;
+            --primary:#0891B2;--primary-dark:#0E7490;--primary-light:#22D3EE;--primary-lighter:#67E8F9;--primary-tint:#083344;
+            --accent:#FBBF24;--accent-tint:#451a03;
+            --success:#059669;--success-bg:#064E3B;
+            --warning:#D97706;--warning-bg:#451a03;
+            --danger:#EF4444;--danger-bg:#7F1D1D;
             --bg:#0f1419;--surface:#1a1f26;--surface-2:#252b35;--text:#e0e0e0;
-            --text2:#a0a0a0;--border:#3a4452;--focus:#64b5f6;--orange:#ffb74d;
+            --text2:#a0a0a0;--border:#3a4452;--focus:#0891B2;
             --shadow:0 1px 2px rgba(0,0,0,0.4),0 1px 3px rgba(0,0,0,0.3);
             --shadow-md:0 4px 14px rgba(0,0,0,0.5)
         }
@@ -112,7 +114,7 @@
         .auth-tab.active{background:var(--primary);color:white}
 
         /* HEADER */
-        .header{background:var(--primary);color:white;padding:10px 18px;border-radius:var(--radius-lg);margin-bottom:16px;display:flex;flex-direction:column;gap:12px;box-shadow:0 4px 12px rgba(0,0,0,0.15);border-bottom:2px solid rgba(255,255,255,0.1)}
+        .header{background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:white;padding:10px 18px;border-radius:var(--radius-lg);margin-bottom:16px;display:flex;flex-direction:column;gap:12px;box-shadow:0 8px 24px rgba(6,182,212,0.18);border-bottom:2px solid rgba(255,255,255,0.1)}
         .header-row{display:flex;justify-content:space-between;align-items:center;gap:12px}
         .header-left{display:flex;align-items:center}
         .header-left h1{font-size:17px;font-weight:700;letter-spacing:-0.3px;line-height:1.2}
@@ -125,35 +127,37 @@
         .btn-logout:active{background:rgba(255,255,255,0.08)}
 
         /* TABS */
-        .tab-btn{flex:1;padding:9px 2px;min-height:0;background:none;border:none;color:var(--text2);font-size:11px;font-weight:600;cursor:pointer;border-radius:10px;transition:all 0.15s}
-        .tab-btn.active{background:var(--primary);color:white;box-shadow:var(--shadow)}
+        .tab-btn{flex:1;padding:9px 2px;min-height:0;background:none;border:none;color:var(--text2);font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;cursor:pointer;border-radius:10px;transition:all 0.15s}
+        .tab-btn.active{background:var(--primary);color:white;box-shadow:0 2px 10px rgba(6,182,212,0.35)}
 
         /* BOTTOM NAV */
         .bottomnav{position:fixed;left:0;right:0;bottom:0;margin:0 auto;max-width:860px;z-index:90;display:flex;flex-wrap:wrap;background:var(--surface);border-top:1px solid var(--border);box-shadow:0 -4px 16px rgba(0,0,0,0.08);padding:8px 8px calc(8px + env(safe-area-inset-bottom));gap:4px}
-        .bottomnav .navbtn{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;background:none;border:none;min-height:0;padding:10px 4px;color:var(--text2);font-size:11px;font-weight:600;border-radius:14px;transition:all 0.2s ease}
-        .bottomnav .navbtn .navicon{font-size:22px;line-height:1;filter:grayscale(0.5);transition:filter 0.2s ease}
-        .bottomnav .navbtn:hover{background:var(--bg);color:var(--text)}
+        .bottomnav .navbtn{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;background:none;border:none;min-height:0;padding:14px 4px;color:var(--text2);font-size:11px;font-weight:600;border-radius:14px;transition:all 0.2s ease}
+        .bottomnav .navbtn .navicon{font-size:22px;line-height:1;filter:grayscale(0.5);transition:all 0.2s ease}
+        .bottomnav .navbtn:hover{background:var(--bg);color:var(--text);transform:translateY(-1px)}
         .bottomnav .navbtn.active{color:var(--primary);background:var(--primary-tint)}
-        .bottomnav .navbtn.active .navicon{filter:none}
+        .bottomnav .navbtn.active .navicon{filter:none;transform:scale(1.15)}
         .bottomnav .navbtn{position:relative}
         .worker-bottomnav{padding:12px 8px calc(12px + env(safe-area-inset-bottom))}
         .worker-bottomnav .navbtn{padding:14px 4px;font-size:12px}
         .worker-bottomnav .navbtn .navicon{font-size:26px}
         .navbadge{position:absolute;top:6px;right:4px;min-width:18px;height:18px;padding:0 4px;border-radius:9px;background:var(--danger);color:#fff;font-size:10px;font-weight:700;display:none;align-items:center;justify-content:center;line-height:18px;box-shadow:0 2px 6px rgba(0,0,0,0.2)}
-        .navbadge.show{display:inline-flex}
+        .navbadge.show{display:inline-flex;animation:badgePulse 1.8s ease-in-out infinite}
 
         /* WIZARD */
         .wizard-progress{display:flex;gap:4px;margin-bottom:18px}
         .wstep{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px}
         .wstep.done{cursor:pointer}
-        .wdot{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;background:var(--bg);color:var(--text2);border:1.5px solid var(--border);transition:all 0.15s}
-        .wstep.current .wdot{background:var(--primary);color:#fff;border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-tint)}
-        .wstep.done .wdot{background:var(--success);color:#fff;border-color:var(--success)}
+        .wdot{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;background:var(--bg);color:var(--text2);border:1.5px solid var(--border);transition:all 0.2s ease}
+        .wstep.current .wdot{background:var(--primary);color:#fff;border-color:var(--primary);box-shadow:0 0 0 4px var(--primary-tint),0 4px 12px rgba(6,182,212,0.35);transform:scale(1.08)}
+        .wstep.done .wdot{background:var(--success);color:#fff;border-color:var(--success);box-shadow:0 2px 8px rgba(16,185,129,0.3);animation:badgePulse 1.6s ease-in-out 2}
         .wlabel{font-size:10px;line-height:1.2;color:var(--text2);text-align:center;font-weight:600}
         .wstep.current .wlabel{color:var(--primary)}
         .wizard-step{display:none}
         .wizard-step.active{display:block;animation:wizFade 0.18s ease}
         @keyframes wizFade{from{opacity:0;transform:translateX(6px)}to{opacity:1;transform:none}}
+        @keyframes badgePulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+        @keyframes slideDown{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
         .wizard-step-title{font-size:16px;font-weight:700;color:var(--text);margin-bottom:14px}
         .collapsible-header{display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;border-radius:var(--radius);padding:2px 0;transition:opacity 0.2s}
         .collapsible-header:hover{opacity:0.7}
@@ -178,22 +182,25 @@
             width:100%;padding:13px 14px;min-height:46px;border:1.5px solid var(--border);border-radius:var(--radius);
             font-size:15px;font-family:inherit;background:var(--surface);color:var(--text);transition:border-color 0.15s,box-shadow 0.15s
         }
-        input:focus,select:focus,textarea:focus{outline:none;border-color:var(--focus);box-shadow:0 0 0 3px rgba(3,102,214,0.12)}
+        input:focus,select:focus,textarea:focus{outline:none;border-color:var(--focus);box-shadow:0 0 0 3px rgba(6,182,212,0.15)}
         input::placeholder,textarea::placeholder{color:#9aa4b2}
         textarea{resize:vertical;min-height:70px}
         .required-star{color:var(--danger)}
 
         /* BUTTONS */
-        button{padding:12px 16px;min-height:46px;border:none;border-radius:var(--radius);font-size:14px;font-weight:600;cursor:pointer;transition:all 0.15s;font-family:inherit}
+        button{padding:12px 16px;min-height:46px;border:none;border-radius:var(--radius);font-size:14px;font-weight:600;cursor:pointer;transition:all 0.2s cubic-bezier(0.34,1.56,0.64,1);font-family:inherit}
         button:active{transform:translateY(1px)}
-        .btn-primary{background:var(--primary);color:white;width:100%;box-shadow:var(--shadow)}
-        .btn-primary:hover{background:var(--primary-dark)}
+        .btn-primary,.btn-secondary,.btn-danger,.btn-success,.btn-photo{font-weight:800;text-transform:uppercase;letter-spacing:0.4px}
+        .btn-primary{background:var(--primary);color:white;width:100%;box-shadow:0 4px 16px rgba(6,182,212,0.3)}
+        .btn-primary:hover{background:var(--primary-dark);transform:translateY(-2px);box-shadow:0 6px 20px rgba(6,182,212,0.4)}
         .btn-secondary{background:var(--surface);color:var(--primary);width:100%;border:1.5px solid var(--border)}
-        .btn-secondary:hover{background:var(--primary-tint);border-color:var(--primary-light)}
-        .btn-danger{background:var(--danger);color:white}
-        .btn-danger:hover{background:#a02d22}
-        .btn-success{background:var(--success);color:white}
-        .btn-photo{background:var(--primary);color:white;padding:12px;font-size:13px;border-radius:var(--radius);width:100%}
+        .btn-secondary:hover{background:var(--primary-tint);border-color:var(--primary-light);transform:translateY(-2px)}
+        .btn-danger{background:var(--danger);color:white;box-shadow:0 4px 16px rgba(239,68,68,0.3)}
+        .btn-danger:hover{background:#B91C1C;transform:translateY(-2px);box-shadow:0 6px 20px rgba(239,68,68,0.4)}
+        .btn-success{background:var(--success);color:white;box-shadow:0 4px 16px rgba(16,185,129,0.3)}
+        .btn-success:hover{background:#065F46;transform:translateY(-2px);box-shadow:0 6px 20px rgba(16,185,129,0.4)}
+        .btn-photo{background:var(--primary);color:white;padding:12px;font-size:13px;border-radius:var(--radius);width:100%;box-shadow:0 4px 16px rgba(6,182,212,0.3)}
+        .btn-photo:hover{background:var(--primary-dark);transform:translateY(-2px);box-shadow:0 6px 20px rgba(6,182,212,0.4)}
         .btn-small{padding:6px 12px;min-height:0;font-size:12px;border-radius:8px}
         input[type=file]{display:none}
 
@@ -265,7 +272,7 @@
         .nest-hero-num{font-size:32px;font-weight:800;color:var(--primary);line-height:1}
 
         /* ADMIN */
-        #adminView .header{background:var(--primary-dark)}
+        #adminView .header{background:linear-gradient(135deg,var(--primary-dark),var(--primary))}
         .admin-badge{background:rgba(255,215,0,0.3);border:1px solid rgba(255,215,0,0.5);padding:2px 10px;border-radius:10px;font-size:11px;font-weight:600;color:#ffd700;display:inline-block;cursor:pointer;transition:all 0.2s ease}
         .admin-badge:hover{background:rgba(255,215,0,0.4);border-color:rgba(255,215,0,0.7)}
         .field-worker-badge{background:rgba(58,110,165,0.3);border:1px solid rgba(58,110,165,0.5);padding:2px 10px;border-radius:10px;font-size:11px;font-weight:600;color:white;display:inline-block;cursor:pointer;transition:all 0.2s ease}
@@ -287,11 +294,11 @@
         .add-worker-box{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:16px}
 
         /* ALERTS */
-        .alert{padding:10px 14px;border-radius:6px;margin-bottom:12px;font-size:13px}
-        .alert-success{background:var(--success-bg);color:var(--success);border:1px solid var(--success)}
-        .alert-error{background:var(--danger-bg);color:var(--danger);border:1px solid var(--danger)}
-        .alert-info{background:var(--primary-tint);color:var(--primary-dark);border:1px solid var(--primary-light)}
-        .alert-warning{background:var(--warning-bg);color:var(--warning);border:1px solid var(--warning)}
+        .alert{padding:10px 14px 10px 16px;border-radius:6px;margin-bottom:12px;font-size:13px;border-left:4px solid transparent;box-shadow:0 2px 8px rgba(16,32,52,0.06);animation:slideDown 0.25s ease}
+        .alert-success{background:var(--success-bg);color:var(--success);border-left-color:var(--success)}
+        .alert-error{background:var(--danger-bg);color:var(--danger);border-left-color:var(--danger)}
+        .alert-info{background:var(--primary-tint);color:var(--primary-dark);border-left-color:var(--primary)}
+        .alert-warning{background:var(--warning-bg);color:var(--warning);border-left-color:var(--warning)}
 
         /* MODAL */
         .modal{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.55);z-index:1000;align-items:flex-end;justify-content:center;padding:0;backdrop-filter:blur(2px)}
@@ -363,13 +370,13 @@
 <!-- Startup splash -->
 <div id="splashScreen" style="position:fixed;inset:0;background:#f5f7fa;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:2000">
     <div style="font-size:48px">🏘️</div>
-    <div style="font-size:16px;color:#2c5282;font-weight:600;margin-top:12px">NSN VC Field Survey</div>
+    <div style="font-size:16px;color:#0E7490;font-weight:600;margin-top:12px">NSN VC Field Survey</div>
     <div id="splashLoadingText" style="font-size:13px;color:#586069;margin-top:8px">Loading...</div>
     <div id="splashVersion" style="font-size:11px;color:#999;margin-top:12px"></div>
     <div id="splashRetry" class="hidden" style="margin-top:18px;text-align:center;padding:0 24px">
-        <div id="splashErrorText" style="font-size:13px;color:#c0392b;margin-bottom:6px">Taking longer than usual. Please check your internet connection.</div>
+        <div id="splashErrorText" style="font-size:13px;color:#EF4444;margin-bottom:6px">Taking longer than usual. Please check your internet connection.</div>
         <div id="splashDetailText" style="font-size:11px;color:#8a8f98;margin-bottom:12px"></div>
-        <button onclick="location.reload()" style="padding:10px 22px;background:#2c5282;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">Retry</button>
+        <button onclick="location.reload()" style="padding:10px 22px;background:#0E7490;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">Retry</button>
     </div>
 </div>
 <script>
@@ -1194,7 +1201,7 @@ const firebaseConfig = {
     appId: "1:547385765757:web:df18cd27e9161b7d1c2614"
 };
 const ADMIN_EMAIL = "enga018@gmail.com";
-const APP_VERSION = "v3.9.1";
+const APP_VERSION = "v3.10.0";
 
 // Dark mode theme management
 const THEME_STORAGE_KEY = 'appTheme';
@@ -1231,7 +1238,7 @@ function applyTheme(theme) {
     localStorage.setItem(THEME_STORAGE_KEY, theme);
     const themeColorMeta = document.querySelector('meta[name="theme-color"]');
     if (themeColorMeta) {
-        themeColorMeta.setAttribute('content', theme === DARK_THEME ? '#3a6ea5' : '#2c5282');
+        themeColorMeta.setAttribute('content', theme === DARK_THEME ? '#0891B2' : '#0E7490');
     }
 }
 function toggleTheme() {
@@ -1379,7 +1386,7 @@ try {
     const af = document.getElementById('authVersionFooter');
     const sv = document.getElementById('splashVersion');
     const nvf = document.querySelectorAll('.nav-version');
-    const html = APP_VERSION + ' | Made with ❤️ by <a href="https://enga.in" target="_blank" style="color:#2c5282;text-decoration:none;font-weight:600">Enga</a>';
+    const html = APP_VERSION + ' | Made with ❤️ by <a href="https://enga.in" target="_blank" style="color:#0E7490;text-decoration:none;font-weight:600">Enga</a>';
     if (af) af.innerHTML = html;
     if (sv) sv.textContent = APP_VERSION;
     nvf.forEach(el => el.innerHTML = html);
