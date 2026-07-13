@@ -166,7 +166,7 @@
         .collapsible-chevron.open{transform:rotate(90deg)}
         .collapsible-body{overflow:hidden;transition:max-height 0.3s ease,opacity 0.25s ease;max-height:0;opacity:0}
         .collapsible-body.open{max-height:3000px;opacity:1}
-        .wizard-nav{display:flex;gap:8px;margin-top:20px}
+        .wizard-nav{display:flex;gap:8px;margin-top:20px;position:sticky;bottom:120px;background:var(--surface);padding:8px 0;z-index:10}
                 .btn-clear-wiz{font-size:13px;padding:10px 12px;min-height:40px;border-radius:8px;background:var(--surface-2);color:var(--text2);border:1px solid var(--border);width:100%;margin-top:8px;font-weight:600}
         .btn-clear-wiz:hover{background:#e8e8e8;color:var(--danger)}
         .btn-clear-wiz:active{background:#ddd}
@@ -283,8 +283,16 @@
         .worker-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px}
         #workersList,#supervisorsList{display:grid;grid-template-columns:1fr;gap:10px}
         @media(min-width:620px){#workersList,#supervisorsList{grid-template-columns:1fr 1fr}}
-        .worker-name{font-weight:600;font-size:15px;color:var(--primary)}
-        .worker-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-top:8px}
+        .worker-name{font-weight:600;font-size:14px;color:var(--primary)}
+        .worker-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
+        .worker-range{font-size:12px;color:var(--text2);margin-bottom:8px}
+        .worker-status-badge{display:inline-block;font-size:10px;font-weight:600;padding:2px 8px;border-radius:12px;margin-left:6px}
+        .worker-status-good{background:var(--success-bg);color:var(--success)}
+        .worker-status-attention{background:var(--warning-bg);color:var(--warning)}
+        .worker-progress{display:flex;align-items:center;gap:6px;margin-bottom:8px;font-size:11px}
+        .worker-progress-bar{flex:1;height:6px;background:var(--border);border-radius:3px;overflow:hidden}
+        .worker-progress-fill{height:100%;background:var(--primary);border-radius:3px}
+        .worker-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-top:8px}
         .worker-stat{text-align:center;background:var(--bg);border-radius:6px;padding:8px}
         .worker-stat-val{font-size:17px;font-weight:700;color:var(--primary)}
         .worker-stat-lbl{font-size:10px;color:var(--text2);text-transform:uppercase}
@@ -508,10 +516,9 @@ setTimeout(function() {
                     <div class="wizard-step-title">🏠 Property details</div>
                     <div class="form-group">
                         <label>Property ID <span class="required-star">*</span></label>
-                        <div style="display:flex;align-items:center;gap:0"><span style="background:var(--primary-tint);border:1.5px solid var(--border);border-right:none;padding:13px 12px;border-radius:var(--radius) 0 0 var(--radius);font-size:14px;font-weight:600;color:var(--primary);white-space:nowrap">NSN-</span><input type="text" id="propertyId" placeholder="0001" pattern="(NSN-)?[0-9]{1,4}" maxlength="8" required style="border-radius:0 var(--radius) var(--radius) 0;border-left:none" oninput="document.getElementById('propertyCheckResult').classList.add('hidden')" onblur="(async () => { const result = await checkPropertyExists(this.value); showPropertyCheckResult(result); })()"></div><div class="text-muted" style="font-size:12px;margin-top:5px">Enter 4-digit number from sticker (e.g. 0001). NSN- is added automatically.</div>
-                        <button type="button" class="btn-secondary" style="width:100%;margin-top:8px;padding:10px;font-size:13px" onclick="(async () => { const result = await checkPropertyExists(document.getElementById('propertyId').value); showPropertyCheckResult(result); })()">🔍 Check Property</button>
+                        <div style="display:flex;align-items:center;gap:0"><span style="background:var(--primary-tint);border:1.5px solid var(--border);border-right:none;padding:13px 12px;border-radius:var(--radius) 0 0 var(--radius);font-size:14px;font-weight:600;color:var(--primary);white-space:nowrap">NSN-</span><input type="text" id="propertyId" placeholder="0001" pattern="(NSN-)?[0-9]{1,4}" maxlength="8" required autofocus inputmode="numeric" style="border-radius:0 var(--radius) var(--radius) 0;border-left:none" oninput="document.getElementById('propertyCheckResult').classList.add('hidden')" onblur="(async () => { const result = await checkPropertyExists(this.value); showPropertyCheckResult(result); })()"></div><div class="text-muted" style="font-size:12px;margin-top:5px">Enter 4-digit number from sticker (e.g. 0001). NSN- is added automatically.</div>
                         <div id="propertyCheckResult" class="hidden" style="margin-top:8px"></div>
-                        <div id="rangeHint" style="font-size:12px;margin-top:8px"></div>
+                        <div id="rangeHint" style="font-size:12px;margin-top:8px;padding:8px;background:var(--bg);border-radius:6px;color:var(--text2)"></div>
                     </div>
                     <div class="form-group">
                         <label>Owner Type <span class="required-star">*</span> <span style="font-size:11px;color:var(--text2);font-weight:400">(who pays the tax)</span></label>
@@ -635,19 +642,8 @@ setTimeout(function() {
         <div id="myrecords" class="form-section">
             <div class="section-title">My Work Summary</div>
             <div class="stats-grid">
-                <div class="stat-card"><div class="stat-value" id="myTotal">0</div><div class="stat-label">Total Done</div></div>
-                <div class="stat-card warning"><div class="stat-value" id="myIncomplete">0</div><div class="stat-label">Incomplete</div></div>
-            </div>
-            <div class="stats-grid">
-                <div class="stat-card"><div class="stat-value" id="myTodayTotal">0</div><div class="stat-label">Today Total</div></div>
-                <div class="stat-card warning"><div class="stat-value" id="myTodayIncomplete">0</div><div class="stat-label">Today Incomplete</div></div>
-            </div>
-            <div class="stat-card" style="margin-bottom:12px">
-                <div style="display:flex;align-items:center;gap:12px">
-                    <div class="stat-label" style="margin:0;white-space:nowrap">📊 Completion Rate</div>
-                    <div class="progress-bar" style="flex:1;margin:0"><div class="progress-fill" id="myProgressBar" style="width:0%"></div></div>
-                    <div class="stat-value" id="myCompletionRate" style="font-size:16px;white-space:nowrap">0%</div>
-                </div>
+                <div class="stat-card"><div class="stat-value" id="myTotal">0</div><div class="stat-label">Completed</div></div>
+                <div class="stat-card warning"><div class="stat-value" id="myIncomplete">0</div><div class="stat-label">Follow-Ups</div></div>
             </div>
             <div class="stat-card" style="background:var(--success-bg);border:1px solid var(--success);margin-bottom:12px">
                 <div style="display:flex;justify-content:space-between;align-items:center">
@@ -659,6 +655,14 @@ setTimeout(function() {
                     <span>👥 <span id="myPaymentPeople">0</span> people × ₹<span id="myRatePerPerson">0</span></span>
                 </div>
             </div>
+            <div style="display:flex;gap:8px;margin-bottom:12px">
+                <button class="btn-primary" onclick="switchTab('followup')" style="flex:1">↩️ Continue Follow-Ups</button>
+                <button class="btn-primary" onclick="switchTab('collect')" style="flex:1">➕ Start New Collection</button>
+            </div>
+            <div class="info-box" style="margin-bottom:12px">
+                💡 Records still needing details are in the <b>Follow Up</b> tab. Your <b>Completed</b> count is your finished work.
+            </div>
+            <div class="section-title" style="margin-bottom:10px">📊 Survey Statistics</div>
             <div class="nest-grid">
                 <div class="nest-box">
                     <div class="section-title">👨‍👩‍👧‍👦 Population</div>
@@ -688,9 +692,6 @@ setTimeout(function() {
                     </div>
                     <div id="myBuildingBreakdown" style="margin-top:8px"></div>
                 </div>
-            </div>
-            <div class="info-box" style="margin-top:4px">
-                💡 Records still needing details are in the <b>Follow Up</b> tab. Your <b>Complete</b> count is your finished work.
             </div>
             <div class="section-title" style="margin-top:16px">📋 My Records</div>
             <div id="myRecordsList" class="records-list"></div>
@@ -738,6 +739,7 @@ setTimeout(function() {
         <!-- OVERVIEW -->
         <div id="overview" class="form-section active">
             <div id="overviewAlerts"></div>
+            <div class="section-title">📊 Monitoring Dashboard</div>
             <div class="stats-grid">
                 <div class="stat-card"><div class="stat-value" id="adminTotal">0</div><div class="stat-label">Total Records</div></div>
                 <div class="stat-card warning"><div class="stat-value" id="adminIncomplete">0</div><div class="stat-label">Incomplete</div></div>
@@ -753,7 +755,7 @@ setTimeout(function() {
                     <div class="stat-value" id="completionRate" style="font-size:16px;white-space:nowrap">0%</div>
                 </div>
             </div>
-            <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap">
+            <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
                 <div class="stat-card warning" id="correctionsCard" style="flex:1;min-width:200px">
                     <div class="stat-label">⚠️ Pending Corrections</div>
                     <div id="correctionsList" style="font-size:13px;color:var(--text);margin-top:8px;text-align:left"></div>
@@ -763,6 +765,7 @@ setTimeout(function() {
                     <div id="adminWorkerToday" style="font-size:13px;color:var(--text2);margin-top:8px"></div>
                 </div>
             </div>
+            <div class="section-title">📈 Survey Statistics</div>
             <div class="nest-grid">
                 <div class="nest-box">
                     <div class="section-title">👨‍👩‍👧‍👦 Population</div>
@@ -864,7 +867,10 @@ setTimeout(function() {
         <!-- SETTINGS -->
         <div id="adminsettings" class="form-section">
             <div class="admin-set-header collapsible-header" onclick="toggleCollapsible('dataMaint')">
-                <span class="collapsible-chevron">▶</span> 🔢 Data Maintenance
+                <div>
+                    <span class="collapsible-chevron">▶</span> 🔢 Data Maintenance
+                    <div style="font-size:12px;color:var(--text2);font-weight:400;margin-top:2px">Fix records and run cleanup tools</div>
+                </div>
             </div>
             <div id="dataMaint" class="collapsible-body">
             <div class="admin-set-card">
@@ -890,7 +896,10 @@ setTimeout(function() {
             </div>
             </div>
             <div class="admin-set-header collapsible-header" onclick="toggleCollapsible('payRates')">
-                <span class="collapsible-chevron">▶</span> 💰 Payment Rates
+                <div>
+                    <span class="collapsible-chevron">▶</span> 💰 Payment Rates
+                    <div style="font-size:12px;color:var(--text2);font-weight:400;margin-top:2px">Update payment calculation rates</div>
+                </div>
             </div>
             <div id="payRates" class="collapsible-body">
             <div class="admin-set-card">
@@ -909,7 +918,10 @@ setTimeout(function() {
             </div>
             </div>
             <div class="admin-set-header collapsible-header danger-zone-header" onclick="toggleDangerZone()">
-                <span class="collapsible-chevron">▶</span> ⚠️ Danger Zone
+                <div>
+                    <span class="collapsible-chevron">▶</span> ⚠️ Danger Zone
+                    <div style="font-size:12px;color:inherit;font-weight:400;margin-top:2px;opacity:0.8">Reset data or perform permanent actions</div>
+                </div>
             </div>
             <div id="dangerZone" class="collapsible-body">
             <div class="admin-set-card danger-zone-card">
@@ -995,6 +1007,24 @@ setTimeout(function() {
             <button class="btn-secondary" onclick="document.getElementById('logoutModal').classList.remove('active')" style="flex:1">Cancel</button>
             <button class="btn-primary" onclick="doLogout()" style="flex:1">Logout</button>
         </div>
+    </div>
+</div>
+
+<!-- Worker Actions Modal -->
+<div id="workerActionsModal" class="modal">
+    <div class="modal-content">
+        <button class="modal-close" onclick="document.getElementById('workerActionsModal').classList.remove('active')">×</button>
+        <div class="modal-header">Worker Actions</div>
+        <div id="workerActionsList" style="display:flex;flex-direction:column;gap:8px"></div>
+    </div>
+</div>
+
+<!-- Record Actions Modal -->
+<div id="recordActionsModal" class="modal">
+    <div class="modal-content">
+        <button class="modal-close" onclick="document.getElementById('recordActionsModal').classList.remove('active')">×</button>
+        <div class="modal-header">Record Actions</div>
+        <div id="recordActionsList" style="display:flex;flex-direction:column;gap:8px"></div>
     </div>
 </div>
 
@@ -1202,7 +1232,7 @@ const firebaseConfig = {
     appId: "1:547385765757:web:df18cd27e9161b7d1c2614"
 };
 const ADMIN_EMAIL = "enga018@gmail.com";
-const APP_VERSION = "v3.10.1";
+const APP_VERSION = "v3.10.6";
 
 // Dark mode theme management
 const THEME_STORAGE_KEY = 'appTheme';
@@ -1838,6 +1868,31 @@ async function saveEditWorker() {
         box.innerHTML = '<div class="alert alert-success">✓ Worker updated!</div>';
         setTimeout(()=>{ document.getElementById('editWorkerModal').classList.remove('active'); }, 1500);
     } catch(e) { box.innerHTML = `<div class="alert alert-error">${e.message}</div>`; }
+}
+
+function openWorkerActionsMenu(uid, name, phone, rangeStart, rangeEnd) {
+    const hasRange = typeof rangeStart === 'number' && typeof rangeEnd === 'number';
+    let actions = `
+        <button class="btn-primary" style="text-align:left" onclick="openEditWorker('${uid}','${name}','${phone}');document.getElementById('workerActionsModal').classList.remove('active')">✏️ Edit Details</button>
+        <button class="btn-primary" style="text-align:left" onclick="assignRange('${uid}','${name}',${rangeStart},${rangeEnd});document.getElementById('workerActionsModal').classList.remove('active')">${hasRange?'🎫 Change Range':'🎫 Assign Range'}</button>
+    `;
+    if (hasRange) {
+        actions += `<button class="btn-secondary" style="text-align:left" onclick="clearRange('${uid}','${name}');document.getElementById('workerActionsModal').classList.remove('active')">🗑 Clear Range</button>`;
+        actions += `<button class="btn-secondary" style="text-align:left" onclick="findMissingProps('${uid}','${name}',${rangeStart},${rangeEnd});document.getElementById('workerActionsModal').classList.remove('active')">🔍 Find Missing</button>`;
+    }
+    actions += `<button class="btn-danger" style="text-align:left" onclick="deleteWorker('${uid}','${name}');document.getElementById('workerActionsModal').classList.remove('active')">🗑 Remove Worker</button>`;
+
+    document.getElementById('workerActionsList').innerHTML = actions;
+    document.getElementById('workerActionsModal').classList.add('active');
+}
+
+function openRecordActionsMenu(id, propId, recordJson) {
+    const actions = `
+        <button class="btn-primary" style="text-align:left" onclick="openAdminEdit(${recordJson});document.getElementById('recordActionsModal').classList.remove('active')">✏️ Edit Record</button>
+        <button class="btn-danger" style="text-align:left" onclick="adminDeleteRecord('${id}','${propId}');document.getElementById('recordActionsModal').classList.remove('active')">🗑 Delete Record</button>
+    `;
+    document.getElementById('recordActionsList').innerHTML = actions;
+    document.getElementById('recordActionsModal').classList.add('active');
 }
 
 function openFullPhoto(recordId) {
@@ -3408,6 +3463,21 @@ function recordCard(r, context) {
         </div>`;
     }
 
+    // Follow-up task card - compact task view
+    if (context === 'followup') {
+        const reason = missing.length > 0 ? `Missing: ${missing.join(', ')}` : (r.adminFlagNote || 'Needs review');
+        return `<div class="record-card absent" style="border-left:4px solid var(--warning);padding:12px">
+            <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:8px">
+                <div>
+                    <span class="record-id">${esc(r.propertyId)}</span>
+                    <div style="font-size:13px;color:var(--text2);margin-top:4px;font-weight:500">📝 ${reason}</div>
+                </div>
+            </div>
+            ${r.adminFlagNote ? `<div style="background:#fff3cd;border-radius:4px;padding:6px 8px;margin-bottom:8px;font-size:12px;color:#856404;border-left:2px solid #ffc107">💬 <b>Admin:</b> ${esc(r.adminFlagNote)}</div>` : ''}
+            <button class="btn-primary" style="width:100%;text-align:center" onclick='startEditRecord(${JSON.stringify(r).replace(/'/g,"&#39;")})'>🔧 Fix Now</button>
+        </div>`;
+    }
+
     // Supervisor view — complete records, view-only, no worker identity, no actions
     if (context === 'supervisor') {
         const isInst = INSTITUTION_CATEGORIES.includes(r.ownerCategory);
@@ -3462,13 +3532,12 @@ function recordCard(r, context) {
         ${r.adminFlagNote ? `<div style="background:#fff3cd;border-radius:4px;padding:5px 8px;margin-top:5px;font-size:12px;color:#856404">⚠️ <b>Fix needed:</b> ${esc(r.adminFlagNote)}${r.needsCorrection ? `<br><span style="font-size:11px">Redo: ${[r.correctionAllowGps?'📍 GPS':'', r.correctionAllowPhoto?'📷 Photo':'', r.correctionAllowDetails?'✏️ Details':''].filter(Boolean).join(', ')||'Details'}</span>` : ''}</div>` : ''}
         ${isAdminView ? correctionDiffHtml(r) : ''}
         <div class="record-actions">
-            <button class="btn-small btn-primary" onclick='showDetail(${JSON.stringify(r).replace(/'/g,"&#39;")})'>👁 View</button>
-            ${context === 'followup' ? `<button class="btn-small" style="background:#e65100;color:white" onclick='startEditRecord(${JSON.stringify(r).replace(/'/g,"&#39;")})'>✏️ Edit</button>` : ''}
-            ${isAdminView ? `<button class="btn-small" style="background:var(--primary);color:white" onclick='openAdminEdit(${JSON.stringify(r).replace(/'/g,"&#39;")})'>✏️ Edit</button>` : ''}
+            <button class="btn-small btn-primary" style="flex:1" onclick='showDetail(${JSON.stringify(r).replace(/'/g,"&#39;")})'>👁 View</button>
+            ${context === 'followup' ? `<button class="btn-small" style="background:#e65100;color:white;flex:1" onclick='startEditRecord(${JSON.stringify(r).replace(/'/g,"&#39;")})'>✏️ Fix Now</button>` : ''}
             ${isAdminView && cstate === 'fixed' ? `<button class="btn-small btn-success" onclick="adminVerifyCorrection('${r.id}','${r.propertyId}')">✓ Verify</button>` : ''}
-            ${isAdminView && !absent && cstate !== 'pending' && cstate !== 'fixed' ? `<button class="btn-small" style="background:#856404;color:white" onclick="adminMarkIncomplete('${r.id}','${r.propertyId}')">↩️ Send for Correction</button>` : ''}
-            ${isAdminView && (cstate === 'pending' || cstate === 'fixed') ? `<button class="btn-small" style="background:#999;color:white" onclick="adminCancelCorrection('${r.id}','${r.propertyId}')">✕ Cancel Correction</button>` : ''}
-            ${isAdminView ? `<button class="btn-small btn-danger" onclick="adminDeleteRecord('${r.id}','${r.propertyId}')">🗑 Delete</button>` : ''}
+            ${isAdminView && !absent && cstate !== 'pending' && cstate !== 'fixed' ? `<button class="btn-small" style="background:#856404;color:white" onclick="adminMarkIncomplete('${r.id}','${r.propertyId}')">↩️ Correction</button>` : ''}
+            ${isAdminView && (cstate === 'pending' || cstate === 'fixed') ? `<button class="btn-small" style="background:#999;color:white" onclick="adminCancelCorrection('${r.id}','${r.propertyId}')">✕ Cancel</button>` : ''}
+            ${isAdminView ? `<button class="btn-small" style="background:none;border:1px solid var(--border);color:var(--text2);padding:4px 8px;font-size:14px" onclick="openRecordActionsMenu('${r.id}','${r.propertyId}','${JSON.stringify(r).replace(/'/g,"&#39;")}')">⋮</button>` : ''}
         </div>
     </div>`;
 }
@@ -3925,34 +3994,27 @@ function renderWorkers() {
         const rangeText = hasRange
             ? `🎫 Stickers: NSN-${String(u.rangeStart).padStart(4,'0')} to NSN-${String(u.rangeEnd).padStart(4,'0')}`
             : '🎫 No range assigned (can enter any ID)';
+        const completionPct = recs.length > 0 ? Math.round((completeCount / recs.length) * 100) : 0;
+        const statusBadge = completionPct >= 80 ? `<span class="worker-status-badge worker-status-good">✓ Good</span>` : `<span class="worker-status-badge worker-status-attention">⚠ Attention</span>`;
+        const displayRange = hasRange
+            ? `NSN-${String(u.rangeStart).padStart(4,'0')} to NSN-${String(u.rangeEnd).padStart(4,'0')}`
+            : 'No range assigned';
         return `<div class="worker-card">
-            <div style="display:flex;justify-content:space-between;align-items:start">
+            <div class="worker-header">
                 <div>
-                    <div class="worker-name">👤 ${u.name}</div>
-                    <div style="font-size:12px;color:var(--text2)">📧 ${u.email}</div>
-                    <div style="font-size:12px;color:var(--text2)">📱 ${u.phone||'N/A'}</div>
+                    <div class="worker-name">👤 ${u.name}${statusBadge}</div>
+                    <div class="worker-range">🎫 ${displayRange}</div>
                 </div>
                 ${!isSupervisor ? `
-                <div style="display:flex;flex-direction:column;gap:4px">
-                    <button class="btn-small" style="background:var(--primary);color:white" onclick="openEditWorker('${u.uid}','${(u.name||'').replace(/'/g,"&#39;")}','${u.phone||''}')">✏️ Edit</button>
-                    <button class="btn-small btn-danger" onclick="deleteWorker('${u.uid}','${u.name}')">🗑 Remove</button>
-                </div>` : ''}
+                <button class="btn-small" style="background:none;border:1px solid var(--border);color:var(--text2);padding:4px 8px;font-size:16px;cursor:pointer" onclick="openWorkerActionsMenu('${u.uid}','${(u.name||'').replace(/'/g,"&#39;")}','${u.phone||''}',${hasRange?u.rangeStart:'null'},${hasRange?u.rangeEnd:'null'})">⋯</button>` : ''}
             </div>
-            ${!isSupervisor ? `
-            <div style="background:${hasRange?'#e6ffed':'#fff3cd'};border-radius:6px;padding:6px 10px;margin-top:8px;font-size:12px;color:${hasRange?'#22863a':'#856404'}">
-                ${rangeText}
-                <button class="btn-small" style="background:var(--primary);color:white;margin-left:8px;padding:3px 8px" onclick="assignRange('${u.uid}','${u.name}',${hasRange?u.rangeStart:'null'},${hasRange?u.rangeEnd:'null'})">${hasRange?'Change':'Assign'}</button>
-                ${hasRange?`<button class="btn-small" style="background:#999;color:white;margin-left:4px;padding:3px 8px" onclick="clearRange('${u.uid}','${u.name}')">Clear</button>`:''}
-                ${hasRange ? `<button class="btn-small" style="background:#e65100;color:white;margin-left:4px;padding:3px 8px" onclick="findMissingProps('${u.uid}','${u.name.replace(/'/g,"&#39;")}',${u.rangeStart},${u.rangeEnd})">🔍 Find Missing</button>` : ''}
-            </div>` : ''}
+            <div class="worker-progress">
+                <div class="worker-progress-bar"><div class="worker-progress-fill" style="width:${completionPct}%"></div></div>
+                <span style="min-width:30px;text-align:right;color:var(--text2)">${completionPct}%</span>
+            </div>
             <div class="worker-stats">
-                <div class="worker-stat"><div class="worker-stat-val">${recs.length}</div><div class="worker-stat-lbl">Properties</div></div>
                 <div class="worker-stat"><div class="worker-stat-val" style="color:var(--success)">${completeCount}</div><div class="worker-stat-lbl">Complete</div></div>
                 <div class="worker-stat"><div class="worker-stat-val" style="color:var(--warning)">${absentCount}</div><div class="worker-stat-lbl">Incomplete</div></div>
-                <div class="worker-stat"><div class="worker-stat-val">${todayCount}</div><div class="worker-stat-lbl">Today</div></div>
-                <div class="worker-stat"><div class="worker-stat-val" style="color:var(--primary)">${recs.length > 0 ? Math.round((completeCount / recs.length) * 100) : 0}%</div><div class="worker-stat-lbl">Done</div></div>
-                <div class="worker-stat"><div class="worker-stat-val">${hh.families}</div><div class="worker-stat-lbl">Households</div></div>
-                <div class="worker-stat"><div class="worker-stat-val">${hh.population}</div><div class="worker-stat-lbl">Persons</div></div>
                 <div class="worker-stat"><div class="worker-stat-val" style="color:var(--primary);font-size:13px">₹ ${payWorker.toFixed(0)}</div><div class="worker-stat-lbl">Payment</div></div>
             </div>
         </div>`;
@@ -4016,16 +4078,11 @@ function renderSupervisorAccounts(supervisors) {
     if (!el) return;
     if (!supervisors.length) { el.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🔎</div><p>No supervisors yet.</p></div>'; return; }
     el.innerHTML = supervisors.map(u => `<div class="worker-card">
-            <div style="display:flex;justify-content:space-between;align-items:start">
+            <div class="worker-header">
                 <div>
                     <div class="worker-name">🔎 ${esc(u.name)}</div>
-                    <div style="font-size:12px;color:var(--text2)">📧 ${esc(u.email)}</div>
-                    <div style="font-size:12px;color:var(--text2)">📱 ${esc(u.phone||'N/A')}</div>
                 </div>
-                <div style="display:flex;flex-direction:column;gap:4px">
-                    <button class="btn-small" style="background:var(--primary);color:white" onclick="openEditWorker('${u.uid}','${(u.name||'').replace(/'/g,"&#39;")}','${u.phone||''}')">✏️ Edit</button>
-                    <button class="btn-small btn-danger" onclick="deleteWorker('${u.uid}','${u.name}')">🗑 Remove</button>
-                </div>
+                <button class="btn-small" style="background:none;border:1px solid var(--border);color:var(--text2);padding:4px 8px;font-size:16px;cursor:pointer" onclick="openWorkerActionsMenu('${u.uid}','${(u.name||'').replace(/'/g,"&#39;")}','${u.phone||''}',null,null)">⋯</button>
             </div>
         </div>`).join('');
 }
