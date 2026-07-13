@@ -283,8 +283,16 @@
         .worker-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px}
         #workersList,#supervisorsList{display:grid;grid-template-columns:1fr;gap:10px}
         @media(min-width:620px){#workersList,#supervisorsList{grid-template-columns:1fr 1fr}}
-        .worker-name{font-weight:600;font-size:15px;color:var(--primary)}
-        .worker-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-top:8px}
+        .worker-name{font-weight:600;font-size:14px;color:var(--primary)}
+        .worker-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
+        .worker-range{font-size:12px;color:var(--text2);margin-bottom:8px}
+        .worker-status-badge{display:inline-block;font-size:10px;font-weight:600;padding:2px 8px;border-radius:12px;margin-left:6px}
+        .worker-status-good{background:var(--success-bg);color:var(--success)}
+        .worker-status-attention{background:var(--warning-bg);color:var(--warning)}
+        .worker-progress{display:flex;align-items:center;gap:6px;margin-bottom:8px;font-size:11px}
+        .worker-progress-bar{flex:1;height:6px;background:var(--border);border-radius:3px;overflow:hidden}
+        .worker-progress-fill{height:100%;background:var(--primary);border-radius:3px}
+        .worker-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-top:8px}
         .worker-stat{text-align:center;background:var(--bg);border-radius:6px;padding:8px}
         .worker-stat-val{font-size:17px;font-weight:700;color:var(--primary)}
         .worker-stat-lbl{font-size:10px;color:var(--text2);text-transform:uppercase}
@@ -995,6 +1003,15 @@ setTimeout(function() {
             <button class="btn-secondary" onclick="document.getElementById('logoutModal').classList.remove('active')" style="flex:1">Cancel</button>
             <button class="btn-primary" onclick="doLogout()" style="flex:1">Logout</button>
         </div>
+    </div>
+</div>
+
+<!-- Worker Actions Modal -->
+<div id="workerActionsModal" class="modal">
+    <div class="modal-content">
+        <button class="modal-close" onclick="document.getElementById('workerActionsModal').classList.remove('active')">×</button>
+        <div class="modal-header">Worker Actions</div>
+        <div id="workerActionsList" style="display:flex;flex-direction:column;gap:8px"></div>
     </div>
 </div>
 
@@ -1838,6 +1855,22 @@ async function saveEditWorker() {
         box.innerHTML = '<div class="alert alert-success">✓ Worker updated!</div>';
         setTimeout(()=>{ document.getElementById('editWorkerModal').classList.remove('active'); }, 1500);
     } catch(e) { box.innerHTML = `<div class="alert alert-error">${e.message}</div>`; }
+}
+
+function openWorkerActionsMenu(uid, name, phone, rangeStart, rangeEnd) {
+    const hasRange = typeof rangeStart === 'number' && typeof rangeEnd === 'number';
+    let actions = `
+        <button class="btn-primary" style="text-align:left" onclick="openEditWorker('${uid}','${name}','${phone}');document.getElementById('workerActionsModal').classList.remove('active')">✏️ Edit Details</button>
+        <button class="btn-primary" style="text-align:left" onclick="assignRange('${uid}','${name}',${rangeStart},${rangeEnd});document.getElementById('workerActionsModal').classList.remove('active')">${hasRange?'🎫 Change Range':'🎫 Assign Range'}</button>
+    `;
+    if (hasRange) {
+        actions += `<button class="btn-secondary" style="text-align:left" onclick="clearRange('${uid}','${name}');document.getElementById('workerActionsModal').classList.remove('active')">🗑 Clear Range</button>`;
+        actions += `<button class="btn-secondary" style="text-align:left" onclick="findMissingProps('${uid}','${name}',${rangeStart},${rangeEnd});document.getElementById('workerActionsModal').classList.remove('active')">🔍 Find Missing</button>`;
+    }
+    actions += `<button class="btn-danger" style="text-align:left" onclick="deleteWorker('${uid}','${name}');document.getElementById('workerActionsModal').classList.remove('active')">🗑 Remove Worker</button>`;
+
+    document.getElementById('workerActionsList').innerHTML = actions;
+    document.getElementById('workerActionsModal').classList.add('active');
 }
 
 function openFullPhoto(recordId) {
@@ -3925,34 +3958,27 @@ function renderWorkers() {
         const rangeText = hasRange
             ? `🎫 Stickers: NSN-${String(u.rangeStart).padStart(4,'0')} to NSN-${String(u.rangeEnd).padStart(4,'0')}`
             : '🎫 No range assigned (can enter any ID)';
+        const completionPct = recs.length > 0 ? Math.round((completeCount / recs.length) * 100) : 0;
+        const statusBadge = completionPct >= 80 ? `<span class="worker-status-badge worker-status-good">✓ Good</span>` : `<span class="worker-status-badge worker-status-attention">⚠ Attention</span>`;
+        const displayRange = hasRange
+            ? `NSN-${String(u.rangeStart).padStart(4,'0')} to NSN-${String(u.rangeEnd).padStart(4,'0')}`
+            : 'No range assigned';
         return `<div class="worker-card">
-            <div style="display:flex;justify-content:space-between;align-items:start">
+            <div class="worker-header">
                 <div>
-                    <div class="worker-name">👤 ${u.name}</div>
-                    <div style="font-size:12px;color:var(--text2)">📧 ${u.email}</div>
-                    <div style="font-size:12px;color:var(--text2)">📱 ${u.phone||'N/A'}</div>
+                    <div class="worker-name">👤 ${u.name}${statusBadge}</div>
+                    <div class="worker-range">🎫 ${displayRange}</div>
                 </div>
                 ${!isSupervisor ? `
-                <div style="display:flex;flex-direction:column;gap:4px">
-                    <button class="btn-small" style="background:var(--primary);color:white" onclick="openEditWorker('${u.uid}','${(u.name||'').replace(/'/g,"&#39;")}','${u.phone||''}')">✏️ Edit</button>
-                    <button class="btn-small btn-danger" onclick="deleteWorker('${u.uid}','${u.name}')">🗑 Remove</button>
-                </div>` : ''}
+                <button class="btn-small" style="background:none;border:1px solid var(--border);color:var(--text2);padding:4px 8px;font-size:16px;cursor:pointer" onclick="openWorkerActionsMenu('${u.uid}','${(u.name||'').replace(/'/g,"&#39;")}','${u.phone||''}',${hasRange?u.rangeStart:'null'},${hasRange?u.rangeEnd:'null'})">⋯</button>` : ''}
             </div>
-            ${!isSupervisor ? `
-            <div style="background:${hasRange?'#e6ffed':'#fff3cd'};border-radius:6px;padding:6px 10px;margin-top:8px;font-size:12px;color:${hasRange?'#22863a':'#856404'}">
-                ${rangeText}
-                <button class="btn-small" style="background:var(--primary);color:white;margin-left:8px;padding:3px 8px" onclick="assignRange('${u.uid}','${u.name}',${hasRange?u.rangeStart:'null'},${hasRange?u.rangeEnd:'null'})">${hasRange?'Change':'Assign'}</button>
-                ${hasRange?`<button class="btn-small" style="background:#999;color:white;margin-left:4px;padding:3px 8px" onclick="clearRange('${u.uid}','${u.name}')">Clear</button>`:''}
-                ${hasRange ? `<button class="btn-small" style="background:#e65100;color:white;margin-left:4px;padding:3px 8px" onclick="findMissingProps('${u.uid}','${u.name.replace(/'/g,"&#39;")}',${u.rangeStart},${u.rangeEnd})">🔍 Find Missing</button>` : ''}
-            </div>` : ''}
+            <div class="worker-progress">
+                <div class="worker-progress-bar"><div class="worker-progress-fill" style="width:${completionPct}%"></div></div>
+                <span style="min-width:30px;text-align:right;color:var(--text2)">${completionPct}%</span>
+            </div>
             <div class="worker-stats">
-                <div class="worker-stat"><div class="worker-stat-val">${recs.length}</div><div class="worker-stat-lbl">Properties</div></div>
                 <div class="worker-stat"><div class="worker-stat-val" style="color:var(--success)">${completeCount}</div><div class="worker-stat-lbl">Complete</div></div>
                 <div class="worker-stat"><div class="worker-stat-val" style="color:var(--warning)">${absentCount}</div><div class="worker-stat-lbl">Incomplete</div></div>
-                <div class="worker-stat"><div class="worker-stat-val">${todayCount}</div><div class="worker-stat-lbl">Today</div></div>
-                <div class="worker-stat"><div class="worker-stat-val" style="color:var(--primary)">${recs.length > 0 ? Math.round((completeCount / recs.length) * 100) : 0}%</div><div class="worker-stat-lbl">Done</div></div>
-                <div class="worker-stat"><div class="worker-stat-val">${hh.families}</div><div class="worker-stat-lbl">Households</div></div>
-                <div class="worker-stat"><div class="worker-stat-val">${hh.population}</div><div class="worker-stat-lbl">Persons</div></div>
                 <div class="worker-stat"><div class="worker-stat-val" style="color:var(--primary);font-size:13px">₹ ${payWorker.toFixed(0)}</div><div class="worker-stat-lbl">Payment</div></div>
             </div>
         </div>`;
@@ -4016,16 +4042,11 @@ function renderSupervisorAccounts(supervisors) {
     if (!el) return;
     if (!supervisors.length) { el.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🔎</div><p>No supervisors yet.</p></div>'; return; }
     el.innerHTML = supervisors.map(u => `<div class="worker-card">
-            <div style="display:flex;justify-content:space-between;align-items:start">
+            <div class="worker-header">
                 <div>
                     <div class="worker-name">🔎 ${esc(u.name)}</div>
-                    <div style="font-size:12px;color:var(--text2)">📧 ${esc(u.email)}</div>
-                    <div style="font-size:12px;color:var(--text2)">📱 ${esc(u.phone||'N/A')}</div>
                 </div>
-                <div style="display:flex;flex-direction:column;gap:4px">
-                    <button class="btn-small" style="background:var(--primary);color:white" onclick="openEditWorker('${u.uid}','${(u.name||'').replace(/'/g,"&#39;")}','${u.phone||''}')">✏️ Edit</button>
-                    <button class="btn-small btn-danger" onclick="deleteWorker('${u.uid}','${u.name}')">🗑 Remove</button>
-                </div>
+                <button class="btn-small" style="background:none;border:1px solid var(--border);color:var(--text2);padding:4px 8px;font-size:16px;cursor:pointer" onclick="openWorkerActionsMenu('${u.uid}','${(u.name||'').replace(/'/g,"&#39;")}','${u.phone||''}',null,null)">⋯</button>
             </div>
         </div>`).join('');
 }
