@@ -166,7 +166,7 @@
         .collapsible-chevron.open{transform:rotate(90deg)}
         .collapsible-body{overflow:hidden;transition:max-height 0.3s ease,opacity 0.25s ease;max-height:0;opacity:0}
         .collapsible-body.open{max-height:3000px;opacity:1}
-        .wizard-nav{display:flex;gap:8px;margin-top:20px}
+        .wizard-nav{display:flex;gap:8px;margin-top:20px;position:sticky;bottom:120px;background:var(--surface);padding:8px 0;z-index:10}
                 .btn-clear-wiz{font-size:13px;padding:10px 12px;min-height:40px;border-radius:8px;background:var(--surface-2);color:var(--text2);border:1px solid var(--border);width:100%;margin-top:8px;font-weight:600}
         .btn-clear-wiz:hover{background:#e8e8e8;color:var(--danger)}
         .btn-clear-wiz:active{background:#ddd}
@@ -516,10 +516,9 @@ setTimeout(function() {
                     <div class="wizard-step-title">🏠 Property details</div>
                     <div class="form-group">
                         <label>Property ID <span class="required-star">*</span></label>
-                        <div style="display:flex;align-items:center;gap:0"><span style="background:var(--primary-tint);border:1.5px solid var(--border);border-right:none;padding:13px 12px;border-radius:var(--radius) 0 0 var(--radius);font-size:14px;font-weight:600;color:var(--primary);white-space:nowrap">NSN-</span><input type="text" id="propertyId" placeholder="0001" pattern="(NSN-)?[0-9]{1,4}" maxlength="8" required style="border-radius:0 var(--radius) var(--radius) 0;border-left:none" oninput="document.getElementById('propertyCheckResult').classList.add('hidden')" onblur="(async () => { const result = await checkPropertyExists(this.value); showPropertyCheckResult(result); })()"></div><div class="text-muted" style="font-size:12px;margin-top:5px">Enter 4-digit number from sticker (e.g. 0001). NSN- is added automatically.</div>
-                        <button type="button" class="btn-secondary" style="width:100%;margin-top:8px;padding:10px;font-size:13px" onclick="(async () => { const result = await checkPropertyExists(document.getElementById('propertyId').value); showPropertyCheckResult(result); })()">🔍 Check Property</button>
+                        <div style="display:flex;align-items:center;gap:0"><span style="background:var(--primary-tint);border:1.5px solid var(--border);border-right:none;padding:13px 12px;border-radius:var(--radius) 0 0 var(--radius);font-size:14px;font-weight:600;color:var(--primary);white-space:nowrap">NSN-</span><input type="text" id="propertyId" placeholder="0001" pattern="(NSN-)?[0-9]{1,4}" maxlength="8" required autofocus inputmode="numeric" style="border-radius:0 var(--radius) var(--radius) 0;border-left:none" oninput="document.getElementById('propertyCheckResult').classList.add('hidden')" onblur="(async () => { const result = await checkPropertyExists(this.value); showPropertyCheckResult(result); })()"></div><div class="text-muted" style="font-size:12px;margin-top:5px">Enter 4-digit number from sticker (e.g. 0001). NSN- is added automatically.</div>
                         <div id="propertyCheckResult" class="hidden" style="margin-top:8px"></div>
-                        <div id="rangeHint" style="font-size:12px;margin-top:8px"></div>
+                        <div id="rangeHint" style="font-size:12px;margin-top:8px;padding:8px;background:var(--bg);border-radius:6px;color:var(--text2)"></div>
                     </div>
                     <div class="form-group">
                         <label>Owner Type <span class="required-star">*</span> <span style="font-size:11px;color:var(--text2);font-weight:400">(who pays the tax)</span></label>
