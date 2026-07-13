@@ -1896,8 +1896,8 @@ function openWorkerActionsMenu(uid, name, phone, rangeStart, rangeEnd) {
 
 function openRecordActionsMenu(id, propId, recordJson) {
     const actions = `
-        <button class="btn-primary" style="text-align:left" onclick="openAdminEdit(${recordJson});document.getElementById('recordActionsModal').classList.remove('active')">✏️ Edit Record</button>
-        <button class="btn-danger" style="text-align:left" onclick="adminDeleteRecord('${id}','${propId}');document.getElementById('recordActionsModal').classList.remove('active')">🗑 Delete Record</button>
+        <button class="btn-primary" style="text-align:left;width:100%;padding:12px 14px" onclick="openAdminEdit(${recordJson});document.getElementById('recordActionsModal').classList.remove('active')">✏️ Edit Record</button>
+        <button class="btn-danger" style="text-align:left;width:100%;padding:12px 14px" onclick="adminDeleteRecord('${id}','${propId}');document.getElementById('recordActionsModal').classList.remove('active')">🗑 Delete Record</button>
     `;
     document.getElementById('recordActionsList').innerHTML = actions;
     document.getElementById('recordActionsModal').classList.add('active');
