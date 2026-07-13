@@ -1894,9 +1894,15 @@ function openWorkerActionsMenu(uid, name, phone, rangeStart, rangeEnd) {
     document.getElementById('workerActionsModal').classList.add('active');
 }
 
-function openRecordActionsMenu(id, propId, recordJson) {
+function openRecordActionsMenu(id, propId) {
+    const rec = (allRecords||[]).find(r => r.id === id);
+    if (!rec) {
+        showAlert('Record not found', 'error');
+        return;
+    }
+    window.tempRecordForEdit = rec;
     const actions = `
-        <button class="btn-primary" style="text-align:left;width:100%;padding:12px 14px" onclick="openAdminEdit(${recordJson});document.getElementById('recordActionsModal').classList.remove('active')">✏️ Edit Record</button>
+        <button class="btn-primary" style="text-align:left;width:100%;padding:12px 14px" onclick="openAdminEdit(window.tempRecordForEdit);document.getElementById('recordActionsModal').classList.remove('active')">✏️ Edit Record</button>
         <button class="btn-danger" style="text-align:left;width:100%;padding:12px 14px" onclick="adminDeleteRecord('${id}','${propId}');document.getElementById('recordActionsModal').classList.remove('active')">🗑 Delete Record</button>
     `;
     document.getElementById('recordActionsList').innerHTML = actions;
@@ -3610,7 +3616,7 @@ function recordCard(r, context) {
             ${isAdminView && cstate === 'fixed' ? `<button class="btn-small btn-success" onclick="adminVerifyCorrection('${r.id}','${r.propertyId}')">✓ Verify</button>` : ''}
             ${isAdminView && !absent && cstate !== 'pending' && cstate !== 'fixed' ? `<button class="btn-small" style="background:#856404;color:white" onclick="adminMarkIncomplete('${r.id}','${r.propertyId}')">↩️ Correction</button>` : ''}
             ${isAdminView && (cstate === 'pending' || cstate === 'fixed') ? `<button class="btn-small" style="background:#999;color:white" onclick="adminCancelCorrection('${r.id}','${r.propertyId}')">✕ Cancel</button>` : ''}
-            ${isAdminView ? `<button class="btn-small" style="background:none;border:1px solid var(--border);color:var(--text2);padding:4px 8px;font-size:14px" onclick="openRecordActionsMenu('${r.id}','${r.propertyId}','${JSON.stringify(r).replace(/'/g,"&#39;")}')">⋮</button>` : ''}
+            ${isAdminView ? `<button class="btn-small" style="background:none;border:1px solid var(--border);color:var(--text2);padding:4px 8px;font-size:14px;cursor:pointer" onclick="openRecordActionsMenu('${r.id}','${r.propertyId}')">⋮</button>` : ''}
         </div>
     </div>`;
 }
