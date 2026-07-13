@@ -206,7 +206,7 @@
         input[type=file]{display:none}
 
         /* PHOTO */
-        .photo-preview{width:100%;border-radius:8px;margin-top:8px;border:2px solid var(--border);display:none;max-height:200px;object-fit:cover}
+        .photo-preview{width:100%;border-radius:8px;margin-top:8px;border:2px solid var(--border);display:none;max-height:120px;object-fit:cover}
         .photo-buttons{display:flex;gap:8px;margin-top:8px}
         .photo-status{font-size:12px;margin-top:6px;padding:6px 10px;border-radius:6px}
         .photo-status.ok{background:#e6ffed;color:#22863a}
@@ -558,9 +558,11 @@ setTimeout(function() {
                         <img id="photoPreview" class="photo-preview">
                         <div id="photoStatus" class="photo-status needed">📷 Photo required — tap to take</div>
                         <div id="photoRecaptureWarn" style="display:none;background:var(--warning-bg);color:var(--warning);font-size:12px;padding:6px 8px;border-radius:4px;margin-bottom:6px">⚠️ Re-take photo only while standing at the property.</div>
-                        <div class="photo-buttons">
+                        <div class="photo-buttons" id="photoButtonsInitial">
                             <button type="button" id="takePhotoBtn" class="btn-photo" onclick="document.getElementById('photoInput').click()" style="flex:1">📷 Take Photo</button>
-                            <button type="button" class="btn-photo" onclick="clearPhoto()" style="background:#666;flex:0 0 auto;width:auto;padding:10px 14px">✕</button>
+                        </div>
+                        <div class="photo-buttons hidden" id="photoButtonsRetake">
+                            <button type="button" class="btn-secondary" onclick="clearPhoto()" style="flex:1">↺ Retake Photo</button>
                         </div>
                         <input type="file" id="photoInput" accept="image/*" capture="environment" onchange="handlePhotoCapture(event)">
                     </div>
@@ -571,7 +573,11 @@ setTimeout(function() {
                     <div class="wizard-step-title">👤 Owner</div>
                     <!-- RESIDENTIAL FIELDS -->
                     <div id="residentialFields">
-                        <div class="section-title">Owner Information <span style="font-size:12px;color:var(--text2);font-weight:400">(optional if owner absent)</span></div>
+                        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+                            <div class="section-title" style="margin:0">Owner Information</div>
+                            <span style="display:inline-block;font-size:10px;font-weight:600;background:var(--primary-tint);color:var(--primary);padding:2px 8px;border-radius:10px">Optional</span>
+                        </div>
+                        <div style="background:var(--primary-tint);border-left:3px solid var(--primary);padding:8px;border-radius:4px;margin-bottom:12px;font-size:12px;color:var(--primary-dark)">Leave blank if owner is absent</div>
                         <div class="form-group">
                             <label>Owner Name</label>
                             <input type="text" id="ownerName" placeholder="Full name of property owner" oninput="this.value = formatNameInput(this.value)">
@@ -1482,6 +1488,7 @@ function markRecordPending(recordId) {
         pending.push(recordId);
         localStorage.setItem('pendingRecords', JSON.stringify(pending));
     }
+    localStorage.setItem('lastLocalSaveTime', Date.now().toString());
     pendingCount = pending.length;
     updateSyncBadge();
 }
@@ -1491,6 +1498,7 @@ function markRecordSynced(recordId) {
     const pending = JSON.parse(localStorage.getItem('pendingRecords') || '[]');
     const updated = pending.filter(id => id !== recordId);
     localStorage.setItem('pendingRecords', JSON.stringify(updated));
+    localStorage.setItem('lastSyncTime', Date.now().toString());
     pendingCount = updated.length;
     updateSyncBadge();
 }
@@ -2150,6 +2158,20 @@ async function viewExistingProperty(recordId) {
     if (rec) showDetail(rec);
 }
 
+function getLocalSaveTime() {
+    const saved = localStorage.getItem('lastLocalSaveTime');
+    if (!saved) return null;
+    const d = new Date(parseInt(saved));
+    return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+}
+
+function getSyncTime() {
+    const synced = localStorage.getItem('lastSyncTime');
+    if (!synced) return null;
+    const d = new Date(parseInt(synced));
+    return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+}
+
 function renderReview(){
     const g = id => (document.getElementById(id).value || '').trim();
     const isInst = INSTITUTION_CATEGORIES.includes(g('ownerCategory'));
@@ -2158,34 +2180,45 @@ function renderReview(){
     const hasPhoto = photoEl.style.display !== 'none' && photoEl.src && photoEl.src !== window.location.href;
     const cleaned = cleanHouseholds(householdDraft);
     const derivedType = derivePropertyType(cleaned);
-    const hh = householdStats({ families: cleaned });
     const ok = v => `<span style="color:var(--success)">✓ ${v}</span>`;
     const no = v => `<span style="color:var(--danger)">✗ ${v}</span>`;
-    const row = (k,v,step) => `<div class="review-row"><span class="rk">${k}${step?` <a href="#" onclick="goWizard('${step}');return false" style="font-size:11px;color:var(--primary)">edit</a>`:''}</span><span class="rv">${v||'—'}</span></div>`;
+    const row = (k,v) => `<div class="review-row"><span class="rk">${k}</span><span class="rv">${v||'—'}</span></div>`;
     const pid = g('propertyId') ? 'NSN-' + g('propertyId').replace(/^NSN-/i,'').replace(/^[0]*/,'').padStart(4,'0') : '';
-    let h = `<div style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px">`;
-    h += row('Property ID', pid, 'property');
-    h += row('Property Type', derivedType, null);
-    h += row('Owner Type', g('ownerCategory'), 'property');
-    h += row('Building', g('buildingType'), 'property');
-    h += row('GPS', (lat&&lng)?ok('Captured'):no('Missing'), 'location');
-    h += row('Photo', hasPhoto?ok('Taken'):no('Missing'), 'location');
+
+    let h = '';
+    // Ready to save badge
+    h += `<div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
+        <span style="background:var(--success);color:white;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600">✓ Ready to save</span>
+    </div>`;
+
+    // Edit Details button
+    h += `<button type="button" class="btn-secondary" onclick="goWizard('property')" style="width:100%;margin-bottom:14px;padding:10px 14px;font-size:14px;text-align:center">✏️ Edit Details</button>`;
+
+    // Summary table
+    h += `<div style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;margin-bottom:16px">`;
+    h += row('Property ID', pid);
+    h += row('Property Type', derivedType);
+    h += row('Owner Type', g('ownerCategory'));
+    h += row('Building', g('buildingType'));
+    h += row('GPS', (lat&&lng)?ok('Captured'):no('Missing'));
+    h += row('Photo', hasPhoto?ok('Taken'):no('Missing'));
     if (isInst){
-        h += row('Organization', g('organizationName'), 'owner');
-        h += row('Contact person', g('contactPerson'), 'owner');
-        h += row('Contact', g('instContact'), 'owner');
+        h += row('Organization', g('organizationName'));
+        h += row('Contact person', g('contactPerson'));
+        h += row('Contact', g('instContact'));
     } else {
-        h += row('Owner', g('ownerName'), 'owner');
-        h += row('Father/Husband', g('fatherHusbandName'), 'owner');
-        h += row('Contact', g('contact'), 'owner');
+        h += row('Owner', g('ownerName'));
+        h += row('Father/Husband', g('fatherHusbandName'));
+        h += row('Contact', g('contact'));
     }
-    h += `<div class="review-row"><span class="rk">Units <a href="#" onclick="goWizard('units');return false" style="font-size:11px;color:var(--primary)">edit</a></span><span class="rv">`;
+
+    h += `<div class="review-row"><span class="rk">Units</span><span class="rv">`;
     if (householdDraft.length === 0) {
-        h += 'No units added</span></div>';
+        h += 'No units added';
     } else {
         const unitList = householdDraft.map((u,i) => {
             let summary = `${unitDisplayId(i)} (${u.type})`;
-            if (u.occupied) {
+            if (!u.isVacant && u.occupied !== false) {
                 const ms = (u.members||[]).length;
                 if (u.type === 'Residential') summary += ` · ${ms} ${ms===1?'member':'members'}`;
                 else summary += ` · ${u.label||'(no label)'}`;
@@ -2194,9 +2227,28 @@ function renderReview(){
             }
             return summary;
         }).join('<br>');
-        h += unitList + '</span></div>';
+        h += unitList;
+    }
+    h += `</span></div>`;
+    h += `</div>`;
+
+    // Auto-save status section
+    const localSaveTime = getLocalSaveTime();
+    const syncTime = getSyncTime();
+    h += `<div style="background:var(--primary-tint);border:1px solid var(--primary);border-radius:8px;padding:12px 14px;font-size:12px;color:var(--primary);margin-bottom:16px">
+        <div style="font-weight:600;margin-bottom:8px">💾 Sync Status</div>`;
+    if (localSaveTime) {
+        h += `<div style="margin-bottom:4px">Saved locally — ${localSaveTime}</div>`;
+    } else {
+        h += `<div style="margin-bottom:4px;opacity:0.7">Saved locally — (pending)</div>`;
+    }
+    if (syncTime) {
+        h += `<div>Synced to server — ${syncTime}</div>`;
+    } else {
+        h += `<div style="opacity:0.7">Synced to server — (pending)</div>`;
     }
     h += `</div>`;
+
     document.getElementById('wizardReview').innerHTML = h;
 }
 
@@ -2235,7 +2287,7 @@ function derivePropertyType(units){
 }
 
 function addUnit(){
-    householdDraft.push({ type:'Residential', occupied:true, label:'', contact:'', isTemporaryResidence:false, members:[{ name:'', gender:'', age:'', relation:'Self' }] });
+    householdDraft.push({ type:'Residential', occupied:true, label:'', contact:'', isTemporaryResidence:false, isVacant:false, isRaltlan:false, members:[{ name:'', gender:'', age:'', relation:'Self' }] });
     renderUnits();
 }
 function removeUnit(fi){ householdDraft.splice(fi,1); renderUnits(); }
@@ -2256,6 +2308,16 @@ function updateUnitType(fi, value){
     renderUnits();
 }
 function updateUnitOccupied(fi, checked){ householdDraft[fi].occupied = checked; renderUnits(); }
+function updateUnitVacant(fi, checked){
+    householdDraft[fi].isVacant = checked;
+    if (checked) {
+        householdDraft[fi].isTemporaryResidence = false;
+        householdDraft[fi].isRaltlan = false;
+    }
+    renderUnits();
+}
+function updateUnitTemporaryResidence(fi, checked){ householdDraft[fi].isTemporaryResidence = checked; renderUnits(); }
+function updateUnitRaltlan(fi, checked){ householdDraft[fi].isRaltlan = checked; renderUnits(); }
 
 // Backward-compat: older drafts/records stored a separate headName. Fold it in as a Head member.
 function normalizeFamilies(families){
@@ -2264,7 +2326,7 @@ function normalizeFamilies(families){
         if (f.headName && !members.some(m => m.relation === 'Self' || m.relation === 'Head')) {
             members.unshift({ name: f.headName, gender:'', age:'', relation:'Self' });
         }
-        return { type: f.type || 'Residential', occupied: f.occupied !== false, label: f.label || '', familyId: f.familyId || '', contact: f.contact || '', isTemporaryResidence: f.isTemporaryResidence || false, members };
+        return { type: f.type || 'Residential', occupied: f.occupied !== false, label: f.label || '', familyId: f.familyId || '', contact: f.contact || '', isTemporaryResidence: f.isTemporaryResidence || false, isVacant: f.isVacant || false, isRaltlan: f.isRaltlan || false, members };
     });
 }
 
@@ -2316,17 +2378,28 @@ function renderUnits(){
                 <span style="font-weight:600;color:var(--primary)">🏪 ${esc(unitDisplayId(fi))}</span>
                 <button type="button" onclick="removeUnit(${fi})" style="background:none;border:none;color:var(--danger);font-size:18px;cursor:pointer;padding:4px 8px">✕</button>
             </div>
-            <div style="display:flex;gap:8px;margin-bottom:8px;align-items:center">
-                <select onchange="updateUnitType(${fi},this.value)" style="flex:7;font-size:13px;min-height:auto">
+            <div style="margin-bottom:8px">
+                <select onchange="updateUnitType(${fi},this.value)" style="width:100%;font-size:13px;min-height:auto;margin-bottom:8px">
                     ${UNIT_TYPES.map(t=>`<option value="${t}" ${f.type===t?'selected':''}>${UNIT_TYPE_LABELS[t]}</option>`).join('')}
                 </select>
-                ${!isInstitutional ? `
-                <div style="flex:3;border:1px solid var(--border);border-radius:8px;padding:8px 12px;display:flex;align-items:center;gap:6px;cursor:pointer;min-height:42px" onclick="let cb=this.querySelector('input[type=checkbox]');cb.checked=!cb.checked;updateUnitOccupied(${fi},!cb.checked)">
-                    <input type="checkbox" ${!isOccupied?'checked':''} style="width:auto;pointer-events:none">
-                    <span style="font-size:13px;font-weight:500;color:var(--text)">Vacant</span>
-                </div>` : ''}
             </div>
-            ${isOccupied ? `
+            ${isResidential ? `
+            <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px;background:var(--surface-2);border-radius:8px;padding:8px">
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin:0;font-size:13px;font-weight:500">
+                    <input type="checkbox" ${f.isVacant?'checked':''} onchange="updateUnitVacant(${fi},this.checked)" style="width:auto;cursor:pointer">
+                    Vacant
+                </label>
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin:0;font-size:13px;font-weight:500">
+                    <input type="checkbox" ${f.isTemporaryResidence?'checked':''} onchange="updateUnitTemporaryResidence(${fi},this.checked)" ${f.isVacant?'disabled':''}  style="width:auto;cursor:pointer">
+                    Temporary Residence
+                </label>
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin:0;font-size:13px;font-weight:500">
+                    <input type="checkbox" ${f.isRaltlan?'checked':''} onchange="updateUnitRaltlan(${fi},this.checked)" ${f.isVacant?'disabled':''} style="width:auto;cursor:pointer">
+                    Raltlan
+                </label>
+            </div>
+            ` : ''}
+            ${isOccupied && !f.isVacant ? `
             ${isResidential ? `
             <div style="background:var(--primary-tint);border-radius:8px;padding:10px;margin-bottom:8px">
                 <div style="font-size:13px;font-weight:600;color:var(--primary);margin-bottom:8px">Head of Family</div>
@@ -2398,7 +2471,7 @@ function cleanHouseholds(draft){
             .map(m => ({ name:normalizeText(m.name||'').trim(), gender:m.gender||'', age:(m.age===''||m.age==null)?'':Number(m.age), relation:m.relation||'' }))
             .filter(m => m.name || m.age !== '' || m.gender || m.relation) : [];
         const familyId = f.familyId || (isRes && occupied ? 'Unit ' + (i+1) : '');
-        return { type: f.type || 'Residential', occupied, label: normalizeText(f.label||'').trim(), familyId, headName: isRes ? familyHeadName({ members }) : '', contact: isRes ? (f.contact||'').trim() : '', isTemporaryResidence: f.isTemporaryResidence || false, members };
+        return { type: f.type || 'Residential', occupied, label: normalizeText(f.label||'').trim(), familyId, headName: isRes ? familyHeadName({ members }) : '', contact: isRes ? (f.contact||'').trim() : '', isTemporaryResidence: f.isTemporaryResidence || false, isVacant: f.isVacant || false, isRaltlan: f.isRaltlan || false, members };
     });
 }
 
