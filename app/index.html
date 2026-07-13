@@ -3727,6 +3727,9 @@ function openAdminEdit(r) {
     aeFamilies.forEach(f => {
         if (!f.type) f.type = 'Residential';
         if (f.occupied === undefined) f.occupied = true;
+        if (f.isVacant === undefined) f.isVacant = false;
+        if (f.isTemporaryResidence === undefined) f.isTemporaryResidence = false;
+        if (f.isRaltlan === undefined) f.isRaltlan = false;
         if (f.type && f.type !== 'Residential' && !f.members) f.members = [];
         // Corrupted records from pre-v2.14.6 type changes: Residential with no members
         if (f.type === 'Residential' && (!f.members || !f.members.length)) {
@@ -3762,17 +3765,32 @@ function renderAeUnits() {
                 <select onchange="aeUpdateUnitType(${fi},this.value);renderAeUnits()" style="flex:3;font-size:12px;min-height:auto;padding:6px 8px">
                     ${UNIT_TYPES.map(t=>`<option value="${t}" ${f.type===t?'selected':''}>${UNIT_TYPE_LABELS[t]}</option>`).join('')}
                 </select>
-                ${!isInst ? `<label style="display:flex;align-items:center;gap:3px;font-size:11px;color:var(--text2);cursor:pointer;margin:0 4px" onclick="let cb=this.querySelector('input');cb.checked=!cb.checked;aeFamilies[${fi}].occupied=!cb.checked;renderAeUnits()"><input type="checkbox" ${!f.occupied?'checked':''} style="width:auto;pointer-events:none">Vacant</label>` : ''}
                 <button type="button" onclick="aeRemoveUnit(${fi});renderAeUnits()" style="background:none;border:none;color:var(--danger);font-size:18px;cursor:pointer;padding:2px 6px">✕</button>
             </div>`;
-        if (!f.occupied) {
-            return `<div style="border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:6px">${header}<div style="font-size:13px;color:var(--text2)">🏠 Vacant</div></div>`;
+        const statusCheckboxes = !isInst ? `
+            <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px;background:var(--surface-2);border-radius:8px;padding:8px">
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin:0;font-size:13px;font-weight:500">
+                    <input type="checkbox" ${f.isVacant?'checked':''} onchange="aeFamilies[${fi}].isVacant=this.checked;if(this.checked){aeFamilies[${fi}].isTemporaryResidence=false;aeFamilies[${fi}].isRaltlan=false;}renderAeUnits()" style="width:auto;cursor:pointer">
+                    Vacant
+                </label>
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin:0;font-size:13px;font-weight:500">
+                    <input type="checkbox" ${f.isTemporaryResidence?'checked':''} onchange="aeFamilies[${fi}].isTemporaryResidence=this.checked" ${f.isVacant?'disabled':''} style="width:auto;cursor:pointer">
+                    Temporary Residence
+                </label>
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin:0;font-size:13px;font-weight:500">
+                    <input type="checkbox" ${f.isRaltlan?'checked':''} onchange="aeFamilies[${fi}].isRaltlan=this.checked" ${f.isVacant?'disabled':''} style="width:auto;cursor:pointer">
+                    Raltlan
+                </label>
+            </div>` : '';
+        if (f.isVacant) {
+            return `<div style="border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:6px">${header}${statusCheckboxes}<div style="font-size:13px;color:var(--text2)">🏠 Vacant</div></div>`;
         }
         if (isRes) {
             const head = (f.members||[])[0] || {};
             const others = (f.members||[]).slice(1);
             return `<div style="border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:6px">
                 ${header}
+                ${statusCheckboxes}
                 <div style="background:var(--primary-tint);border-radius:8px;padding:10px;margin-bottom:8px">
                     <div style="font-size:12px;font-weight:600;color:var(--primary);margin-bottom:6px">Head of Family</div>
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
