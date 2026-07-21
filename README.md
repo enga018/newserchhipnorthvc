@@ -44,7 +44,7 @@ This sets up a post-commit hook that automatically bumps the version in `app/ind
 
 The app is also packaged as an Android APK via [Capacitor](https://capacitorjs.com/), bundling the same `app/index.html` + `vendor/` assets locally so it works fully offline from first launch (no dependency on reaching Firebase Hosting).
 
-- Every push to `main` builds a debug APK via `.github/workflows/android-apk.yml` — download it from the workflow run's Artifacts.
+- Every push to `main` builds a debug APK via `.github/workflows/android-apk.yml` and publishes it to a rolling [**"latest" GitHub Release**](https://github.com/enga018/newserchhipnorthvc/releases/tag/android-latest) — that's the stable link to share for install. It's also uploaded as the run's Artifacts if you want a specific commit's build.
 - To sign a release build too, add repo secrets `ANDROID_KEYSTORE_BASE64` (base64-encoded `.keystore`/`.jks`), `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, and `ANDROID_KEY_PASSWORD`.
 - To build locally: `npm install`, then `npm run android:sync` (rebuilds `www/` from `app/index.html` and syncs it into `android/`), then `cd android && ./gradlew assembleDebug`.
 - `www/` is a generated build artifact (gitignored) — never edit it directly; edit `app/index.html` and re-run the sync.
