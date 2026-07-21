@@ -1,0 +1,8 @@
+{
+  "appId": "in.enga.newserchhipnorthvc",
+  "appName": "NSN VC Field Survey",
+  "webDir": "www",
+  "android": {
+    "allowMixedContent": false
+  }
+}

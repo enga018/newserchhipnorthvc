@@ -40,6 +40,15 @@ After cloning the repository, install git hooks for automatic version bumping:
 
 This sets up a post-commit hook that automatically bumps the version in `app/index.html` based on commit scope (see `CLAUDE.md` for versioning policy).
 
+## Android app (APK)
+
+The app is also packaged as an Android APK via [Capacitor](https://capacitorjs.com/), bundling the same `app/index.html` + `vendor/` assets locally so it works fully offline from first launch (no dependency on reaching Firebase Hosting).
+
+- Every push to `main` builds a debug APK via `.github/workflows/android-apk.yml` — download it from the workflow run's Artifacts.
+- To sign a release build too, add repo secrets `ANDROID_KEYSTORE_BASE64` (base64-encoded `.keystore`/`.jks`), `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, and `ANDROID_KEY_PASSWORD`.
+- To build locally: `npm install`, then `npm run android:sync` (rebuilds `www/` from `app/index.html` and syncs it into `android/`), then `cd android && ./gradlew assembleDebug`.
+- `www/` is a generated build artifact (gitignored) — never edit it directly; edit `app/index.html` and re-run the sync.
+
 ---
 
 **Created for Village Council Property Tax Collection**
