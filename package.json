@@ -4,9 +4,17 @@
   "description": "NSN VC Field Survey app",
   "private": true,
   "scripts": {
-    "test": "node --test"
+    "test": "node --test",
+    "build:www": "node scripts/build-android-www.js",
+    "android:sync": "npm run build:www && npx cap sync android",
+    "android:open": "npm run android:sync && npx cap open android"
   },
   "dependencies": {
     "firebase-admin": "^14.1.0"
+  },
+  "devDependencies": {
+    "@capacitor/android": "^8.4.2",
+    "@capacitor/cli": "^8.4.2",
+    "@capacitor/core": "^8.4.2"
   }
 }

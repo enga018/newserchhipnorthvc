@@ -1,0 +1,95 @@
+name: build-android-apk
+
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      HAS_SIGNING: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read app version
+        id: app_version
+        run: echo "version=$(grep -oP 'APP_VERSION = \"\K[^\"]+' app/index.html)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build web bundle + sync Capacitor
+        run: |
+          npm run build:www
+          npx cap sync android
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - uses: android-actions/setup-android@v3
+
+      - name: Ensure required SDK packages are installed
+        run: |
+          yes | sdkmanager --licenses > /dev/null || true
+          sdkmanager "platform-tools" "platforms;android-36" "build-tools;36.0.0"
+
+      - name: Build debug APK
+        working-directory: android
+        run: ./gradlew assembleDebug --no-daemon
+
+      # Optional signed release build — only runs once ANDROID_KEYSTORE_BASE64 and
+      # friends are added as repo secrets. Until then this step is skipped and only
+      # the debug APK above is produced.
+      - name: Build signed release APK
+        if: ${{ env.HAS_SIGNING == 'true' }}
+        working-directory: android
+        run: |
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > release.keystore
+          ./gradlew assembleRelease --no-daemon \
+            -Pandroid.injected.signing.store.file=release.keystore \
+            -Pandroid.injected.signing.store.password="${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" \
+            -Pandroid.injected.signing.key.alias="${{ secrets.ANDROID_KEY_ALIAS }}" \
+            -Pandroid.injected.signing.key.password="${{ secrets.ANDROID_KEY_PASSWORD }}"
+          rm -f release.keystore
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nsn-vc-survey-debug-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+
+      - uses: actions/upload-artifact@v4
+        if: ${{ hashFiles('android/app/build/outputs/apk/release/app-release.apk') != '' }}
+        with:
+          name: nsn-vc-survey-release-apk
+          path: android/app/build/outputs/apk/release/app-release.apk
+
+      # Rolling "latest" GitHub Release with a stable download URL — updated on every
+      # build on main, so field workers always have one link to get the current APK.
+      - name: Publish/update "latest" release
+        if: ${{ github.ref == 'refs/heads/main' }}
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: android-latest
+          name: "NSN VC Field Survey — Android (latest)"
+          body: |
+            Automatically built from commit ${{ github.sha }}.
+            App version: ${{ steps.app_version.outputs.version }}
+
+            This is a debug-signed APK — installing it requires enabling
+            "install from unknown sources" on the phone.
+          prerelease: true
+          fail_on_unmatched_files: false
+          files: |
+            android/app/build/outputs/apk/debug/app-debug.apk
+            android/app/build/outputs/apk/release/app-release.apk
