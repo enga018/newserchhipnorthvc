@@ -1,6 +1,6 @@
 # Versioning policy
 
-The app version lives in `index.html` as `const APP_VERSION = "vMAJOR.MINOR.PATCH"` (also used as the service worker cache-busting query string). Bump it on every commit to `main`:
+The app version lives in `app/index.html` as `const APP_VERSION = "vMAJOR.MINOR.PATCH"` and in `sw.js` as `SW_VERSION: vMAJOR.MINOR.PATCH` (also used as the service worker cache-busting query string). Bump it on every commit to `main`:
 
 - **Small change** (bug fix, tweak, small addition — roughly a diff of a few dozen lines in one area): PATCH += 1.
   Example: 1.1.1 → 1.1.2
@@ -29,4 +29,4 @@ The hook:
   - **Large**: multiple files or ≥ 100 lines changed → MINOR += 1, PATCH = 0
 - Automatically creates a follow-up version bump commit
 - Skips on commits with "version bump" in the message (to avoid double-bumping)
-- Updates both `app/index.html` and `manifest.json`
+- Updates `app/index.html`, `sw.js`, and `manifest.json`
