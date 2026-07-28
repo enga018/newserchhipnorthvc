@@ -1255,7 +1255,7 @@ const firebaseConfig = {
     appId: "1:547385765757:web:df18cd27e9161b7d1c2614"
 };
 const ADMIN_EMAIL = "enga018@gmail.com";
-const APP_VERSION = "v3.11.2";
+const APP_VERSION = "v3.11.3";
 
 // Dark mode theme management
 const THEME_STORAGE_KEY = 'appTheme';
@@ -2335,8 +2335,11 @@ function updateUnitOccupied(fi, checked){ householdDraft[fi].occupied = checked;
 function updateUnitVacant(fi, checked){
     householdDraft[fi].isVacant = checked;
     if (checked) {
+        householdDraft[fi].occupied = false;
         householdDraft[fi].isTemporaryResidence = false;
         householdDraft[fi].isRaltlan = false;
+    } else {
+        householdDraft[fi].occupied = true;
     }
     renderUnits();
 }
@@ -3008,7 +3011,7 @@ function isRecordAbsent(r) {
 function familyMembersIncomplete(families) {
     const fams = Array.isArray(families) ? families : [];
     for (const f of fams) {
-        if (f.occupied === false) continue; // skip vacant units
+        if (f.occupied === false || f.isVacant) continue; // skip vacant units
         if (f.type && f.type !== 'Residential') continue; // non-residential units don't track members
         const members = Array.isArray(f && f.members) ? f.members : [];
         if (members.length === 0) return true; // occupied unit with nobody recorded
@@ -3823,9 +3826,9 @@ function renderAeUnits() {
         const statusCheckboxes = !isInst ? `
             <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px;background:var(--surface-2);border-radius:8px;padding:8px">
                 <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin:0;font-size:13px;font-weight:500">
-                    <input type="checkbox" ${f.isVacant?'checked':''} onchange="aeFamilies[${fi}].isVacant=this.checked;if(this.checked){aeFamilies[${fi}].isTemporaryResidence=false;aeFamilies[${fi}].isRaltlan=false;}renderAeUnits()" style="width:auto;cursor:pointer">
-                    Vacant
-                </label>
+<input type="checkbox" ${f.isVacant?'checked':''} onchange="aeFamilies[${fi}].isVacant=this.checked;if(this.checked){aeFamilies[${fi}].occupied=false;aeFamilies[${fi}].isTemporaryResidence=false;aeFamilies[${fi}].isRaltlan=false;}else{aeFamilies[${fi}].occupied=true;}renderAeUnits()" style="width:auto;cursor:pointer">
+                     Vacant
+                 </label>
                 <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin:0;font-size:13px;font-weight:500">
                     <input type="checkbox" ${f.isTemporaryResidence?'checked':''} onchange="aeFamilies[${fi}].isTemporaryResidence=this.checked" ${f.isVacant?'disabled':''} style="width:auto;cursor:pointer">
                     Temporary Residence
