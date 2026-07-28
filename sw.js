@@ -1,4 +1,4 @@
-// Cache name auto-derived from app version passed via SW registration URL (sw.js?v=x.y.z)
+// SW_VERSION: v3.11.3 — cache name derived from registration URL query param (sw.js?v=x.y.z)
 const params = new URLSearchParams(self.location.search);
 const appVersion = params.get('v') || 'unknown';
 const CACHE_NAME = 'nsn-vc-survey-' + appVersion;
