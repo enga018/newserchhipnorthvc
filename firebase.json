@@ -4,16 +4,29 @@
     "ignore": [
       "firebase.json",
       ".firebaserc",
-      ".git",
       ".gitignore",
-      ".github",
-      "node_modules",
       "package.json",
       "package-lock.json",
-      "test",
       "CLAUDE.md",
       "FUTURE_PLANS.md",
-      "README.md"
+      "README.md",
+      "**/node_modules/**",
+      "**/.git/**",
+      "**/.github/**",
+      "**/android/**",
+      "**/hooks/**",
+      "**/.qoder/**",
+      "**/.firebase/**",
+      "**/test/**",
+      "**/www/**"
+    ],
+    "headers": [
+      {
+        "source": "/sw.js",
+        "headers": [
+          { "key": "Cache-Control", "value": "no-cache" }
+        ]
+      }
     ]
   },
   "firestore": {
